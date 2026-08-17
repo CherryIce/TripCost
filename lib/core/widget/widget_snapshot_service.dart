@@ -1,0 +1,129 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:trip_cost/core/money/decimal_value.dart';
+import 'package:trip_cost/core/platform/generated/platform_apis.g.dart';
+import 'package:trip_cost/core/storage/data_reset_coordinator.dart';
+import 'package:trip_cost/core/storage/database/app_database.dart';
+
+abstract interface class WidgetSnapshotGateway {
+  Future<void> write(String payloadJson);
+
+  Future<void> clear();
+}
+
+final class PlatformWidgetSnapshotGateway implements WidgetSnapshotGateway {
+  PlatformWidgetSnapshotGateway({SharedSnapshotApi? api})
+    : _api = api ?? SharedSnapshotApi();
+
+  final SharedSnapshotApi _api;
+
+  @override
+  Future<void> write(String payloadJson) {
+    return _api.writeWidgetSnapshot(
+      SharedSnapshot(
+        contractVersion: WidgetSnapshotService.contractVersion,
+        payloadJson: payloadJson,
+      ),
+    );
+  }
+
+  @override
+  Future<void> clear() => _api.clearWidgetSnapshot();
+}
+
+final class WidgetSnapshotService implements SharedSnapshotStore {
+  WidgetSnapshotService(
+    this._database, {
+    WidgetSnapshotGateway? gateway,
+    DateTime Function()? clock,
+  }) : _gateway = gateway ?? PlatformWidgetSnapshotGateway(),
+       _clock = clock ?? (() => DateTime.now().toUtc());
+
+  static const int contractVersion = 1;
+  static const Duration staleAfter = Duration(hours: 48);
+
+  final AppDatabase _database;
+  final WidgetSnapshotGateway _gateway;
+  final DateTime Function() _clock;
+
+  Future<void> refresh() async {
+    final now = _clock().toUtc();
+    final payload = <String, Object?>{
+      'version': contractVersion,
+      'generatedAtUtc': now.toIso8601String(),
+      'rate': await _rateSummary(now),
+      'trip': await _tripSummary(),
+    };
+    await _gateway.write(jsonEncode(payload));
+  }
+
+  @override
+  Future<void> clear() => _gateway.clear();
+
+  Future<Map<String, Object?>?> _rateSummary(DateTime now) async {
+    final row = await _database
+        .customSelect(
+          'SELECT base_currency, quote_currency, rate, source_timestamp, '
+          'is_cached FROM rate_snapshots WHERE deleted_at IS NULL '
+          'ORDER BY fetched_at DESC LIMIT 1',
+        )
+        .getSingleOrNull();
+    if (row == null) return null;
+    final sourceAt = _dateFromDb(row.data['source_timestamp']);
+    final rate = row.data['rate']! as String;
+    return <String, Object?>{
+      'baseCurrency': row.data['base_currency']! as String,
+      'quoteCurrency': row.data['quote_currency']! as String,
+      'amount': '1',
+      'convertedAmount': rate,
+      'rate': rate,
+      'rateDate': sourceAt.toIso8601String().substring(0, 10),
+      'isCached': _boolFromDb(row.data['is_cached']),
+      'isStale': now.difference(sourceAt) > staleAfter,
+    };
+  }
+
+  Future<Map<String, Object?>?> _tripSummary() async {
+    final trip = await _database
+        .customSelect(
+          'SELECT id, name, home_currency, total_budget FROM trips '
+          "WHERE deleted_at IS NULL AND status IN ('active', 'upcoming') "
+          "ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, start_date "
+          'LIMIT 1',
+        )
+        .getSingleOrNull();
+    if (trip == null) return null;
+    final tripId = trip.data['id']! as String;
+    final expenses = await _database
+        .customSelect(
+          'SELECT actual_final_amount, estimated_final_amount FROM expenses '
+          'WHERE deleted_at IS NULL AND budget_included = 1 AND trip_id = ?',
+          variables: <Variable<Object>>[Variable<String>(tripId)],
+        )
+        .get();
+    var spent = DecimalValue.zero;
+    for (final expense in expenses) {
+      final value =
+          expense.data['actual_final_amount'] ??
+          expense.data['estimated_final_amount'];
+      if (value is String) spent += DecimalValue.parse(value);
+    }
+    return <String, Object?>{
+      'name': trip.data['name']! as String,
+      'homeCurrency': trip.data['home_currency']! as String,
+      'spent': spent.toString(),
+      'budget': trip.data['total_budget'] as String?,
+    };
+  }
+}
+
+DateTime _dateFromDb(Object? value) {
+  if (value is int) {
+    return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true);
+  }
+  if (value is String) return DateTime.parse(value).toUtc();
+  throw const FormatException('Invalid Widget snapshot timestamp.');
+}
+
+bool _boolFromDb(Object? value) => value == true || value == 1;

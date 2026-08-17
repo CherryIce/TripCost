@@ -1,0 +1,1718 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_zh.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('zh'),
+    Locale('en'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'TripCost'**
+  String get appTitle;
+
+  /// No description provided for @homeTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get homeTab;
+
+  /// No description provided for @tripsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips'**
+  String get tripsTab;
+
+  /// No description provided for @ledgerTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get ledgerTab;
+
+  /// No description provided for @settingsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTab;
+
+  /// No description provided for @scanAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get scanAction;
+
+  /// No description provided for @homeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Understand the real cost'**
+  String get homeTitle;
+
+  /// No description provided for @homeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert a local price and compare payment methods.'**
+  String get homeSubtitle;
+
+  /// No description provided for @tripsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips'**
+  String get tripsTitle;
+
+  /// No description provided for @tripsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip budgets and offline packs will appear here.'**
+  String get tripsSubtitle;
+
+  /// No description provided for @ledgerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger'**
+  String get ledgerTitle;
+
+  /// No description provided for @ledgerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved expenses and actual charges will appear here.'**
+  String get ledgerSubtitle;
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @settingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency, rates, payments, sync, and privacy.'**
+  String get settingsSubtitle;
+
+  /// No description provided for @scanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a price'**
+  String get scanTitle;
+
+  /// No description provided for @scanSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a camera photo or an image, then confirm every detected price before comparing payment methods.'**
+  String get scanSubtitle;
+
+  /// No description provided for @scanCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get scanCamera;
+
+  /// No description provided for @scanPhotoLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get scanPhotoLibrary;
+
+  /// No description provided for @scanPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition runs on this device. The original image is not uploaded.'**
+  String get scanPrivacy;
+
+  /// No description provided for @scanRecognizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing text on this device…'**
+  String get scanRecognizing;
+
+  /// No description provided for @scanDetectedPrices.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected prices'**
+  String get scanDetectedPrices;
+
+  /// No description provided for @scanSelectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one price, or select several to add them together.'**
+  String get scanSelectHint;
+
+  /// No description provided for @scanLowConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Low confidence · review this value'**
+  String get scanLowConfidence;
+
+  /// No description provided for @scanManualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount manually'**
+  String get scanManualEntry;
+
+  /// No description provided for @scanAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get scanAmount;
+
+  /// No description provided for @scanChooseCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose currency'**
+  String get scanChooseCurrency;
+
+  /// No description provided for @scanInvalidEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount and choose a currency.'**
+  String get scanInvalidEdit;
+
+  /// No description provided for @scanCurrencyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a currency for every selected price.'**
+  String get scanCurrencyRequired;
+
+  /// No description provided for @scanMixedCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected prices use different currencies. Edit them before continuing.'**
+  String get scanMixedCurrencies;
+
+  /// No description provided for @scanSelectedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected total · {currency} {amount}'**
+  String scanSelectedTotal(String currency, String amount);
+
+  /// No description provided for @scanContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare payment methods'**
+  String get scanContinue;
+
+  /// No description provided for @scanPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Access was not granted. Choose the other image source or enter the amount manually.'**
+  String get scanPermissionDenied;
+
+  /// No description provided for @scanImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This image is no longer available. Choose it again or enter the amount manually.'**
+  String get scanImageUnavailable;
+
+  /// No description provided for @scanRecognitionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The image could not be recognized. Try another image or enter the amount manually.'**
+  String get scanRecognitionFailed;
+
+  /// No description provided for @scanNoCandidates.
+  ///
+  /// In en, this message translates to:
+  /// **'No prices were found. Try another image or enter the amount manually.'**
+  String get scanNoCandidates;
+
+  /// No description provided for @scanRateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference rate is available for this currency. Enter a manual rate on Home, then try again.'**
+  String get scanRateUnavailable;
+
+  /// No description provided for @languageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageTitle;
+
+  /// No description provided for @systemLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get systemLanguage;
+
+  /// No description provided for @simplifiedChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'简体中文'**
+  String get simplifiedChinese;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @scaffoldNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Project scaffold ready'**
+  String get scaffoldNotice;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get onboardingStart;
+
+  /// No description provided for @onboardingScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Understand prices instantly'**
+  String get onboardingScanTitle;
+
+  /// No description provided for @onboardingScanSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan price tags, menus, and receipts to make foreign prices easier to understand.'**
+  String get onboardingScanSubtitle;
+
+  /// No description provided for @onboardingCompareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare the cost to pay'**
+  String get onboardingCompareTitle;
+
+  /// No description provided for @onboardingCompareSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Include fees and rewards to compare the estimated cost of each payment method.'**
+  String get onboardingCompareSubtitle;
+
+  /// No description provided for @onboardingBudgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep every trip on budget'**
+  String get onboardingBudgetTitle;
+
+  /// No description provided for @onboardingBudgetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expenses to a trip and see how much of your travel budget remains.'**
+  String get onboardingBudgetSubtitle;
+
+  /// No description provided for @converterInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Local price or expression'**
+  String get converterInputLabel;
+
+  /// No description provided for @converterInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: 1200 * 3 + 500'**
+  String get converterInputHint;
+
+  /// No description provided for @converterResultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference conversion'**
+  String get converterResultLabel;
+
+  /// No description provided for @converterInvalidExpression.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the expression and edit it in place.'**
+  String get converterInvalidExpression;
+
+  /// No description provided for @converterPositiveAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount greater than zero.'**
+  String get converterPositiveAmount;
+
+  /// No description provided for @converterRateLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding the latest reference rate…'**
+  String get converterRateLoading;
+
+  /// No description provided for @converterRateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference rate is available. Add a manual rate to continue.'**
+  String get converterRateUnavailable;
+
+  /// No description provided for @converterRateLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest reference rate · {source} · {time}'**
+  String converterRateLive(String source, String time);
+
+  /// No description provided for @converterRateCached.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached at {time} · {source}'**
+  String converterRateCached(String time, String source);
+
+  /// No description provided for @converterRateStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Older cache from {time} · review before paying'**
+  String converterRateStale(String time);
+
+  /// No description provided for @converterRateManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Using your manual reference rate'**
+  String get converterRateManual;
+
+  /// No description provided for @converterRateCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card-network reference · {source} · {time}'**
+  String converterRateCard(String source, String time);
+
+  /// No description provided for @converterRateIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Same currency · rate 1'**
+  String get converterRateIdentity;
+
+  /// No description provided for @converterManualRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter manual rate'**
+  String get converterManualRate;
+
+  /// No description provided for @converterManualRateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'1 local currency = how much home currency'**
+  String get converterManualRateHint;
+
+  /// No description provided for @converterRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh rate'**
+  String get converterRefresh;
+
+  /// No description provided for @converterCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare payment methods'**
+  String get converterCompare;
+
+  /// No description provided for @converterDcc.
+  ///
+  /// In en, this message translates to:
+  /// **'Check DCC'**
+  String get converterDcc;
+
+  /// No description provided for @converterRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent expenses'**
+  String get converterRecentTitle;
+
+  /// No description provided for @converterRecentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved expenses will appear here.'**
+  String get converterRecentEmpty;
+
+  /// No description provided for @currencyLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction currency'**
+  String get currencyLocal;
+
+  /// No description provided for @currencyHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home currency'**
+  String get currencyHome;
+
+  /// No description provided for @currencyFavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite currency'**
+  String get currencyFavorite;
+
+  /// No description provided for @currencyUnfavorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove favorite'**
+  String get currencyUnfavorite;
+
+  /// No description provided for @commonCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// No description provided for @commonSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get commonSave;
+
+  /// No description provided for @commonDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get commonDelete;
+
+  /// No description provided for @commonDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get commonDone;
+
+  /// No description provided for @commonAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get commonAdd;
+
+  /// No description provided for @commonEstimated.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated'**
+  String get commonEstimated;
+
+  /// No description provided for @paymentMethodsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment methods'**
+  String get paymentMethodsTitle;
+
+  /// No description provided for @paymentMethodsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Store fee rules only. Never enter card numbers, expiry dates, CVV, identity, or banking credentials.'**
+  String get paymentMethodsSubtitle;
+
+  /// No description provided for @paymentMethodsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cash or a card to compare estimated costs.'**
+  String get paymentMethodsEmpty;
+
+  /// No description provided for @paymentAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add payment method'**
+  String get paymentAddTitle;
+
+  /// No description provided for @paymentEditName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get paymentEditName;
+
+  /// No description provided for @paymentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get paymentType;
+
+  /// No description provided for @paymentNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Card network'**
+  String get paymentNetwork;
+
+  /// No description provided for @paymentBillingCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing currency'**
+  String get paymentBillingCurrency;
+
+  /// No description provided for @paymentTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Template'**
+  String get paymentTemplate;
+
+  /// No description provided for @paymentForeignFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Foreign conversion fee %'**
+  String get paymentForeignFee;
+
+  /// No description provided for @paymentCrossBorderFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Cross-border fee %'**
+  String get paymentCrossBorderFee;
+
+  /// No description provided for @paymentRateMarkup.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange-rate markup %'**
+  String get paymentRateMarkup;
+
+  /// No description provided for @paymentFixedFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed fee'**
+  String get paymentFixedFee;
+
+  /// No description provided for @paymentCashback.
+  ///
+  /// In en, this message translates to:
+  /// **'Cashback %'**
+  String get paymentCashback;
+
+  /// No description provided for @paymentMinimumFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum variable fee (optional)'**
+  String get paymentMinimumFee;
+
+  /// No description provided for @paymentMaximumFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum variable fee (optional)'**
+  String get paymentMaximumFee;
+
+  /// No description provided for @paymentCashRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual cash exchange rate (optional)'**
+  String get paymentCashRate;
+
+  /// No description provided for @paymentNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (optional)'**
+  String get paymentNotes;
+
+  /// No description provided for @paymentTransactionScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to'**
+  String get paymentTransactionScope;
+
+  /// No description provided for @paymentPurchase.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases'**
+  String get paymentPurchase;
+
+  /// No description provided for @paymentAtm.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM'**
+  String get paymentAtm;
+
+  /// No description provided for @paymentAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases and ATM'**
+  String get paymentAll;
+
+  /// No description provided for @paymentTypeCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit card'**
+  String get paymentTypeCredit;
+
+  /// No description provided for @paymentTypeDebit.
+  ///
+  /// In en, this message translates to:
+  /// **'Debit card'**
+  String get paymentTypeDebit;
+
+  /// No description provided for @paymentTypeCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get paymentTypeCash;
+
+  /// No description provided for @paymentTypeWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Digital wallet'**
+  String get paymentTypeWallet;
+
+  /// No description provided for @paymentTypeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get paymentTypeCustom;
+
+  /// No description provided for @paymentNetworkUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get paymentNetworkUnknown;
+
+  /// No description provided for @paymentNetworkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentNetworkOther;
+
+  /// No description provided for @paymentInvalidForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the name, non-negative rates and fee limits.'**
+  String get paymentInvalidForm;
+
+  /// No description provided for @paymentDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this payment method?'**
+  String get paymentDeleteTitle;
+
+  /// No description provided for @paymentDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Historical expense snapshots remain unchanged.'**
+  String get paymentDeleteMessage;
+
+  /// No description provided for @paymentPolicyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Generic estimate only. Bank and card-network policies may change.'**
+  String get paymentPolicyNotice;
+
+  /// No description provided for @paymentComparisonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated payment costs'**
+  String get paymentComparisonTitle;
+
+  /// No description provided for @paymentComparisonMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from a valid conversion to compare costs.'**
+  String get paymentComparisonMissing;
+
+  /// No description provided for @paymentComparisonNeedTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least two applicable methods for a useful comparison.'**
+  String get paymentComparisonNeedTwo;
+
+  /// No description provided for @paymentRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest estimated cost'**
+  String get paymentRecommended;
+
+  /// No description provided for @paymentDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'+{amount} vs lowest'**
+  String paymentDifference(String amount);
+
+  /// No description provided for @paymentBaseAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Base conversion'**
+  String get paymentBaseAmount;
+
+  /// No description provided for @paymentRateMarkupAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate markup'**
+  String get paymentRateMarkupAmount;
+
+  /// No description provided for @paymentForeignFeeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Foreign conversion fee'**
+  String get paymentForeignFeeAmount;
+
+  /// No description provided for @paymentCrossBorderFeeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cross-border fee'**
+  String get paymentCrossBorderFeeAmount;
+
+  /// No description provided for @paymentVariableFee.
+  ///
+  /// In en, this message translates to:
+  /// **'Variable fee after limits'**
+  String get paymentVariableFee;
+
+  /// No description provided for @paymentFixedFeeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed fee'**
+  String get paymentFixedFeeAmount;
+
+  /// No description provided for @paymentCashbackAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated cashback'**
+  String get paymentCashbackAmount;
+
+  /// No description provided for @paymentEstimatedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated total'**
+  String get paymentEstimatedTotal;
+
+  /// No description provided for @paymentCashRateUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses your actual cash exchange rate'**
+  String get paymentCashRateUsed;
+
+  /// No description provided for @paymentEstimateDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'All figures are estimates. Final charges depend on the merchant, card network, issuer and posting date.'**
+  String get paymentEstimateDisclaimer;
+
+  /// No description provided for @dccTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'DCC check'**
+  String get dccTitle;
+
+  /// No description provided for @dccLocalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Local-currency amount'**
+  String get dccLocalAmount;
+
+  /// No description provided for @dccMerchantQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant home-currency quote'**
+  String get dccMerchantQuote;
+
+  /// No description provided for @dccOptionalPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method (optional)'**
+  String get dccOptionalPayment;
+
+  /// No description provided for @dccNoPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'No payment method'**
+  String get dccNoPayment;
+
+  /// No description provided for @dccImpliedRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant implied rate'**
+  String get dccImpliedRate;
+
+  /// No description provided for @dccReferenceRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference rate'**
+  String get dccReferenceRate;
+
+  /// No description provided for @dccReferenceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference conversion'**
+  String get dccReferenceAmount;
+
+  /// No description provided for @dccExtraAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'DCC extra amount'**
+  String get dccExtraAmount;
+
+  /// No description provided for @dccExtraPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'DCC extra percentage'**
+  String get dccExtraPercent;
+
+  /// No description provided for @dccLocalPaymentEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated cost if paying in local currency'**
+  String get dccLocalPaymentEstimate;
+
+  /// No description provided for @dccGuidanceHigher.
+  ///
+  /// In en, this message translates to:
+  /// **'The merchant quote is about {percent}% above the current reference conversion. Paying in local currency is usually more transparent, but the final charge still depends on the issuer.'**
+  String dccGuidanceHigher(String percent);
+
+  /// No description provided for @dccGuidanceLower.
+  ///
+  /// In en, this message translates to:
+  /// **'The merchant quote is not above the current reference conversion. This is still only a comparison; verify the currency and final amount on the terminal.'**
+  String get dccGuidanceLower;
+
+  /// No description provided for @dccInvalidLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a local amount greater than zero.'**
+  String get dccInvalidLocal;
+
+  /// No description provided for @dccInvalidQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a merchant quote greater than zero.'**
+  String get dccInvalidQuote;
+
+  /// No description provided for @dccSameCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'DCC requires two different currencies.'**
+  String get dccSameCurrency;
+
+  /// No description provided for @dccMissingRate.
+  ///
+  /// In en, this message translates to:
+  /// **'A reference rate is required before checking DCC.'**
+  String get dccMissingRate;
+
+  /// No description provided for @templateNoForeignFee.
+  ///
+  /// In en, this message translates to:
+  /// **'No foreign-fee card'**
+  String get templateNoForeignFee;
+
+  /// No description provided for @templateOnePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'1% fee card'**
+  String get templateOnePercent;
+
+  /// No description provided for @templateOnePointFivePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'1.5% fee card'**
+  String get templateOnePointFivePercent;
+
+  /// No description provided for @templateTwoPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'2% fee card'**
+  String get templateTwoPercent;
+
+  /// No description provided for @templateUnionPayCny.
+  ///
+  /// In en, this message translates to:
+  /// **'UnionPay CNY billing card'**
+  String get templateUnionPayCny;
+
+  /// No description provided for @templateCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash exchange'**
+  String get templateCash;
+
+  /// No description provided for @templateCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully custom'**
+  String get templateCustom;
+
+  /// No description provided for @onboardingHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested home currency'**
+  String get onboardingHomeCurrency;
+
+  /// No description provided for @onboardingCreateTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a trip'**
+  String get onboardingCreateTrip;
+
+  /// No description provided for @onboardingAddPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add payment method'**
+  String get onboardingAddPayment;
+
+  /// No description provided for @commonEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get commonEdit;
+
+  /// No description provided for @commonNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get commonNone;
+
+  /// No description provided for @commonAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get commonAll;
+
+  /// No description provided for @tripCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'New trip'**
+  String get tripCreate;
+
+  /// No description provided for @tripEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit trip'**
+  String get tripEdit;
+
+  /// No description provided for @tripCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy configuration'**
+  String get tripCopy;
+
+  /// No description provided for @tripArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get tripArchive;
+
+  /// No description provided for @tripDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this trip?'**
+  String get tripDeleteTitle;
+
+  /// No description provided for @tripDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses and receipt references stay in the ledger without this trip. This cannot be undone.'**
+  String get tripDeleteMessage;
+
+  /// No description provided for @tripName.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip name'**
+  String get tripName;
+
+  /// No description provided for @tripDestinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries or regions'**
+  String get tripDestinations;
+
+  /// No description provided for @tripDestinationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: JP, KR'**
+  String get tripDestinationsHint;
+
+  /// No description provided for @tripStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get tripStartDate;
+
+  /// No description provided for @tripEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get tripEndDate;
+
+  /// No description provided for @tripLocalCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'Local currencies'**
+  String get tripLocalCurrencies;
+
+  /// No description provided for @tripBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Total budget'**
+  String get tripBudget;
+
+  /// No description provided for @tripBudgetOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional; zero is allowed'**
+  String get tripBudgetOptional;
+
+  /// No description provided for @tripParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Travelers'**
+  String get tripParticipants;
+
+  /// No description provided for @tripDefaultPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Default payment method'**
+  String get tripDefaultPayment;
+
+  /// No description provided for @tripOfflinePack.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline rate pack'**
+  String get tripOfflinePack;
+
+  /// No description provided for @tripOfflinePackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare the selected local and home currency pair without requesting location.'**
+  String get tripOfflinePackHint;
+
+  /// No description provided for @tripInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the name, dates, currencies, budget and traveler count.'**
+  String get tripInvalid;
+
+  /// No description provided for @tripActive.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get tripActive;
+
+  /// No description provided for @tripUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get tripUpcoming;
+
+  /// No description provided for @tripHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get tripHistory;
+
+  /// No description provided for @tripMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip is no longer available.'**
+  String get tripMissing;
+
+  /// No description provided for @tripNoBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'No budget'**
+  String get tripNoBudget;
+
+  /// No description provided for @tripSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get tripSpent;
+
+  /// No description provided for @tripRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get tripRemaining;
+
+  /// No description provided for @tripDailyRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining per day'**
+  String get tripDailyRemaining;
+
+  /// No description provided for @tripDayProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip days'**
+  String get tripDayProgress;
+
+  /// No description provided for @tripDailyAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Current daily average'**
+  String get tripDailyAverage;
+
+  /// No description provided for @tripPaymentBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment-method breakdown'**
+  String get tripPaymentBreakdown;
+
+  /// No description provided for @tripOfflineReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline pack ready'**
+  String get tripOfflineReady;
+
+  /// No description provided for @tripOfflineMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline pack not downloaded'**
+  String get tripOfflineMissing;
+
+  /// No description provided for @expenseManualAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expense'**
+  String get expenseManualAdd;
+
+  /// No description provided for @expenseSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save expense'**
+  String get expenseSave;
+
+  /// No description provided for @expenseRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent expenses'**
+  String get expenseRecent;
+
+  /// No description provided for @expenseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant or item'**
+  String get expenseTitle;
+
+  /// No description provided for @expenseTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip'**
+  String get expenseTrip;
+
+  /// No description provided for @expenseCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get expenseCategory;
+
+  /// No description provided for @expenseTransactionAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Original amount'**
+  String get expenseTransactionAmount;
+
+  /// No description provided for @expenseReferenceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference conversion'**
+  String get expenseReferenceAmount;
+
+  /// No description provided for @expenseEstimatedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated final amount'**
+  String get expenseEstimatedAmount;
+
+  /// No description provided for @expenseActualAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual posted amount'**
+  String get expenseActualAmount;
+
+  /// No description provided for @expensePaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get expensePaymentMethod;
+
+  /// No description provided for @expenseTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax in home currency'**
+  String get expenseTax;
+
+  /// No description provided for @expenseTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip in home currency'**
+  String get expenseTip;
+
+  /// No description provided for @expenseDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount in home currency'**
+  String get expenseDiscount;
+
+  /// No description provided for @expenseDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction date'**
+  String get expenseDate;
+
+  /// No description provided for @expenseReceiptPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt local path (optional)'**
+  String get expenseReceiptPath;
+
+  /// No description provided for @expenseNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get expenseNotes;
+
+  /// No description provided for @expenseBudgetIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Include in trip budget'**
+  String get expenseBudgetIncluded;
+
+  /// No description provided for @expenseStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get expenseStatus;
+
+  /// No description provided for @expenseConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get expenseConfirmed;
+
+  /// No description provided for @expenseInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the title, positive amounts, currencies and traveler count.'**
+  String get expenseInvalid;
+
+  /// No description provided for @expenseDuplicateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible duplicate expense'**
+  String get expenseDuplicateTitle;
+
+  /// No description provided for @expenseDuplicateMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A matching expense was saved within five minutes. Save another copy?'**
+  String get expenseDuplicateMessage;
+
+  /// No description provided for @expenseSaveAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Save anyway'**
+  String get expenseSaveAnyway;
+
+  /// No description provided for @expenseMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This expense is no longer available.'**
+  String get expenseMissing;
+
+  /// No description provided for @expenseDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'Difference from estimate'**
+  String get expenseDifference;
+
+  /// No description provided for @expenseRateSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved rate snapshot'**
+  String get expenseRateSnapshot;
+
+  /// No description provided for @expensePaymentSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved fee-rule snapshot'**
+  String get expensePaymentSnapshot;
+
+  /// No description provided for @expenseActualConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Two actual posted amounts need conflict resolution before sync can continue.'**
+  String get expenseActualConflict;
+
+  /// No description provided for @expenseRecordActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Record actual amount'**
+  String get expenseRecordActual;
+
+  /// No description provided for @expenseAdjust.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund or void'**
+  String get expenseAdjust;
+
+  /// No description provided for @expenseRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get expenseRefund;
+
+  /// No description provided for @expensePartialRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial refund'**
+  String get expensePartialRefund;
+
+  /// No description provided for @expenseVoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Voided'**
+  String get expenseVoid;
+
+  /// No description provided for @expenseRefundInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The refund must be greater than zero and cannot exceed the original posted or estimated amount.'**
+  String get expenseRefundInvalid;
+
+  /// No description provided for @expenseManualRateSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual ledger rate'**
+  String get expenseManualRateSource;
+
+  /// No description provided for @expenseManualPaymentRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual entry'**
+  String get expenseManualPaymentRule;
+
+  /// No description provided for @ledgerTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get ledgerTimeline;
+
+  /// No description provided for @ledgerCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get ledgerCalendar;
+
+  /// No description provided for @ledgerCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get ledgerCategories;
+
+  /// No description provided for @ledgerFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get ledgerFilters;
+
+  /// No description provided for @ledgerClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get ledgerClearFilters;
+
+  /// No description provided for @ledgerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching expenses yet.'**
+  String get ledgerEmpty;
+
+  /// No description provided for @ledgerMinimumAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum amount'**
+  String get ledgerMinimumAmount;
+
+  /// No description provided for @ledgerMaximumAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum amount'**
+  String get ledgerMaximumAmount;
+
+  /// No description provided for @ledgerInvalidFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid non-negative amount range.'**
+  String get ledgerInvalidFilters;
+
+  /// No description provided for @ledgerFilteredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} expenses'**
+  String ledgerFilteredCount(int count);
+
+  /// No description provided for @ledgerRecentDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Last {count} days'**
+  String ledgerRecentDays(int count);
+
+  /// No description provided for @calibrationNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Record an actual amount to build a local fee comparison.'**
+  String get calibrationNone;
+
+  /// No description provided for @calibrationRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent {count} comparable charges: {minimum}% to {maximum}% markup. Three or more records are required before suggesting a rule change.'**
+  String calibrationRange(int count, String minimum, String maximum);
+
+  /// No description provided for @calibrationRangeReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent {count} comparable charges: {minimum}% to {maximum}% markup. Review them before manually changing the rule.'**
+  String calibrationRangeReady(int count, String minimum, String maximum);
+
+  /// No description provided for @categoryFood.
+  ///
+  /// In en, this message translates to:
+  /// **'Food'**
+  String get categoryFood;
+
+  /// No description provided for @categoryTransport.
+  ///
+  /// In en, this message translates to:
+  /// **'Transport'**
+  String get categoryTransport;
+
+  /// No description provided for @categoryShopping.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping'**
+  String get categoryShopping;
+
+  /// No description provided for @categoryHotel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotel'**
+  String get categoryHotel;
+
+  /// No description provided for @categoryTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets'**
+  String get categoryTickets;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get categoryOther;
+
+  /// No description provided for @syncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'iCloud sync'**
+  String get syncTitle;
+
+  /// No description provided for @syncEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync structured data with iCloud'**
+  String get syncEnable;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @syncStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is off. Local data is unchanged.'**
+  String get syncStatusDisabled;
+
+  /// No description provided for @syncStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to sync'**
+  String get syncStatusIdle;
+
+  /// No description provided for @syncStatusWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get syncStatusWorking;
+
+  /// No description provided for @syncStatusSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get syncStatusSucceeded;
+
+  /// No description provided for @syncStatusWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry'**
+  String get syncStatusWaiting;
+
+  /// No description provided for @syncStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed. Local data remains available.'**
+  String get syncStatusFailed;
+
+  /// No description provided for @syncStatusNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to iCloud to sync.'**
+  String get syncStatusNoAccount;
+
+  /// No description provided for @syncStatusRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'iCloud is restricted on this device.'**
+  String get syncStatusRestricted;
+
+  /// No description provided for @syncLastSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Last successful sync: {value}'**
+  String syncLastSuccess(String value);
+
+  /// No description provided for @syncFailureReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {value}'**
+  String syncFailureReason(String value);
+
+  /// No description provided for @syncActualConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Two posted amounts need your choice.'**
+  String get syncActualConflict;
+
+  /// No description provided for @syncConflictValues.
+  ///
+  /// In en, this message translates to:
+  /// **'On this device: {local} · In iCloud: {remote}'**
+  String syncConflictValues(String local, String remote);
+
+  /// No description provided for @syncKeepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this device'**
+  String get syncKeepLocal;
+
+  /// No description provided for @syncUseCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Use iCloud'**
+  String get syncUseCloud;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'zh'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

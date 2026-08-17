@@ -1,0 +1,88 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:trip_cost/core/storage/database/app_database.dart';
+import 'package:trip_cost/core/storage/database/database_bootstrapper.dart';
+import 'package:trip_cost/core/widget/widget_snapshot_service.dart';
+
+void main() {
+  late AppDatabase database;
+  late _FakeSnapshotGateway gateway;
+  final now = DateTime.utc(2026, 8, 17, 8);
+
+  setUp(() async {
+    database = AppDatabase.inMemory();
+    gateway = _FakeSnapshotGateway();
+    await DatabaseBootstrapper(
+      database,
+      clock: () => now,
+    ).seedCurrencyMetadata();
+  });
+
+  tearDown(() => database.close());
+
+  test('writes minimal versioned rate and trip summary', () async {
+    await database.coreDao.upsertRateSnapshot(
+      RateSnapshotsCompanion.insert(
+        id: 'rate-1',
+        updatedAt: now,
+        baseCurrency: 'JPY',
+        quoteCurrency: 'CNY',
+        rate: '0.05',
+        sourceType: 'market',
+        sourceName: 'Frankfurter',
+        sourceTimestamp: now.subtract(const Duration(days: 3)),
+        fetchedAt: now,
+        isCached: const Value<bool>(true),
+      ),
+    );
+    await database.coreDao.upsertTrip(
+      TripsCompanion.insert(
+        id: 'trip-1',
+        updatedAt: now,
+        name: 'Tokyo',
+        destinationCodesJson: '["JP"]',
+        startDate: now,
+        endDate: now.add(const Duration(days: 3)),
+        homeCurrency: 'CNY',
+        localCurrenciesJson: '["JPY"]',
+        totalBudget: const Value<String?>('1000'),
+        status: 'active',
+        createdAt: now,
+      ),
+    );
+
+    await WidgetSnapshotService(
+      database,
+      gateway: gateway,
+      clock: () => now,
+    ).refresh();
+
+    final payload = jsonDecode(gateway.payload!) as Map<String, Object?>;
+    expect(payload['version'], 1);
+    expect((payload['rate']! as Map<String, Object?>)['isStale'], isTrue);
+    expect((payload['trip']! as Map<String, Object?>)['name'], 'Tokyo');
+    expect(gateway.clearCount, 0);
+  });
+
+  test('clear forwards to the App Group gateway', () async {
+    await WidgetSnapshotService(database, gateway: gateway).clear();
+    expect(gateway.clearCount, 1);
+  });
+}
+
+final class _FakeSnapshotGateway implements WidgetSnapshotGateway {
+  String? payload;
+  int clearCount = 0;
+
+  @override
+  Future<void> clear() async {
+    clearCount += 1;
+  }
+
+  @override
+  Future<void> write(String payloadJson) async {
+    payload = payloadJson;
+  }
+}

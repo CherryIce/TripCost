@@ -1,0 +1,8 @@
+"widget_name" = "TripCost";
+"widget_description" = "无需打开 App 即可查看旅行消费摘要。";
+"widget_ready" = "Widget 骨架已就绪";
+"widget_empty" = "暂无摘要";
+"widget_open_app" = "打开应用以生成摘要。";
+"widget_cached" = "缓存汇率";
+"widget_stale" = "汇率可能已过期";
+"widget_trip_spent" = "行程已消费";

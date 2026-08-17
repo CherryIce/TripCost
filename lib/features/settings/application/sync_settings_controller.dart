@@ -1,0 +1,117 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/infrastructure/app_providers.dart';
+import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
+import 'package:trip_cost/core/sync/domain/sync_models.dart';
+
+final syncSettingsControllerProvider =
+    AsyncNotifierProvider<SyncSettingsController, SyncSettingsState>(
+      SyncSettingsController.new,
+    );
+
+final class SyncSettingsState {
+  const SyncSettingsState({
+    required this.enabled,
+    required this.runtime,
+    required this.conflicts,
+  });
+
+  final bool enabled;
+  final SyncRuntimeStatus runtime;
+  final List<SyncConflictModel> conflicts;
+}
+
+final class SyncSettingsController extends AsyncNotifier<SyncSettingsState> {
+  UserSettingsModel? _settings;
+
+  @override
+  Future<SyncSettingsState> build() async {
+    _settings = await ref.watch(settingsRepositoryProvider).load();
+    final value = await _load();
+    if (value.enabled) {
+      unawaited(_run(force: false));
+    }
+    return value;
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    final previous = _settings;
+    final now = DateTime.now().toUtc();
+    final next = UserSettingsModel(
+      metadata: SyncRecordMetadata(
+        recordId: DriftSettingsRepository.settingsRecordId,
+        syncVersion: (previous?.metadata.syncVersion ?? 0) + 1,
+        updatedAt: now,
+      ),
+      defaultCurrency:
+          previous?.defaultCurrency ??
+          (throw StateError('Complete onboarding before changing sync.')),
+      favoriteCurrencies: previous!.favoriteCurrencies,
+      languageMode: previous.languageMode,
+      refreshInterval: previous.refreshInterval,
+      wifiOnlyRefresh: previous.wifiOnlyRefresh,
+      syncEnabled: enabled,
+    );
+    await ref.read(settingsRepositoryProvider).save(next);
+    _settings = next;
+    if (enabled) {
+      await _run(force: true);
+    } else {
+      final current = await ref.read(syncStoreProvider).status();
+      await ref
+          .read(syncStoreProvider)
+          .updateRuntime(
+            accountState: current.accountState,
+            phase: SyncPhase.disabled,
+          );
+      state = AsyncData(await _load());
+    }
+  }
+
+  Future<void> synchronizeNow() => _run(force: true);
+
+  Future<void> resolveConflict(
+    SyncConflictModel conflict, {
+    required bool useRemoteValue,
+  }) async {
+    await ref
+        .read(syncStoreProvider)
+        .resolveActualAmountConflict(conflict, useRemoteValue: useRemoteValue);
+    await _run(force: true);
+  }
+
+  Future<void> _run({required bool force}) async {
+    final current = state.value;
+    if (current != null) state = AsyncData(current);
+    await ref.read(syncOrchestratorProvider).synchronize(force: force);
+    try {
+      await ref.read(widgetSnapshotServiceProvider).refresh();
+    } on Object {
+      // Widget sharing failure is surfaced by its own placeholder and must not
+      // change Cloud sync success or block local data.
+    }
+    state = AsyncData(await _load());
+  }
+
+  Future<SyncSettingsState> _load() async {
+    if (_settings?.syncEnabled != true) {
+      return const SyncSettingsState(
+        enabled: false,
+        runtime: SyncRuntimeStatus(
+          accountState: SyncAccountState.couldNotDetermine,
+          phase: SyncPhase.disabled,
+          failureCount: 0,
+        ),
+        conflicts: <SyncConflictModel>[],
+      );
+    }
+    final store = ref.read(syncStoreProvider);
+    return SyncSettingsState(
+      enabled: _settings?.syncEnabled ?? false,
+      runtime: await store.status(),
+      conflicts: await store.unresolvedConflicts(),
+    );
+  }
+}
