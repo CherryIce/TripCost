@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/app/app.dart';
 import 'package:trip_cost/app/locale_controller.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
@@ -71,6 +72,89 @@ void main() {
     await tester.tap(find.text('Start exploring'));
     await tester.pumpAndSettle();
     expect(store.isComplete, isTrue);
+    expect(find.text('Home'), findsOneWidget);
+  });
+
+  testWidgets('trip creation from onboarding can be cancelled back to home', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_testApp(_FakeStartupStateStore()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create a trip'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New trip'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('New trip'), findsNothing);
+  });
+
+  testWidgets('rapid save taps create only one onboarding trip', (
+    tester,
+  ) async {
+    final trips = MemoryTripRepository();
+    await tester.pumpWidget(
+      _testApp(_FakeStartupStateStore(), tripRepository: trips),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create a trip'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(CupertinoTextField).first, '001');
+    final saveButton = tester.widget<CupertinoButton>(
+      find.widgetWithText(CupertinoButton, 'Save'),
+    );
+    saveButton.onPressed!();
+    saveButton.onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(trips.values, hasLength(1));
+    expect(trips.values.single.name, '001');
+    expect(find.text('New trip'), findsNothing);
+    expect(find.text('Home'), findsOneWidget);
+  });
+
+  testWidgets('retry after a partial save reuses the same trip record', (
+    tester,
+  ) async {
+    final trips = _SaveThenThrowOnceTripRepository();
+    await tester.pumpWidget(
+      _testApp(_FakeStartupStateStore(), tripRepository: trips),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create a trip'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(CupertinoTextField).first, '001');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('New trip'), findsOneWidget);
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(trips.values, hasLength(1));
+    expect(trips.values.single.name, '001');
+    expect(find.text('New trip'), findsNothing);
     expect(find.text('Home'), findsOneWidget);
   });
 
@@ -150,6 +234,7 @@ void main() {
 Widget _testApp(
   StartupStateStore store, {
   MemorySettingsRepository? settings,
+  TripRepository? tripRepository,
   AppLanguageMode initialLanguageMode = AppLanguageMode.system,
 }) {
   final database = createIsolatedTestDatabase();
@@ -162,7 +247,9 @@ Widget _testApp(
       settingsRepositoryProvider.overrideWithValue(
         settings ?? MemorySettingsRepository(),
       ),
-      tripRepositoryProvider.overrideWithValue(MemoryTripRepository()),
+      tripRepositoryProvider.overrideWithValue(
+        tripRepository ?? MemoryTripRepository(),
+      ),
       expenseRepositoryProvider.overrideWithValue(MemoryExpenseRepository()),
       feeCalibrationRepositoryProvider.overrideWithValue(
         MemoryFeeCalibrationRepository(),
@@ -205,4 +292,30 @@ class _ThrowingStartupStateStore implements StartupStateStore {
 
   @override
   Future<void> resetOnboarding() async {}
+}
+
+final class _SaveThenThrowOnceTripRepository implements TripRepository {
+  final _delegate = MemoryTripRepository();
+  bool _shouldThrow = true;
+
+  List<TripModel> get values => _delegate.values;
+
+  @override
+  Future<TripModel?> findById(String id) => _delegate.findById(id);
+
+  @override
+  Future<List<TripModel>> listActive() => _delegate.listActive();
+
+  @override
+  Future<void> save(TripModel trip) async {
+    await _delegate.save(trip);
+    if (_shouldThrow) {
+      _shouldThrow = false;
+      throw StateError('simulated post-write failure');
+    }
+  }
+
+  @override
+  Future<void> softDelete(String id, DateTime deletedAtUtc) =>
+      _delegate.softDelete(id, deletedAtUtc);
 }

@@ -14,7 +14,13 @@ class AppShell extends StatelessWidget {
     return CupertinoPageScaffold(
       child: Column(
         children: <Widget>[
-          Expanded(child: navigationShell),
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: navigationShell,
+            ),
+          ),
           _AppNavigationBar(
             currentIndex: navigationShell.currentIndex,
             onDestinationSelected: (index) {

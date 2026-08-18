@@ -59,6 +59,34 @@ void main() {
     expect(find.byKey(const Key('currency-option-JPY')), findsOneWidget);
     expect(find.byKey(const Key('currency-option-CNY')), findsNothing);
   });
+
+  testWidgets('puts names left, favorites right, and safe area in the list', (
+    tester,
+  ) async {
+    addTearDown(tester.view.reset);
+    tester.view.padding = const FakeViewPadding(bottom: 102);
+
+    await tester.pumpWidget(
+      _app(
+        currencies: <Currency>[usd, eur, jpy, cny],
+        selected: usd,
+        favorites: <Currency>[eur],
+      ),
+    );
+
+    final nameRect = tester.getRect(find.byKey(const Key('currency-name-EUR')));
+    final favoriteRect = tester.getRect(
+      find.byKey(const Key('currency-favorite-EUR')),
+    );
+    final optionRect = tester.getRect(
+      find.byKey(const Key('currency-option-EUR')),
+    );
+    expect(nameRect.left, lessThan(favoriteRect.left));
+    expect(favoriteRect.right, closeTo(optionRect.right - 16, 0.1));
+
+    final list = tester.widget<ListView>(find.byType(ListView));
+    expect(list.padding, const EdgeInsets.only(bottom: 50));
+  });
 }
 
 Widget _app({

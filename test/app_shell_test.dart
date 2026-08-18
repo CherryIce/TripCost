@@ -3,16 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/app/app.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
+import 'package:trip_cost/features/converter/presentation/home_page.dart';
+import 'package:trip_cost/features/expense/presentation/ledger_page.dart';
+import 'package:trip_cost/features/settings/presentation/settings_page.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/features/startup/data/startup_state_store.dart';
+import 'package:trip_cost/features/trip/presentation/trips_page.dart';
 
 import 'helpers/isolated_test_database.dart';
 import 'helpers/m4_fakes.dart';
+import 'helpers/m5_fixtures.dart';
 
 void main() {
   testWidgets('shows four destinations and a separate scan action', (
     tester,
   ) async {
+    addTearDown(tester.view.reset);
+    tester.view.padding = const FakeViewPadding(bottom: 102);
     final database = createIsolatedTestDatabase();
     await tester.pumpWidget(
       ProviderScope(
@@ -25,7 +32,9 @@ void main() {
           settingsRepositoryProvider.overrideWithValue(
             MemorySettingsRepository(),
           ),
-          tripRepositoryProvider.overrideWithValue(MemoryTripRepository()),
+          tripRepositoryProvider.overrideWithValue(
+            MemoryTripRepository([fixtureTrip()]),
+          ),
           expenseRepositoryProvider.overrideWithValue(
             MemoryExpenseRepository(),
           ),
@@ -46,6 +55,43 @@ void main() {
     expect(find.text('Ledger'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
     expect(find.byIcon(CupertinoIcons.viewfinder), findsOneWidget);
+    expect(
+      MediaQuery.paddingOf(tester.element(find.byType(HomePage))).bottom,
+      0,
+    );
+    final navigationSafeArea = find.byWidgetPredicate(
+      (widget) => widget is SafeArea && !widget.top,
+    );
+    expect(MediaQuery.paddingOf(tester.element(navigationSafeArea)).bottom, 34);
+
+    await tester.tap(find.text('Trips'));
+    await tester.pumpAndSettle();
+    expect(
+      MediaQuery.paddingOf(tester.element(find.byType(TripsPage))).bottom,
+      0,
+    );
+    final tripList = find.ancestor(
+      of: find.text('Tokyo week'),
+      matching: find.byType(ListView),
+    );
+    final tripListSafeArea = tester.widget<SafeArea>(
+      find.ancestor(of: tripList, matching: find.byType(SafeArea)),
+    );
+    expect(tripListSafeArea.bottom, isFalse);
+
+    await tester.tap(find.text('Ledger'));
+    await tester.pumpAndSettle();
+    expect(
+      MediaQuery.paddingOf(tester.element(find.byType(LedgerPage))).bottom,
+      0,
+    );
+
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+    expect(
+      MediaQuery.paddingOf(tester.element(find.byType(SettingsPage))).bottom,
+      0,
+    );
 
     await tester.tap(find.byIcon(CupertinoIcons.viewfinder));
     await tester.pumpAndSettle();

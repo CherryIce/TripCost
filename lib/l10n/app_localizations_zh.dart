@@ -512,7 +512,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tripDeleteTitle => '删除这个行程？';
 
   @override
-  String get tripDeleteMessage => '消费和票据引用会保留在账本中，但不再关联此行程；此操作无法撤销。';
+  String get tripDeleteMessage => '消费会保留在账本中但不再关联此行程。请选择是否同时移除其本地票据图片；此操作无法撤销。';
+
+  @override
+  String get tripExport => '导出此行程';
+
+  @override
+  String get tripDeleteKeepReceipts => '删除行程，保留票据';
+
+  @override
+  String get tripDeleteWithReceipts => '删除行程及票据';
+
+  @override
+  String get tripReceiptDeletePartial => '行程已删除，但部分票据图片无法移除。';
 
   @override
   String get tripName => '行程名称';

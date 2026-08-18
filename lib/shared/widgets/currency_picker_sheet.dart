@@ -35,11 +35,13 @@ final class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
   Widget build(BuildContext context) {
     final options = _filteredCurrencies();
     final height = MediaQuery.sizeOf(context).height * 0.74;
+    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
     return CupertinoPopupSurface(
       child: SafeArea(
         top: false,
+        bottom: false,
         child: SizedBox(
-          height: height.clamp(420.0, 680.0),
+          height: height.clamp(420.0, 680.0) + bottomSafeArea,
           child: Column(
             children: <Widget>[
               Padding(
@@ -92,6 +94,9 @@ final class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                 ),
               Expanded(
                 child: ListView.separated(
+                  padding: EdgeInsets.only(
+                    bottom: AppInsets.scrollableBottomPadding(context),
+                  ),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   itemCount: options.length,
@@ -115,21 +120,6 @@ final class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                       child: Row(
                         children: <Widget>[
                           SizedBox(
-                            width: 28,
-                            child: Icon(
-                              isFavorite
-                                  ? CupertinoIcons.star_fill
-                                  : CupertinoIcons.star,
-                              size: 18,
-                              color: isFavorite
-                                  ? CupertinoTheme.of(context).primaryColor
-                                  : CupertinoColors.tertiaryLabel.resolveFrom(
-                                      context,
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.small),
-                          SizedBox(
                             width: 52,
                             child: Text(
                               currency.code,
@@ -141,12 +131,31 @@ final class _CurrencyPickerSheetState extends State<CurrencyPickerSheet> {
                           Expanded(
                             child: Text(
                               widget.displayName(currency),
+                              key: Key('currency-name-${currency.code}'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (currency == widget.selected)
-                            const Icon(CupertinoIcons.check_mark, size: 18),
+                            const Padding(
+                              padding: EdgeInsets.only(right: AppSpacing.small),
+                              child: Icon(CupertinoIcons.check_mark, size: 18),
+                            ),
+                          SizedBox(
+                            width: 28,
+                            child: Icon(
+                              isFavorite
+                                  ? CupertinoIcons.star_fill
+                                  : CupertinoIcons.star,
+                              key: Key('currency-favorite-${currency.code}'),
+                              size: 18,
+                              color: isFavorite
+                                  ? CupertinoTheme.of(context).primaryColor
+                                  : CupertinoColors.tertiaryLabel.resolveFrom(
+                                      context,
+                                    ),
+                            ),
+                          ),
                         ],
                       ),
                     );

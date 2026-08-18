@@ -544,7 +544,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDeleteMessage =>
-      'Expenses and receipt references stay in the ledger without this trip. This cannot be undone.';
+      'Expenses stay in the ledger without this trip. Choose whether their local receipt images should also be removed. This cannot be undone.';
+
+  @override
+  String get tripExport => 'Export this trip';
+
+  @override
+  String get tripDeleteKeepReceipts => 'Delete trip, keep receipts';
+
+  @override
+  String get tripDeleteWithReceipts => 'Delete trip and receipts';
+
+  @override
+  String get tripReceiptDeletePartial =>
+      'The trip was deleted, but some receipt images could not be removed.';
 
   @override
   String get tripName => 'Trip name';

@@ -52,6 +52,58 @@ void main() {
     expect(await store.pendingRecords(), isEmpty);
   });
 
+  test('push acknowledgement cannot clean a newer local generation', () async {
+    await _insertExpense(database, first, actual: '100');
+    final firstBatch = await store.pendingRecords();
+    final pushed = firstBatch.single;
+
+    now = first.add(const Duration(minutes: 1));
+    await _insertExpense(database, now, actual: '105');
+    await store.markPushed(firstBatch, <String>{pushed.key});
+    await store.applyPullBatch(<CloudSyncRecord>[pushed], 'echo-cursor');
+
+    final pending = await store.pendingRecords();
+    expect(pending, hasLength(1));
+    expect(pending.single.changeId, isNot(pushed.changeId));
+    expect(
+      (await database.coreDao.getExpense('expense-1'))!.actualFinalAmount,
+      '105',
+    );
+  });
+
+  test('remote actual after a local push still creates a conflict', () async {
+    await _insertExpense(database, first, actual: '100');
+    final batch = await store.pendingRecords();
+    final pushed = batch.single;
+    await store.markPushed(batch, <String>{pushed.key});
+    final remoteAt = first.add(const Duration(minutes: 1));
+    final remotePayload = pushed.payload
+      ..['actual_final_amount'] = '110'
+      ..['updated_at'] = remoteAt.millisecondsSinceEpoch ~/ 1000;
+
+    await store.applyPullBatch(
+      <CloudSyncRecord>[
+        CloudSyncRecord(
+          id: pushed.id,
+          entityType: pushed.entityType,
+          payloadJson: jsonEncode(remotePayload),
+          modifiedAtUtc: remoteAt,
+          deleted: false,
+          schemaVersion: pushed.schemaVersion,
+          deviceId: 'remote-device',
+          changeId: 'remote-change',
+        ),
+      ],
+      'remote-cursor',
+      locallyPushedKeys: <String>{pushed.key},
+    );
+
+    final conflicts = await store.unresolvedConflicts();
+    expect(conflicts, hasLength(1));
+    expect(conflicts.single.localValue, '100');
+    expect(conflicts.single.remoteValue, '110');
+  });
+
   test('older remote value cannot revive a newer local tombstone', () async {
     final deletedAt = first.add(const Duration(minutes: 2));
     await _insertTrip(database, deletedAt, deletedAt: deletedAt);

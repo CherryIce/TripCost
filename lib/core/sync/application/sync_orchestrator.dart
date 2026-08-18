@@ -65,15 +65,23 @@ final class SyncOrchestrator {
         lastAttemptAt: now,
       );
       var pulledRecordCount = 0;
+      final pushedKeys = <String>{};
       while (true) {
         final pending = await _store.pendingRecords();
         if (pending.isEmpty) break;
         final pushed = await _gateway.pushChanges(pending);
-        if (pushed.acceptedKeys.isEmpty) {
+        final accepted = <String>{
+          for (final record in pending)
+            if (pushed.acceptedKeys.contains(record.key)) record.key,
+        };
+        if (accepted.isEmpty) {
           throw const SyncFailure('empty-push-result');
         }
-        await _store.markPushed(pending, pushed.acceptedKeys);
-        if (pushed.acceptedKeys.length < pending.length) break;
+        await _store.markPushed(pending, accepted);
+        pushedKeys.addAll(accepted);
+        if (accepted.length < pending.length) {
+          throw const SyncFailure('partial-push-result');
+        }
       }
 
       await _store.updateRuntime(
@@ -98,7 +106,11 @@ final class SyncOrchestrator {
           continue;
         }
         pulledRecordCount += pulled.records.length;
-        await _store.applyPullBatch(pulled.records, pulled.cursor);
+        await _store.applyPullBatch(
+          pulled.records,
+          pulled.cursor,
+          locallyPushedKeys: pushedKeys,
+        );
         cursor = pulled.cursor;
         if (!pulled.hasMore) break;
       }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/money/currency.dart';
@@ -47,6 +48,16 @@ void main() {
     final service = BackupService(database, clock: () => now);
     final backup = File('${temporaryDirectory.path}/backup.json');
     await settingsRepository.save(settings('CNY', 1));
+    await database.coreDao.upsertSyncMetadata(
+      SyncMetadataEntriesCompanion.insert(
+        entityType: 'userSettings',
+        recordId: DriftSettingsRepository.settingsRecordId,
+        syncVersion: 1,
+        syncState: SyncState.clean.name,
+        updatedAt: now,
+        lastSyncedAt: Value<DateTime?>(now),
+      ),
+    );
     await service.exportTo(backup);
     await settingsRepository.save(settings('USD', 2));
 
@@ -55,6 +66,13 @@ void main() {
     final restored = await settingsRepository.load();
     expect(restored!.defaultCurrency.code, 'CNY');
     expect(restored.metadata.syncVersion, 1);
+    expect(
+      await database.coreDao.getSyncMetadata(
+        'userSettings',
+        DriftSettingsRepository.settingsRecordId,
+      ),
+      isNull,
+    );
     final envelope =
         jsonDecode(await backup.readAsString()) as Map<String, Object?>;
     expect(envelope['formatVersion'], BackupService.formatVersion);

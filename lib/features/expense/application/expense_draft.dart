@@ -23,6 +23,27 @@ final class ExpenseEditorArguments {
   final TripModel? trip;
 }
 
+bool canReuseSeedRateSnapshot({
+  required ExpenseDraftSeed seed,
+  required Money transactionAmount,
+  required Money referenceAmount,
+}) {
+  return seed.transactionAmount == transactionAmount &&
+      seed.breakdown.referenceAmount == referenceAmount &&
+      seed.rateSnapshot.baseCurrency == transactionAmount.currency &&
+      seed.rateSnapshot.quoteCurrency == referenceAmount.currency;
+}
+
+bool canReuseSeedPaymentRule({
+  required ExpenseDraftSeed seed,
+  required String? paymentMethodId,
+  required String billingCurrencyCode,
+}) {
+  final rule = seed.breakdown.paymentRule;
+  return rule.paymentMethodId == paymentMethodId &&
+      rule.billingCurrencyCode == billingCurrencyCode;
+}
+
 Money calculateEstimatedFinalAmount({
   required Money baseAmount,
   required Money taxAmount,

@@ -192,6 +192,10 @@ final class DriftSyncStore implements CacheRepositoryObserver {
         (item) => acceptedKeys.contains(item.key),
       )) {
         final payload = record.payload;
+        final local = await _rawRow(_config(record.entityType), record.id);
+        if (local == null || !_payloadMatchesLocal(local, payload)) {
+          continue;
+        }
         await _database.coreDao.upsertSyncMetadata(
           SyncMetadataEntriesCompanion.insert(
             entityType: record.entityType.name,
@@ -214,8 +218,9 @@ final class DriftSyncStore implements CacheRepositoryObserver {
 
   Future<void> applyPullBatch(
     List<CloudSyncRecord> records,
-    String? nextCursor,
-  ) async {
+    String? nextCursor, {
+    Set<String> locallyPushedKeys = const <String>{},
+  }) async {
     final now = _clock().toUtc();
     final ordered = records.toList()
       ..sort(
@@ -228,7 +233,7 @@ final class DriftSyncStore implements CacheRepositoryObserver {
         if (record.schemaVersion != recordSchemaVersion) {
           throw const SyncFailure('unsupported-record-schema');
         }
-        await _applyRecord(record, now);
+        await _applyRecord(record, now, locallyPushedKeys);
       }
       final id = await deviceId();
       final current = await _database.coreDao.getSyncRuntime(runtimeId);
@@ -313,7 +318,11 @@ final class DriftSyncStore implements CacheRepositoryObserver {
     });
   }
 
-  Future<void> _applyRecord(CloudSyncRecord record, DateTime now) async {
+  Future<void> _applyRecord(
+    CloudSyncRecord record,
+    DateTime now,
+    Set<String> locallyPushedKeys,
+  ) async {
     final config = _config(record.entityType);
     final remotePayload = record.payload;
     if (remotePayload['id'] != record.id) {
@@ -326,7 +335,9 @@ final class DriftSyncStore implements CacheRepositoryObserver {
       record.id,
     );
     if (metadata?.changeId == record.changeId) {
-      await _writeCleanMetadata(record, remotePayload, now);
+      if (local != null && _payloadMatchesLocal(local, remotePayload)) {
+        await _writeCleanMetadata(record, remotePayload, now);
+      }
       return;
     }
 
@@ -335,8 +346,11 @@ final class DriftSyncStore implements CacheRepositoryObserver {
         : _dateFromDb(local['updated_at'], 'updated_at');
     final localPending =
         local != null &&
-        (metadata?.lastSyncedAt == null ||
-            localModified!.isAfter(metadata!.lastSyncedAt!.toUtc()));
+        (metadata?.syncState == SyncState.pending.name ||
+            metadata?.syncState == SyncState.failed.name ||
+            metadata?.lastSyncedAt == null ||
+            localModified!.isAfter(metadata!.lastSyncedAt!.toUtc()) ||
+            locallyPushedKeys.contains(record.key));
     if (record.entityType == SyncEntityType.expense &&
         localPending &&
         local['actual_final_amount'] != null &&
@@ -429,6 +443,17 @@ final class DriftSyncStore implements CacheRepositoryObserver {
         )
         .getSingleOrNull();
     return row == null ? null : Map<String, Object?>.from(row.data);
+  }
+
+  bool _payloadMatchesLocal(
+    Map<String, Object?> local,
+    Map<String, Object?> payload,
+  ) {
+    for (final entry in payload.entries) {
+      if (entry.key == 'receipt_local_path') continue;
+      if (local[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 
   Future<void> _upsertRaw(

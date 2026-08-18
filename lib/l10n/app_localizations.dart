@@ -1079,8 +1079,32 @@ abstract class AppLocalizations {
   /// No description provided for @tripDeleteMessage.
   ///
   /// In en, this message translates to:
-  /// **'Expenses and receipt references stay in the ledger without this trip. This cannot be undone.'**
+  /// **'Expenses stay in the ledger without this trip. Choose whether their local receipt images should also be removed. This cannot be undone.'**
   String get tripDeleteMessage;
+
+  /// No description provided for @tripExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export this trip'**
+  String get tripExport;
+
+  /// No description provided for @tripDeleteKeepReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete trip, keep receipts'**
+  String get tripDeleteKeepReceipts;
+
+  /// No description provided for @tripDeleteWithReceipts.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete trip and receipts'**
+  String get tripDeleteWithReceipts;
+
+  /// No description provided for @tripReceiptDeletePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip was deleted, but some receipt images could not be removed.'**
+  String get tripReceiptDeletePartial;
 
   /// No description provided for @tripName.
   ///

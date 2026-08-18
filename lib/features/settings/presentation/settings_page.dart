@@ -215,8 +215,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         builder: (context, setModalState) => CupertinoPopupSurface(
           child: SafeArea(
             top: false,
+            bottom: false,
             child: SizedBox(
-              height: 480,
+              height: 480 + MediaQuery.paddingOf(context).bottom,
               child: Column(
                 children: <Widget>[
                   Padding(
@@ -243,6 +244,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   Expanded(
                     child: ListView(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.medium,
+                        0,
+                        AppSpacing.medium,
+                        AppInsets.scrollableBottomPadding(context),
+                      ),
                       children: <Widget>[
                         for (final currency in CurrencyCatalog.knownCurrencies)
                           _SwitchRow(
@@ -644,7 +651,7 @@ class _SettingsButton extends StatelessWidget {
             ),
           ),
           if (value != null)
-            Flexible(
+            Expanded(
               child: Text(
                 value!,
                 maxLines: 2,

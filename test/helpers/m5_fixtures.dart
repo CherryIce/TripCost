@@ -63,6 +63,7 @@ TripModel fixtureTrip({Money? budget, TripStatus status = TripStatus.active}) {
 
 ExpenseModel fixtureExpense({
   String id = 'expense-1',
+  String? tripId = 'trip-1',
   String title = 'Lunch',
   String category = 'food',
   String estimate = '100',
@@ -72,11 +73,12 @@ ExpenseModel fixtureExpense({
   ExpenseEntryType entryType = ExpenseEntryType.purchase,
   String? relatedExpenseId,
   DateTime? occurredAt,
+  String? receiptLocalPath,
 }) {
   final amount = DecimalValue.parse(estimate);
   return ExpenseModel(
     metadata: fixtureMetadata(id),
-    tripId: 'trip-1',
+    tripId: tripId,
     title: title,
     category: category,
     transactionAmount: Money(
@@ -98,7 +100,7 @@ ExpenseModel fixtureExpense({
     discountAmount: Money(amount: DecimalValue.zero, currency: fixtureCny),
     participantCount: 2,
     occurredAt: occurredAt ?? DateTime.utc(2026, 8, 17, 8),
-    receiptLocalPath: null,
+    receiptLocalPath: receiptLocalPath,
     notes: null,
     budgetIncluded: budgetIncluded,
     status: status,

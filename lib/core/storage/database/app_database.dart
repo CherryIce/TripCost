@@ -155,6 +155,11 @@ final class AppDatabase extends _$AppDatabase {
           );
         }
       }
+      // A backup has no trustworthy identity for the device and CloudKit
+      // account restoring it. Recreate sync metadata locally so every restored
+      // business record is uploaded instead of inheriting another device's
+      // clean state.
+      await customStatement('DELETE FROM "sync_metadata_entries"');
     });
     notifyAllCacheTables();
   }

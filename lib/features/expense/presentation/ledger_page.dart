@@ -193,6 +193,14 @@ final class LedgerFilter {
   }
 }
 
+int ledgerRecentDaySelection(LedgerFilter filter) {
+  final from = filter.from;
+  final to = filter.to;
+  if (from == null || to == null) return 0;
+  final hours = to.difference(from).inHours;
+  return (hours / Duration.hoursPerDay).round();
+}
+
 class LedgerFilterPage extends StatefulWidget {
   const LedgerFilterPage({
     required this.initial,
@@ -215,7 +223,7 @@ class _LedgerFilterPageState extends State<LedgerFilterPage> {
   late String? _currency = widget.initial.currencyCode;
   late String? _payment = widget.initial.paymentMethodId;
   late ExpenseStatus? _status = widget.initial.status;
-  late int _dateRange = widget.initial.from == null ? 0 : 30;
+  late int _dateRange = ledgerRecentDaySelection(widget.initial);
   late final _minimum = TextEditingController(
     text: widget.initial.minimumAmount?.toString() ?? '',
   );
@@ -800,8 +808,11 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
       final seedSnapshot = _seed?.rateSnapshot;
       final rateSnapshot =
           (seedSnapshot != null &&
-              seedSnapshot.baseCurrency == _transactionCurrency &&
-              seedSnapshot.quoteCurrency == _homeCurrency)
+              canReuseSeedRateSnapshot(
+                seed: _seed!,
+                transactionAmount: transaction,
+                referenceAmount: reference,
+              ))
           ? seedSnapshot
           : RateSnapshotModel(
               metadata: SyncRecordMetadata(
@@ -819,9 +830,14 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
               isCached: true,
             );
       final seedRule = _seed?.breakdown.paymentRule;
-      final paymentRule =
-          (seedRule != null &&
-              seedRule.billingCurrencyCode == _homeCurrency.code)
+      final reuseSeedRule =
+          seedRule != null &&
+          canReuseSeedPaymentRule(
+            seed: _seed!,
+            paymentMethodId: _paymentMethodId,
+            billingCurrencyCode: _homeCurrency.code,
+          );
+      final paymentRule = reuseSeedRule
           ? seedRule
           : selectedMethod?.freezeRules() ?? _manualRule(_homeCurrency);
       final expense = ExpenseModel(
@@ -839,7 +855,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
         actualFinalAmount: null,
         paymentMethodId:
             selectedMethod?.metadata.recordId ??
-            (_seed == null ? null : _paymentMethodId),
+            (reuseSeedRule ? _paymentMethodId : null),
         paymentRuleSnapshot: paymentRule,
         rateSnapshot: rateSnapshot,
         taxAmount: Money.parse(_tax.text.trim(), _homeCurrency),
@@ -933,6 +949,9 @@ class ExpenseDetailPage extends ConsumerWidget {
     final calibration = expense.paymentMethodId == null
         ? null
         : ref.watch(calibrationSummaryProvider(expense.paymentMethodId!));
+    final remainingRefund = ref
+        .read(expensesControllerProvider.notifier)
+        .remainingRefundAmount(expense);
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(middle: Text(expense.title)),
       child: SafeArea(
@@ -1008,7 +1027,9 @@ class ExpenseDetailPage extends ConsumerWidget {
               child: Text(l10n.expenseRecordActual),
             ),
             CupertinoButton(
-              onPressed: expense.entryType == ExpenseEntryType.purchase
+              onPressed:
+                  expense.entryType == ExpenseEntryType.purchase &&
+                      remainingRefund.compareTo(DecimalValue.zero) > 0
                   ? () => _adjust(context, ref, expense)
                   : null,
               child: Text(l10n.expenseAdjust),
@@ -1051,10 +1072,22 @@ class ExpenseDetailPage extends ConsumerWidget {
     ExpenseModel expense,
   ) async {
     final l10n = AppLocalizations.of(context);
+    final expensesController = ref.read(expensesControllerProvider.notifier);
+    final hasRefund =
+        expensesController
+            .remainingRefundAmount(expense)
+            .compareTo(originalRefundableAmount(expense)) <
+        0;
     final action = await showCupertinoModalPopup<String>(
       context: context,
       builder: (context) => CupertinoActionSheet(
         actions: <Widget>[
+          if (!hasRefund)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop('void'),
+              child: Text(l10n.expenseVoid),
+            ),
           CupertinoActionSheetAction(
             onPressed: () => Navigator.of(context).pop('refund'),
             child: Text(l10n.expenseRefund),
@@ -1062,11 +1095,6 @@ class ExpenseDetailPage extends ConsumerWidget {
           CupertinoActionSheetAction(
             onPressed: () => Navigator.of(context).pop('partial'),
             child: Text(l10n.expensePartialRefund),
-          ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(context).pop('void'),
-            child: Text(l10n.expenseVoid),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -1168,12 +1196,7 @@ class _Categories extends StatelessWidget {
   final List<ExpenseModel> items;
   @override
   Widget build(BuildContext context) {
-    final totals = <String, Money>{};
-    for (final item in items) {
-      final amount = item.actualFinalAmount ?? item.estimatedFinalAmount;
-      final key = '${item.category}|${amount.currency.code}';
-      totals.update(key, (value) => value + amount, ifAbsent: () => amount);
-    }
+    final totals = ledgerCategoryTotals(items);
     final formatter = const MoneyFormatter();
     final locale = Localizations.localeOf(context).toLanguageTag();
     return ListView(
@@ -1192,6 +1215,19 @@ class _Categories extends StatelessWidget {
       ],
     );
   }
+}
+
+Map<String, Money> ledgerCategoryTotals(Iterable<ExpenseModel> items) {
+  final totals = <String, Money>{};
+  for (final item in items) {
+    if (!item.budgetIncluded || item.entryType == ExpenseEntryType.voided) {
+      continue;
+    }
+    final amount = item.actualFinalAmount ?? item.estimatedFinalAmount;
+    final key = '${item.category}|${amount.currency.code}';
+    totals.update(key, (value) => value + amount, ifAbsent: () => amount);
+  }
+  return Map<String, Money>.unmodifiable(totals);
 }
 
 class _ExpenseTile extends StatelessWidget {

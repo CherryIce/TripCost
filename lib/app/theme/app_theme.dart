@@ -32,7 +32,11 @@ abstract final class AppInsets {
       AppSpacing.medium,
       AppSpacing.medium,
       AppSpacing.medium,
-      AppSpacing.medium + MediaQuery.paddingOf(context).bottom,
+      scrollableBottomPadding(context),
     );
+  }
+
+  static double scrollableBottomPadding(BuildContext context) {
+    return AppSpacing.medium + MediaQuery.paddingOf(context).bottom;
   }
 }

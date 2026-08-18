@@ -99,6 +99,9 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
   }
 
   Future<void> voidExpense(ExpenseModel expense) async {
+    if (_refundedAmount(expense).compareTo(DecimalValue.zero) > 0) {
+      throw const FormatException('An expense with refunds cannot be voided.');
+    }
     final now = DateTime.now().toUtc();
     await save(
       _copyExpense(
@@ -121,19 +124,21 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
   }) async {
     final originalHome =
         original.actualFinalAmount ?? original.estimatedFinalAmount;
+    final remaining = remainingRefundAmount(original);
+    final requested = partial ? homeAmount.amount.abs() : remaining;
     if (homeAmount.currency != originalHome.currency ||
-        homeAmount.amount.compareTo(DecimalValue.zero) <= 0 ||
-        homeAmount.amount.compareTo(originalHome.amount.abs()) > 0) {
+        requested.compareTo(DecimalValue.zero) <= 0 ||
+        requested.compareTo(remaining) > 0) {
       throw const FormatException(
         'Refund amount exceeds the original expense.',
       );
     }
     final now = DateTime.now().toUtc();
     final negativeHome = Money(
-      amount: -homeAmount.amount.abs(),
+      amount: -requested,
       currency: homeAmount.currency,
     );
-    final refundShare = homeAmount.amount.divide(originalHome.amount.abs());
+    final refundShare = requested.divide(originalHome.amount.abs());
     final negativeTransaction = Money(
       amount: -(original.transactionAmount.amount.abs() * refundShare),
       currency: original.transactionAmount.currency,
@@ -189,6 +194,51 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
     await ref.read(localDataChangeCoordinatorProvider).notify();
   }
 
+  Future<List<String>> clearReceiptImagesForTrip(String tripId) async {
+    final repository = ref.read(expenseRepositoryProvider);
+    final expenses = await repository.listForTrip(tripId);
+    final withReceipts = expenses
+        .where((expense) => expense.receiptLocalPath != null)
+        .toList(growable: false);
+    final now = DateTime.now().toUtc();
+    for (final expense in withReceipts) {
+      await repository.save(
+        _copyExpense(
+          expense,
+          metadata: SyncRecordMetadata(
+            recordId: expense.metadata.recordId,
+            syncVersion: expense.metadata.syncVersion + 1,
+            updatedAt: now,
+          ),
+          clearReceiptLocalPath: true,
+        ),
+      );
+    }
+
+    final failures = <String>[];
+    final references = <String>{
+      for (final expense in withReceipts) expense.receiptLocalPath!,
+    };
+    for (final reference in references) {
+      try {
+        await ref.read(receiptStorageProvider).delete(reference);
+      } on Object {
+        failures.add(reference);
+      }
+    }
+    await _reload();
+    await ref.read(localDataChangeCoordinatorProvider).notify();
+    return List<String>.unmodifiable(failures);
+  }
+
+  DecimalValue remainingRefundAmount(ExpenseModel original) {
+    return originalRefundableAmount(original) - _refundedAmount(original);
+  }
+
+  DecimalValue _refundedAmount(ExpenseModel original) {
+    return refundedAmountFor(original, state.value ?? const <ExpenseModel>[]);
+  }
+
   Future<void> _reload() async {
     final cached = await ref.read(expenseRepositoryProvider).listActive();
     if (ref.mounted) state = AsyncData(cached);
@@ -205,6 +255,30 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
   }
 }
 
+DecimalValue originalRefundableAmount(ExpenseModel original) {
+  return (original.actualFinalAmount ?? original.estimatedFinalAmount).amount
+      .abs();
+}
+
+DecimalValue refundedAmountFor(
+  ExpenseModel original,
+  Iterable<ExpenseModel> expenses,
+) {
+  var total = DecimalValue.zero;
+  for (final expense in expenses) {
+    if (expense.relatedExpenseId != original.metadata.recordId ||
+        (expense.entryType != ExpenseEntryType.refund &&
+            expense.entryType != ExpenseEntryType.partialRefund)) {
+      continue;
+    }
+    final amount = expense.actualFinalAmount ?? expense.estimatedFinalAmount;
+    if (amount.currency == original.referenceAmount.currency) {
+      total += amount.amount.abs();
+    }
+  }
+  return total;
+}
+
 ExpenseModel _copyExpense(
   ExpenseModel expense, {
   required SyncRecordMetadata metadata,
@@ -212,6 +286,7 @@ ExpenseModel _copyExpense(
   ExpenseStatus? status,
   bool? budgetIncluded,
   ExpenseEntryType? entryType,
+  bool clearReceiptLocalPath = false,
 }) {
   return ExpenseModel(
     metadata: metadata,
@@ -230,7 +305,7 @@ ExpenseModel _copyExpense(
     discountAmount: expense.discountAmount,
     participantCount: expense.participantCount,
     occurredAt: expense.occurredAt,
-    receiptLocalPath: expense.receiptLocalPath,
+    receiptLocalPath: clearReceiptLocalPath ? null : expense.receiptLocalPath,
     notes: expense.notes,
     budgetIncluded: budgetIncluded ?? expense.budgetIncluded,
     status: status ?? expense.status,

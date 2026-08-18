@@ -118,6 +118,28 @@ void main() {
       ),
     );
   });
+
+  test('trip export contains only expenses from the selected trip', () async {
+    final service = ExpenseExportService(
+      expenseRepository: MemoryExpenseRepository([
+        fixtureExpense(title: 'Tokyo dinner'),
+        fixtureExpense(
+          id: 'expense-2',
+          tripId: 'trip-2',
+          title: 'Paris dinner',
+        ),
+      ]),
+      platformGateway: gateway,
+      temporaryDirectory: () async => temporaryDirectory,
+      clock: () => DateTime.utc(2026, 8, 17, 8),
+    );
+
+    final file = await service.createCsv(locale: 'en', tripId: 'trip-1');
+    final contents = await file.readAsString();
+
+    expect(contents, contains('Tokyo dinner'));
+    expect(contents, isNot(contains('Paris dinner')));
+  });
 }
 
 final class _FakeDocumentGateway implements DocumentPlatformGateway {

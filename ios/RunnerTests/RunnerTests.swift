@@ -43,6 +43,48 @@ class RunnerTests: XCTestCase {
     XCTAssertGreaterThan(document.numberOfPages, 1)
   }
 
+  func testExpensePdfRendererPaginatesLongSingleFieldsWithoutClipping() throws {
+    let longText = String(repeating: "很长的商户名称与来源说明", count: 500)
+    let row: [String: Any] = [
+      "occurredAt": "2026-08-17T08:00:00Z",
+      "title": longText,
+      "category": "food",
+      "entryType": "purchase",
+      "transactionAmount": "12800",
+      "transactionCurrency": "JPY",
+      "homeCurrency": "CNY",
+      "rate": "0.05",
+      "rateDate": "2026-08-17",
+      "rateSource": longText,
+      "estimatedAmount": "640",
+      "actualAmount": "645.50",
+    ]
+    let labels = [
+      "category": "分类",
+      "type": "类型",
+      "originalAmount": "原币金额",
+      "homeCurrency": "本位币",
+      "rate": "汇率",
+      "rateDate": "汇率日期",
+      "source": "汇率来源",
+      "estimated": "预计金额",
+      "actual": "实际入账金额",
+    ]
+
+    let url = try ExpensePdfRenderer.render(document: [
+      "filename": "long-fields.pdf",
+      "title": "TripCost 消费导出",
+      "generatedAt": "2026年8月17日 16:00",
+      "labels": labels,
+      "rows": [row],
+      "disclaimer": longText,
+    ])
+    addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+
+    let document = try XCTUnwrap(CGPDFDocument(url as CFURL))
+    XCTAssertGreaterThan(document.numberOfPages, 2)
+  }
+
   func testPreferredLanguagesUseOnlyDeviceSupportedValues() {
     let result = VisionOcrSupport.matchedLanguages(
       preferred: ["zh_Hans", "en", "fr-FR"],

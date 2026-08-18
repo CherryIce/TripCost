@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/export/expense_export_service.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
@@ -13,6 +14,7 @@ import 'package:trip_cost/core/money/money_formatter.dart';
 import 'package:trip_cost/core/trips/domain/trip_budget.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
+import 'package:trip_cost/features/settings/application/settings_data_service.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
@@ -38,6 +40,7 @@ class TripsPage extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: trips.when(
           loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (error, stack) => Center(
@@ -107,6 +110,10 @@ class TripsPage extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop('copy'),
             child: Text(l10n.tripCopy),
           ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop('export'),
+            child: Text(l10n.tripExport),
+          ),
           if (trip.status != TripStatus.archived)
             CupertinoActionSheetAction(
               onPressed: () => Navigator.of(context).pop('archive'),
@@ -133,33 +140,116 @@ class TripsPage extends ConsumerWidget {
         );
       case 'copy':
         await ref.read(tripsControllerProvider.notifier).duplicate(trip);
+      case 'export':
+        await _exportTrip(context, ref, trip);
       case 'archive':
         await ref.read(tripsControllerProvider.notifier).archive(trip);
       case 'delete':
-        final confirmed = await showCupertinoDialog<bool>(
+        final choice = await showCupertinoDialog<String>(
           context: context,
           builder: (context) => CupertinoAlertDialog(
             title: Text(l10n.tripDeleteTitle),
             content: Text(l10n.tripDeleteMessage),
             actions: <Widget>[
               CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => Navigator.of(context).pop(),
                 child: Text(l10n.commonCancel),
               ),
               CupertinoDialogAction(
                 isDestructiveAction: true,
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(l10n.commonDelete),
+                onPressed: () => Navigator.of(context).pop('keep'),
+                child: Text(l10n.tripDeleteKeepReceipts),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(context).pop('receipts'),
+                child: Text(l10n.tripDeleteWithReceipts),
               ),
             ],
           ),
         );
-        if (confirmed == true) {
+        if (choice != null) {
+          var receiptFailures = const <String>[];
+          if (choice == 'receipts') {
+            receiptFailures = await ref
+                .read(expensesControllerProvider.notifier)
+                .clearReceiptImagesForTrip(trip.metadata.recordId);
+          }
           await ref
               .read(tripsControllerProvider.notifier)
               .delete(trip.metadata.recordId);
+          if (receiptFailures.isNotEmpty && context.mounted) {
+            await _showMessage(context, l10n.tripReceiptDeletePartial);
+          }
         }
     }
+  }
+
+  Future<void> _exportTrip(
+    BuildContext context,
+    WidgetRef ref,
+    TripModel trip,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final format = await showCupertinoModalPopup<ExpenseExportFormat>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: <Widget>[
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop(ExpenseExportFormat.csv),
+            child: Text(l10n.exportCsv),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop(ExpenseExportFormat.pdf),
+            child: Text(l10n.exportPdf),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+      ),
+    );
+    if (format == null || !context.mounted) return;
+    try {
+      final service = ref.read(expenseExportServiceProvider);
+      final locale = Localizations.localeOf(context).toLanguageTag();
+      final file = format == ExpenseExportFormat.csv
+          ? await service.createCsv(
+              locale: locale,
+              tripId: trip.metadata.recordId,
+            )
+          : await service.createPdf(
+              locale: locale,
+              tripId: trip.metadata.recordId,
+            );
+      await service.share(file);
+    } on ExpenseExportException catch (error) {
+      if (!context.mounted) return;
+      final message = switch (error.code) {
+        ExpenseExportException.empty => l10n.exportEmpty,
+        ExpenseExportException.tooLarge => l10n.exportTooLarge,
+        _ => l10n.exportFailed,
+      };
+      await _showMessage(context, message);
+    } on Object {
+      if (context.mounted) await _showMessage(context, l10n.exportFailed);
+    }
+  }
+
+  Future<void> _showMessage(BuildContext context, String message) {
+    return showCupertinoDialog<void>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        content: Text(message),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(AppLocalizations.of(context).commonDone),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -210,6 +300,7 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   final _destinations = TextEditingController();
   final _budget = TextEditingController();
   final _participants = TextEditingController(text: '1');
+  late final String _recordId;
   late DateTime _startDate;
   late DateTime _endDate;
   Currency _homeCurrency = CurrencyCatalog().resolve('CNY');
@@ -217,11 +308,13 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   String? _defaultPaymentMethodId;
   bool _offlinePack = false;
   bool _invalid = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initial;
+    _recordId = initial?.metadata.recordId ?? const Uuid().v4();
     final today = localCalendarDate(DateTime.now());
     _startDate = initial?.startDate ?? today;
     _endDate = initial?.endDate ?? _startDate.add(const Duration(days: 6));
@@ -255,11 +348,20 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
         ref.watch(paymentMethodsControllerProvider).value ?? const [];
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: widget.initial == null
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _isSaving ? null : _close,
+                child: Text(l10n.commonCancel),
+              )
+            : null,
         middle: Text(widget.initial == null ? l10n.tripCreate : l10n.tripEdit),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: _save,
-          child: Text(l10n.commonSave),
+          onPressed: _isSaving ? null : _save,
+          child: _isSaving
+              ? const CupertinoActivityIndicator(radius: 8)
+              : Text(l10n.commonSave),
         ),
       ),
       child: SafeArea(
@@ -455,13 +557,18 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+      _invalid = false;
+    });
     try {
       final now = DateTime.now().toUtc();
       final budgetText = _budget.text.trim();
       final initial = widget.initial;
       final trip = TripModel(
         metadata: SyncRecordMetadata(
-          recordId: initial?.metadata.recordId ?? const Uuid().v4(),
+          recordId: _recordId,
           syncVersion: (initial?.metadata.syncVersion ?? 0) + 1,
           updatedAt: now,
         ),
@@ -508,9 +615,22 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
           // A failed optional download must not roll back the local trip.
         }
       }
-      if (mounted) context.pop();
+      if (mounted) _close();
     } on Object {
-      setState(() => _invalid = true);
+      if (mounted) {
+        setState(() {
+          _invalid = true;
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _close() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.trips);
     }
   }
 }

@@ -19,9 +19,10 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		9CBC068CDB358FC177C78B2D /* TripCostWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8DB65477D42C386C33D081 /* TripCostWidget.swift */; };
 		C8E2B5A093F5F91B65D38F30 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5D8DA090580CFF3340CB628 /* Foundation.framework */; };
-		DE475124B8C84D29418036D1 /* VisionOcrService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0437E3E59BE71D971DB32B /* VisionOcrService.swift */; };
 		D0C8A1000000000000000001 /* DocumentExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C8A1000000000000000002 /* DocumentExportService.swift */; };
 		D0C8A1000000000000000003 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0C8A1000000000000000006 /* InfoPlist.strings */; };
+		D0C8A1000000000000000007 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C8A1000000000000000008 /* SceneDelegate.swift */; };
+		DE475124B8C84D29418036D1 /* VisionOcrService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0437E3E59BE71D971DB32B /* VisionOcrService.swift */; };
 		E35977A06D0BA1AB4BA46A1F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9CE330C819CE480CEBC190B6 /* Localizable.strings */; };
 		EB9AED98007474A22E7EC3A0 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47360EF1D369CB41020AF734 /* Pods_RunnerTests.framework */; };
 		FCF78C2CA0CFDD70342CF256 /* PlatformApiStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C6C51F5367CA011F14964F /* PlatformApiStubs.swift */; };
@@ -101,6 +102,7 @@
 		D0C8A1000000000000000002 /* DocumentExportService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DocumentExportService.swift; sourceTree = "<group>"; };
 		D0C8A1000000000000000004 /* InfoPlist.strings */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D0C8A1000000000000000005 /* InfoPlist.strings */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		D0C8A1000000000000000008 /* SceneDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		DAB2E7C91625C343427F07C5 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E842710CCDCDF7B3DCB46E7B /* AppWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AppWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC312F1E25CE9107CB33B452 /* PlatformApis.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlatformApis.g.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				D0C8A1000000000000000008 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				2371E2AEC34DC447CCE2DD02 /* Generated */,
 				C6C6C51F5367CA011F14964F /* PlatformApiStubs.swift */,
@@ -436,13 +439,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -510,6 +509,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				D0C8A1000000000000000007 /* SceneDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				12AA894B37C4049768FDBF0F /* PlatformApis.g.swift in Sources */,
 				FCF78C2CA0CFDD70342CF256 /* PlatformApiStubs.swift in Sources */,

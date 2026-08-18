@@ -5,12 +5,12 @@ import UniformTypeIdentifiers
 final class DocumentExportService: NSObject, UIDocumentPickerDelegate {
   private static let channelName = "trip_cost/documents"
 
-  private weak var presentingViewController: UIViewController?
+  private let presentingViewController: () -> UIViewController?
   private var documentPickerResult: FlutterResult?
 
   static func register(
     binaryMessenger: FlutterBinaryMessenger,
-    presentingViewController: UIViewController
+    presentingViewController: @escaping () -> UIViewController?
   ) -> DocumentExportService {
     let service = DocumentExportService(presentingViewController: presentingViewController)
     let channel = FlutterMethodChannel(name: channelName, binaryMessenger: binaryMessenger)
@@ -20,7 +20,7 @@ final class DocumentExportService: NSObject, UIDocumentPickerDelegate {
     return service
   }
 
-  init(presentingViewController: UIViewController) {
+  init(presentingViewController: @escaping () -> UIViewController?) {
     self.presentingViewController = presentingViewController
     super.init()
   }
@@ -58,7 +58,7 @@ final class DocumentExportService: NSObject, UIDocumentPickerDelegate {
     let urls = paths.map(URL.init(fileURLWithPath:)).filter {
       FileManager.default.fileExists(atPath: $0.path)
     }
-    guard urls.count == paths.count, let presenter = presentingViewController else {
+    guard urls.count == paths.count, let presenter = presentingViewController() else {
       result(FlutterError(code: "share-unavailable", message: "A file is unavailable.", details: nil))
       return
     }
@@ -77,7 +77,7 @@ final class DocumentExportService: NSObject, UIDocumentPickerDelegate {
   }
 
   private func pickBackupFile(result: @escaping FlutterResult) {
-    guard documentPickerResult == nil, let presenter = presentingViewController else {
+    guard documentPickerResult == nil, let presenter = presentingViewController() else {
       result(FlutterError(code: "picker-unavailable", message: "Document picker is unavailable.", details: nil))
       return
     }
@@ -134,6 +134,7 @@ enum ExpensePdfRenderer {
     try renderer.writePDF(to: destination) { context in
       var page = 0
       var y: CGFloat = 0
+      let contentBottom = pageSize.height - margin - 24
 
       func beginPage() {
         context.beginPage()
@@ -150,42 +151,85 @@ enum ExpensePdfRenderer {
       }
 
       func ensureSpace(_ height: CGFloat) {
-        if y + height > pageSize.height - margin - 24 {
+        if y + height > contentBottom {
           beginPage()
         }
       }
 
+      func drawFlowing(
+        _ text: String,
+        x: CGFloat = margin,
+        width: CGFloat = contentWidth,
+        font: UIFont,
+        color: UIColor = .label,
+        alignment: NSTextAlignment = .left
+      ) {
+        var remaining = text
+        repeat {
+          let availableHeight = contentBottom - y
+          let fullHeight = measuredHeight(remaining, width: width, font: font, alignment: alignment)
+          if fullHeight <= availableHeight {
+            y += draw(
+              remaining,
+              in: CGRect(x: x, y: y, width: width, height: fullHeight),
+              font: font,
+              color: color,
+              alignment: alignment
+            )
+            remaining = ""
+            continue
+          }
+          let prefix = fittingPrefix(
+            remaining,
+            width: width,
+            height: availableHeight,
+            font: font,
+            alignment: alignment
+          )
+          if prefix.isEmpty {
+            beginPage()
+            continue
+          }
+          let prefixHeight = measuredHeight(prefix, width: width, font: font, alignment: alignment)
+          y += draw(
+            prefix,
+            in: CGRect(x: x, y: y, width: width, height: prefixHeight),
+            font: font,
+            color: color,
+            alignment: alignment
+          )
+          remaining.removeFirst(prefix.count)
+          if !remaining.isEmpty {
+            beginPage()
+          }
+        } while !remaining.isEmpty
+      }
+
       beginPage()
-      y += draw(
-        title,
-        in: CGRect(x: margin, y: y, width: contentWidth, height: 60),
-        font: .systemFont(ofSize: 22, weight: .bold)
-      )
+      drawFlowing(title, font: .systemFont(ofSize: 22, weight: .bold))
       y += 4
-      y += draw(
+      drawFlowing(
         generatedAt,
-        in: CGRect(x: margin, y: y, width: contentWidth, height: 28),
         font: .systemFont(ofSize: 10),
         color: .secondaryLabel
       )
       y += 14
 
       for row in rows {
-        ensureSpace(158)
+        ensureSpace(36)
         let item = string(row["title"])
         let date = localizedDateTime(string(row["occurredAt"]), locale: locale)
-        y += draw(
+        drawFlowing(
           item,
-          in: CGRect(x: margin, y: y, width: contentWidth * 0.68, height: 42),
           font: .systemFont(ofSize: 13, weight: .semibold)
         )
-        _ = draw(
+        drawFlowing(
           date,
-          in: CGRect(x: margin + contentWidth * 0.7, y: y - 18, width: contentWidth * 0.3, height: 34),
           font: .systemFont(ofSize: 9),
           color: .secondaryLabel,
-          alignment: .right
+          alignment: .left
         )
+        y += 4
 
         let original = "\(label(labels, "originalAmount")): \(string(row["transactionAmount"])) \(string(row["transactionCurrency"]))"
         let categoryAndType = "\(label(labels, "category")): \(string(row["category"])) · \(label(labels, "type")): \(string(row["entryType"]))"
@@ -197,22 +241,18 @@ enum ExpensePdfRenderer {
         let actualValue = string(row["actualAmount"], fallback: "—")
         let actual = "\(label(labels, "actual")): \(actualValue) \(string(row["homeCurrency"]))"
         for line in [categoryAndType, original, home, rate, source, estimated, actual] {
-          y += draw(
-            line,
-            in: CGRect(x: margin, y: y, width: contentWidth, height: 28),
-            font: .systemFont(ofSize: 10.5)
-          )
+          drawFlowing(line, font: .systemFont(ofSize: 10.5))
         }
+        ensureSpace(21)
         y += 8
         UIColor.separator.setFill()
         UIRectFill(CGRect(x: margin, y: y, width: contentWidth, height: 0.5))
         y += 12
       }
 
-      ensureSpace(72)
-      y += draw(
+      ensureSpace(18)
+      drawFlowing(
         disclaimer,
-        in: CGRect(x: margin, y: y, width: contentWidth, height: 72),
         font: .systemFont(ofSize: 9),
         color: .secondaryLabel
       )
@@ -236,19 +276,67 @@ enum ExpensePdfRenderer {
       .foregroundColor: color,
       .paragraphStyle: paragraph,
     ]
-    let height = ceil((text as NSString).boundingRect(
-      with: CGSize(width: rect.width, height: .greatestFiniteMagnitude),
-      options: [.usesLineFragmentOrigin, .usesFontLeading],
-      attributes: attributes,
-      context: nil
-    ).height)
+    let height = measuredHeight(text, width: rect.width, attributes: attributes)
     (text as NSString).draw(
-      with: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: min(height, rect.height)),
+      with: CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: height),
       options: [.usesLineFragmentOrigin, .usesFontLeading],
       attributes: attributes,
       context: nil
     )
-    return min(height, rect.height)
+    return height
+  }
+
+  private static func measuredHeight(
+    _ text: String,
+    width: CGFloat,
+    font: UIFont,
+    alignment: NSTextAlignment = .left
+  ) -> CGFloat {
+    let paragraph = NSMutableParagraphStyle()
+    paragraph.lineBreakMode = .byWordWrapping
+    paragraph.alignment = alignment
+    return measuredHeight(text, width: width, attributes: [
+      .font: font,
+      .paragraphStyle: paragraph,
+    ])
+  }
+
+  private static func measuredHeight(
+    _ text: String,
+    width: CGFloat,
+    attributes: [NSAttributedString.Key: Any]
+  ) -> CGFloat {
+    ceil((text as NSString).boundingRect(
+      with: CGSize(width: width, height: .greatestFiniteMagnitude),
+      options: [.usesLineFragmentOrigin, .usesFontLeading],
+      attributes: attributes,
+      context: nil
+    ).height)
+  }
+
+  private static func fittingPrefix(
+    _ text: String,
+    width: CGFloat,
+    height: CGFloat,
+    font: UIFont,
+    alignment: NSTextAlignment
+  ) -> String {
+    guard !text.isEmpty, height >= font.lineHeight else { return "" }
+    let boundaries = Array(text.indices) + [text.endIndex]
+    var lower = 1
+    var upper = boundaries.count - 1
+    var best = 0
+    while lower <= upper {
+      let middle = (lower + upper) / 2
+      let candidate = String(text[..<boundaries[middle]])
+      if measuredHeight(candidate, width: width, font: font, alignment: alignment) <= height {
+        best = middle
+        lower = middle + 1
+      } else {
+        upper = middle - 1
+      }
+    }
+    return best == 0 ? "" : String(text[..<boundaries[best]])
   }
 
   private static func string(_ value: Any?, fallback: String = "") -> String {

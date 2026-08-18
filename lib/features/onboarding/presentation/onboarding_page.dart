@@ -209,7 +209,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     } on Object {
       // Local storage failure must not block entering the app.
     }
-    if (mounted) context.go(destination);
+    if (!mounted) return;
+    final router = GoRouter.of(context);
+    router.go(AppRoutes.home);
+    if (destination != AppRoutes.home) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        router.push<void>(destination);
+      });
+    }
   }
 
   Future<void> _chooseHomeCurrency() async {

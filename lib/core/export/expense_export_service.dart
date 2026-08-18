@@ -74,8 +74,8 @@ final class ExpenseExportService {
   final Future<Directory> Function() _temporaryDirectory;
   final DateTime Function() _clock;
 
-  Future<File> createCsv({required String locale}) async {
-    final rows = await _loadRows();
+  Future<File> createCsv({required String locale, String? tripId}) async {
+    final rows = await _loadRows(tripId: tripId);
     final labels = ExpenseExportLabels.forLocale(locale);
     final contents = ExpenseCsvEncoder().encode(rows, labels: labels);
     final directory = await _temporaryDirectory();
@@ -84,8 +84,8 @@ final class ExpenseExportService {
     return file;
   }
 
-  Future<File> createPdf({required String locale}) async {
-    final rows = await _loadRows();
+  Future<File> createPdf({required String locale, String? tripId}) async {
+    final rows = await _loadRows(tripId: tripId);
     final labels = ExpenseExportLabels.forLocale(locale);
     final dateLocale = locale.startsWith('zh') ? 'zh' : 'en';
     await initializeDateFormatting(dateLocale);
@@ -106,8 +106,10 @@ final class ExpenseExportService {
   Future<void> share(File file) =>
       _platformGateway.shareFiles(<String>[file.path]);
 
-  Future<List<ExpenseExportRow>> _loadRows() async {
-    final expenses = await _expenseRepository.listActive();
+  Future<List<ExpenseExportRow>> _loadRows({String? tripId}) async {
+    final expenses = tripId == null
+        ? await _expenseRepository.listActive()
+        : await _expenseRepository.listForTrip(tripId);
     if (expenses.isEmpty) {
       throw const ExpenseExportException(ExpenseExportException.empty);
     }
