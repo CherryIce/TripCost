@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/sync/application/sync_orchestrator.dart';
@@ -29,16 +30,22 @@ final class LocalDataChangeCoordinator implements LocalDataChangeNotifier {
   final WidgetSnapshotService _widgetSnapshotService;
 
   @override
-  Future<void> notify() {
-    unawaited(_refreshWidget());
+  Future<void> notify() async {
+    await _refreshWidget();
     unawaited(_requestSyncIfEnabled());
-    return Future<void>.value();
   }
 
   Future<void> _refreshWidget() async {
     try {
       await _widgetSnapshotService.refresh();
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      developer.log(
+        'Widget snapshot refresh failed.',
+        name: 'trip_cost.widget',
+        error: error,
+        stackTrace: stackTrace,
+        level: 1000,
+      );
       // App Group availability never changes the success of the local write.
     }
   }

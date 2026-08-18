@@ -85,6 +85,61 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
   }
 
   Future<Map<String, Object?>?> _tripSummary() async {
+    final latestExpense = await _database
+        .customSelect(
+          'SELECT trip_id, title, home_currency, actual_final_amount, '
+          'estimated_final_amount FROM expenses '
+          'WHERE deleted_at IS NULL AND budget_included = 1 '
+          'ORDER BY occurred_at DESC, created_at DESC LIMIT 1',
+        )
+        .getSingleOrNull();
+
+    if (latestExpense != null) {
+      final tripId = latestExpense.data['trip_id'] as String?;
+      final homeCurrency = latestExpense.data['home_currency']! as String;
+      final trip = tripId == null
+          ? null
+          : await _database
+                .customSelect(
+                  'SELECT name, home_currency, total_budget FROM trips '
+                  'WHERE deleted_at IS NULL AND id = ? LIMIT 1',
+                  variables: <Variable<Object>>[Variable<String>(tripId)],
+                )
+                .getSingleOrNull();
+      final expenses = await _database
+          .customSelect(
+            trip == null
+                ? tripId == null
+                      ? 'SELECT actual_final_amount, estimated_final_amount '
+                            'FROM expenses WHERE deleted_at IS NULL '
+                            'AND budget_included = 1 AND trip_id IS NULL '
+                            'AND home_currency = ?'
+                      : 'SELECT actual_final_amount, estimated_final_amount '
+                            'FROM expenses WHERE deleted_at IS NULL '
+                            'AND budget_included = 1 AND trip_id = ?'
+                : 'SELECT actual_final_amount, estimated_final_amount '
+                      'FROM expenses WHERE deleted_at IS NULL '
+                      'AND budget_included = 1 AND trip_id = ?',
+            variables: <Variable<Object>>[
+              Variable<String>(tripId ?? homeCurrency),
+            ],
+          )
+          .get();
+      final latestAmount =
+          latestExpense.data['actual_final_amount'] ??
+          latestExpense.data['estimated_final_amount'];
+      return <String, Object?>{
+        'name': trip?.data['name'] as String? ?? '',
+        'homeCurrency': trip?.data['home_currency'] as String? ?? homeCurrency,
+        'spent': _sumExpenses(expenses).toString(),
+        'budget': trip?.data['total_budget'] as String?,
+        'expenseCount': expenses.length,
+        'latestExpenseTitle': latestExpense.data['title']! as String,
+        'latestExpenseAmount': latestAmount as String?,
+        'isUnassigned': trip == null,
+      };
+    }
+
     final trip = await _database
         .customSelect(
           'SELECT id, name, home_currency, total_budget FROM trips '
@@ -94,14 +149,19 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
         )
         .getSingleOrNull();
     if (trip == null) return null;
-    final tripId = trip.data['id']! as String;
-    final expenses = await _database
-        .customSelect(
-          'SELECT actual_final_amount, estimated_final_amount FROM expenses '
-          'WHERE deleted_at IS NULL AND budget_included = 1 AND trip_id = ?',
-          variables: <Variable<Object>>[Variable<String>(tripId)],
-        )
-        .get();
+    return <String, Object?>{
+      'name': trip.data['name']! as String,
+      'homeCurrency': trip.data['home_currency']! as String,
+      'spent': DecimalValue.zero.toString(),
+      'budget': trip.data['total_budget'] as String?,
+      'expenseCount': 0,
+      'latestExpenseTitle': null,
+      'latestExpenseAmount': null,
+      'isUnassigned': false,
+    };
+  }
+
+  DecimalValue _sumExpenses(List<QueryRow> expenses) {
     var spent = DecimalValue.zero;
     for (final expense in expenses) {
       final value =
@@ -109,12 +169,7 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
           expense.data['estimated_final_amount'];
       if (value is String) spent += DecimalValue.parse(value);
     }
-    return <String, Object?>{
-      'name': trip.data['name']! as String,
-      'homeCurrency': trip.data['home_currency']! as String,
-      'spent': spent.toString(),
-      'budget': trip.data['total_budget'] as String?,
-    };
+    return spent;
   }
 }
 

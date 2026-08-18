@@ -23,6 +23,10 @@ struct WidgetSnapshotEnvelope: Decodable {
     let homeCurrency: String
     let spent: String
     let budget: String?
+    let expenseCount: Int?
+    let latestExpenseTitle: String?
+    let latestExpenseAmount: String?
+    let isUnassigned: Bool?
   }
 }
 
@@ -87,44 +91,296 @@ struct TripCostWidgetView: View {
   let entry: TripCostEntry
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 7) {
-      if let rate = entry.snapshot?.rate {
-        HStack {
-          Image(systemName: "arrow.left.arrow.right")
-          Text("\(rate.baseCurrency) / \(rate.quoteCurrency)").font(.headline)
-          Spacer()
-          if rate.isCached || rate.isStale {
-            Image(systemName: rate.isStale ? "exclamationmark.clock" : "tray.and.arrow.down")
-              .foregroundColor(rate.isStale ? .orange : .secondary)
-              .accessibilityLabel(Text(rate.isStale ? "widget_stale" : "widget_cached"))
-          }
-        }
-        Text("\(rate.amount) \(rate.baseCurrency) = \(rate.convertedAmount) \(rate.quoteCurrency)")
-          .font(.title3.weight(.semibold))
-          .minimumScaleFactor(0.75)
-        Text("1 \(rate.baseCurrency) = \(rate.rate) \(rate.quoteCurrency) · \(rate.rateDate)")
-          .font(.caption)
-          .foregroundColor(.secondary)
-          .lineLimit(1)
+    Group {
+      if let trip = entry.snapshot?.trip {
+        spendingView(trip, rate: entry.snapshot?.rate)
+      } else if let rate = entry.snapshot?.rate {
+        rateView(rate)
       } else {
-        Label("widget_empty", systemImage: "airplane.departure").font(.headline)
-        Text("widget_open_app").font(.caption).foregroundColor(.secondary)
+        emptyView
       }
-      if family == .systemMedium, let trip = entry.snapshot?.trip {
-        Divider()
-        HStack {
-          VStack(alignment: .leading, spacing: 2) {
-            Text(trip.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-            Text("widget_trip_spent").font(.caption2).foregroundColor(.secondary)
-          }
-          Spacer()
-          Text("\(trip.spent) \(trip.homeCurrency)").font(.subheadline.monospacedDigit())
-        }
-      }
-      Spacer(minLength: 0)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    .padding()
+    .tripCostWidgetContentMargins()
+    .tripCostWidgetBackground()
+  }
+
+  private var accent: Color { Color(red: 0.09, green: 0.42, blue: 0.36) }
+
+  @ViewBuilder
+  private func spendingView(
+    _ trip: WidgetSnapshotEnvelope.TripSummary,
+    rate: WidgetSnapshotEnvelope.RateSummary?
+  ) -> some View {
+    if family == .systemMedium {
+      mediumSpendingView(trip, rate: rate)
+    } else {
+      compactSpendingView(trip)
+    }
+  }
+
+  private func compactSpendingView(
+    _ trip: WidgetSnapshotEnvelope.TripSummary
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 0) {
+      compactSpendingHeader(trip)
+
+      Spacer(minLength: 5)
+
+      Text("\(trip.spent) \(trip.homeCurrency)")
+        .font(.system(size: 27, weight: .bold, design: .rounded))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+      spentLabel(trip)
+
+      Spacer(minLength: 6)
+
+      if let budget = trip.budget, let progress = budgetProgress(spent: trip.spent, budget: budget) {
+        VStack(spacing: 4) {
+          HStack {
+            Text("widget_budget")
+            Spacer()
+            Text("\(budget) \(trip.homeCurrency)")
+          }
+          .font(.caption2)
+          .foregroundColor(.secondary)
+          ProgressView(value: progress)
+            .tint(accent)
+        }
+      } else if let latestTitle = trip.latestExpenseTitle {
+        HStack(spacing: 5) {
+          Image(systemName: "clock.arrow.circlepath")
+          Text("widget_latest")
+          Text(latestTitle)
+            .lineLimit(1)
+            .layoutPriority(1)
+          Spacer(minLength: 0)
+        }
+        .font(.caption2)
+        .foregroundColor(.secondary)
+      }
+    }
+  }
+
+  private func mediumSpendingView(
+    _ trip: WidgetSnapshotEnvelope.TripSummary,
+    rate: WidgetSnapshotEnvelope.RateSummary?
+  ) -> some View {
+    HStack(spacing: 14) {
+      VStack(alignment: .leading, spacing: 0) {
+        spendingHeader(trip)
+        Spacer(minLength: 6)
+        Text("\(trip.spent) \(trip.homeCurrency)")
+          .font(.system(size: 28, weight: .bold, design: .rounded))
+          .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.65)
+        spentLabel(trip)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      Divider()
+
+      VStack(alignment: .leading, spacing: 7) {
+        if let latestTitle = trip.latestExpenseTitle {
+          VStack(alignment: .leading, spacing: 2) {
+            Text(latestTitle)
+              .font(.subheadline.weight(.semibold))
+              .lineLimit(1)
+            if let latestAmount = trip.latestExpenseAmount {
+              Text("\(latestAmount) \(trip.homeCurrency)")
+                .font(.caption.monospacedDigit())
+                .foregroundColor(.secondary)
+            }
+          }
+        }
+        if let budget = trip.budget,
+           let progress = budgetProgress(spent: trip.spent, budget: budget) {
+          VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 3) {
+              Text("widget_budget")
+              Text("· \(budget) \(trip.homeCurrency)")
+            }
+            .font(.caption2)
+            .foregroundColor(.secondary)
+            .lineLimit(1)
+            ProgressView(value: progress)
+              .tint(accent)
+          }
+        }
+        Spacer(minLength: 0)
+        if let rate {
+          HStack(spacing: 5) {
+            Image(systemName: "arrow.left.arrow.right")
+            Text("1 \(rate.baseCurrency) = \(rate.rate) \(rate.quoteCurrency)")
+              .lineLimit(1)
+            if rate.isStale {
+              Image(systemName: "exclamationmark.clock")
+                .foregroundColor(.orange)
+                .accessibilityLabel(Text("widget_stale"))
+            }
+          }
+          .font(.caption2)
+          .foregroundColor(.secondary)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+  }
+
+  private func compactSpendingHeader(
+    _ trip: WidgetSnapshotEnvelope.TripSummary
+  ) -> some View {
+    HStack(spacing: 7) {
+      Image(systemName: trip.isUnassigned == true ? "creditcard.fill" : "airplane")
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundColor(accent)
+        .frame(width: 24, height: 24)
+        .background(accent.opacity(0.12), in: Circle())
+      VStack(alignment: .leading, spacing: 0) {
+        Group {
+          if trip.isUnassigned == true {
+            Text("widget_recent_spending")
+          } else {
+            Text(trip.name)
+          }
+        }
+        .font(.caption.weight(.semibold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        Text(expenseCountText(trip.expenseCount ?? 0))
+          .font(.caption2)
+          .foregroundColor(.secondary)
+          .lineLimit(1)
+      }
+      .layoutPriority(1)
+      Spacer(minLength: 0)
+    }
+  }
+
+  private func spendingHeader(
+    _ trip: WidgetSnapshotEnvelope.TripSummary
+  ) -> some View {
+    HStack(spacing: 9) {
+      Image(systemName: trip.isUnassigned == true ? "creditcard.fill" : "airplane")
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundColor(accent)
+        .frame(width: 28, height: 28)
+        .background(accent.opacity(0.12), in: Circle())
+      VStack(alignment: .leading, spacing: 1) {
+        Group {
+          if trip.isUnassigned == true {
+            Text("widget_recent_spending")
+          } else {
+            Text(trip.name)
+          }
+        }
+          .font(.subheadline.weight(.semibold))
+          .lineLimit(1)
+        Text(expenseCountText(trip.expenseCount ?? 0))
+          .font(.caption2)
+          .foregroundColor(.secondary)
+      }
+      Spacer(minLength: 4)
+    }
+  }
+
+  @ViewBuilder
+  private func spentLabel(_ trip: WidgetSnapshotEnvelope.TripSummary) -> some View {
+    Group {
+      if trip.isUnassigned == true {
+        Text("widget_total_spent")
+      } else {
+        Text("widget_trip_spent")
+      }
+    }
+    .font(.caption)
+    .foregroundColor(.secondary)
+  }
+
+  private func rateView(_ rate: WidgetSnapshotEnvelope.RateSummary) -> some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        Image(systemName: "arrow.left.arrow.right")
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundColor(accent)
+          .frame(width: 28, height: 28)
+          .background(accent.opacity(0.12), in: Circle())
+        Text("\(rate.baseCurrency) / \(rate.quoteCurrency)")
+          .font(.headline)
+          .lineLimit(1)
+        Spacer()
+      }
+      Spacer(minLength: 6)
+      Text("\(rate.convertedAmount) \(rate.quoteCurrency)")
+        .font(.system(size: 27, weight: .bold, design: .rounded))
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.65)
+      Text("1 \(rate.baseCurrency)")
+        .font(.caption)
+        .foregroundColor(.secondary)
+      Spacer(minLength: 6)
+      Text(rate.rateDate)
+        .font(.caption2)
+        .foregroundColor(.secondary)
+    }
+  }
+
+  private var emptyView: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Image(systemName: "airplane.circle.fill")
+        .font(.title)
+        .foregroundColor(accent)
+      Text("widget_empty").font(.headline)
+      Text("widget_open_app").font(.caption).foregroundColor(.secondary)
+      Spacer(minLength: 0)
+    }
+  }
+
+  private func expenseCountText(_ count: Int) -> String {
+    String(format: NSLocalizedString("widget_expense_count", comment: ""), count)
+  }
+
+  private func budgetProgress(spent: String, budget: String) -> Double? {
+    guard let spentValue = Double(spent),
+          let budgetValue = Double(budget),
+          budgetValue > 0
+    else { return nil }
+    return min(max(spentValue / budgetValue, 0), 1)
+  }
+}
+
+private extension View {
+  @ViewBuilder
+  func tripCostWidgetContentMargins() -> some View {
+    if #available(iOSApplicationExtension 17.0, *) {
+      self
+    } else {
+      padding()
+    }
+  }
+
+  @ViewBuilder
+  func tripCostWidgetBackground() -> some View {
+    if #available(iOSApplicationExtension 17.0, *) {
+      containerBackground(for: .widget) {
+        LinearGradient(
+          colors: [Color(.secondarySystemBackground), Color(.systemBackground)],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        )
+      }
+    } else {
+      background(
+        LinearGradient(
+          colors: [Color(.secondarySystemBackground), Color(.systemBackground)],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        )
+      )
+    }
   }
 }
 

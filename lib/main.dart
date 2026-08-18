@@ -52,7 +52,11 @@ final class _ProductionAppBootstrapState
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(localDataChangeCoordinatorProvider).notify());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(ref.read(localDataChangeCoordinatorProvider).notify());
+      }
+    });
   }
 
   @override

@@ -6,3 +6,8 @@
 "widget_cached" = "缓存汇率";
 "widget_stale" = "汇率可能已过期";
 "widget_trip_spent" = "行程已消费";
+"widget_total_spent" = "累计消费";
+"widget_recent_spending" = "近期消费";
+"widget_expense_count" = "%d 笔消费";
+"widget_budget" = "预算";
+"widget_latest" = "最近";

@@ -334,6 +334,7 @@ final class PlatformApiStubs: CloudSyncApi, SharedSnapshotApi, WidgetControlApi 
       WidgetCenter.shared.reloadTimelines(ofKind: "AppWidget")
       completion(.success(()))
     } catch {
+      NSLog("TripCost widget snapshot write failed: %@", error.localizedDescription)
       completion(.failure(error))
     }
   }

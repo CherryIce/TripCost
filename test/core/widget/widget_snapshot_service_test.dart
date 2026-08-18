@@ -70,6 +70,44 @@ void main() {
     await WidgetSnapshotService(database, gateway: gateway).clear();
     expect(gateway.clearCount, 1);
   });
+
+  test('summarizes the latest standalone expense without a trip', () async {
+    await database.coreDao.upsertExpense(
+      ExpensesCompanion.insert(
+        id: 'expense-1',
+        updatedAt: now,
+        title: 'Dinner',
+        category: 'food',
+        transactionAmount: '100',
+        transactionCurrency: 'USD',
+        referenceAmount: '673.66',
+        homeCurrency: 'CNY',
+        estimatedFinalAmount: '680',
+        paymentRuleSnapshotJson: '{}',
+        rateSnapshotJson: '{}',
+        taxAmount: '0',
+        tipAmount: '0',
+        discountAmount: '0',
+        occurredAt: now,
+        status: 'estimated',
+        createdAt: now,
+      ),
+    );
+
+    await WidgetSnapshotService(
+      database,
+      gateway: gateway,
+      clock: () => now,
+    ).refresh();
+
+    final payload = jsonDecode(gateway.payload!) as Map<String, Object?>;
+    final trip = payload['trip']! as Map<String, Object?>;
+    expect(trip['isUnassigned'], isTrue);
+    expect(trip['spent'], '680');
+    expect(trip['homeCurrency'], 'CNY');
+    expect(trip['expenseCount'], 1);
+    expect(trip['latestExpenseTitle'], 'Dinner');
+  });
 }
 
 final class _FakeSnapshotGateway implements WidgetSnapshotGateway {
