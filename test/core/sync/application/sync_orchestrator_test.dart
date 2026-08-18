@@ -30,25 +30,31 @@ void main() {
       ],
     );
     final store = DriftSyncStore(database, clock: () => now);
-    final status = await SyncOrchestrator(
+    final orchestrator = SyncOrchestrator(
       gateway: gateway,
       store: store,
       clock: () => now,
-    ).synchronize(force: true);
+    );
+    addTearDown(orchestrator.dispose);
+    final completion = orchestrator.completions.first;
+    final status = await orchestrator.synchronize(force: true);
 
     expect(status.phase, SyncPhase.succeeded);
     expect(status.lastSuccessAt, now);
     expect(await store.cursor(), 'c2');
     expect(gateway.pullCursors, <String?>[null, 'c1']);
+    expect((await completion).pulledRecordCount, 0);
   });
 
   test('iCloud account failure is structured and schedules retry', () async {
     final store = DriftSyncStore(database, clock: () => now);
-    final status = await SyncOrchestrator(
+    final orchestrator = SyncOrchestrator(
       gateway: _FakeGateway(account: SyncAccountState.noAccount),
       store: store,
       clock: () => now,
-    ).synchronize(force: true);
+    );
+    addTearDown(orchestrator.dispose);
+    final status = await orchestrator.synchronize(force: true);
 
     expect(status.phase, SyncPhase.failed);
     expect(status.lastErrorCode, 'icloud-noAccount');
@@ -60,11 +66,13 @@ void main() {
     await store.applyPullBatch(const <CloudSyncRecord>[], 'expired');
     final gateway = _FakeGateway(expireFirstCursor: true);
 
-    final status = await SyncOrchestrator(
+    final orchestrator = SyncOrchestrator(
       gateway: gateway,
       store: store,
       clock: () => now,
-    ).synchronize(force: true);
+    );
+    addTearDown(orchestrator.dispose);
+    final status = await orchestrator.synchronize(force: true);
 
     expect(status.phase, SyncPhase.succeeded);
     expect(gateway.pullCursors, <String?>['expired', null]);

@@ -28,7 +28,10 @@ void main() {
       ),
     );
     final container = ProviderContainer(
-      overrides: [settingsRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        systemLocaleProvider.overrideWithValue(const Locale('en', 'US')),
+        settingsRepositoryProvider.overrideWithValue(repository),
+      ],
     );
     addTearDown(container.dispose);
     await container.read(generalSettingsControllerProvider.future);
@@ -44,7 +47,7 @@ void main() {
     expect(repository.value?.wifiOnlyRefresh, isTrue);
     expect(repository.value?.languageMode, AppLanguageMode.simplifiedChinese);
     expect(repository.value?.syncEnabled, isTrue);
-    expect(container.read(localeControllerProvider), const Locale('zh'));
+    expect(container.read(localeControllerProvider), const Locale('zh', 'US'));
   });
 
   test('favorite currencies may be explicitly cleared', () async {

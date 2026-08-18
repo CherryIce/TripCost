@@ -9,7 +9,8 @@ import 'package:trip_cost/core/money/money.dart';
 import 'package:trip_cost/core/rates/data/drift_rate_snapshot_repository.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 
-final class DriftExpenseRepository implements ExpenseRepository {
+final class DriftExpenseRepository
+    implements ExpenseRepository, CacheRepositoryObserver {
   DriftExpenseRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -21,22 +22,28 @@ final class DriftExpenseRepository implements ExpenseRepository {
   final money.CurrencyCatalog _currencyCatalog;
 
   @override
-  Future<void> save(ExpenseModel expense) {
-    return _database.transaction(() => _save(expense));
+  Stream<void> watchChanges() => _database.coreDao.watchActiveExpenses();
+
+  @override
+  Future<void> save(ExpenseModel expense) async {
+    await _database.transaction(() => _save(expense));
+    _database.notifyCacheTable('expenses');
   }
 
   @override
   Future<void> saveWithCalibration(
     ExpenseModel expense,
     FeeCalibrationModel calibration,
-  ) {
-    return _database.transaction(() async {
+  ) async {
+    await _database.transaction(() async {
       await _save(expense);
       await DriftFeeCalibrationRepository(
         _database,
         currencyCatalog: _currencyCatalog,
       ).save(calibration);
     });
+    _database.notifyCacheTable('expenses');
+    _database.notifyCacheTable('fee_calibrations');
   }
 
   Future<void> _save(ExpenseModel expense) async {
@@ -122,6 +129,7 @@ final class DriftExpenseRepository implements ExpenseRepository {
         ),
       );
     });
+    _database.notifyCacheTable('expenses');
   }
 
   Future<ExpenseModel> _toDomain(Expense row) async {
@@ -255,7 +263,8 @@ final class DriftExpenseRepository implements ExpenseRepository {
   }
 }
 
-final class DriftFeeCalibrationRepository implements FeeCalibrationRepository {
+final class DriftFeeCalibrationRepository
+    implements FeeCalibrationRepository, CacheRepositoryObserver {
   DriftFeeCalibrationRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -265,6 +274,9 @@ final class DriftFeeCalibrationRepository implements FeeCalibrationRepository {
 
   final AppDatabase _database;
   final money.CurrencyCatalog _currencyCatalog;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchFeeCalibrations();
 
   @override
   Future<void> save(FeeCalibrationModel calibration) async {
@@ -293,6 +305,7 @@ final class DriftFeeCalibrationRepository implements FeeCalibrationRepository {
         lastSyncedAt: Value<DateTime?>(calibration.metadata.lastSyncedAt),
       ),
     );
+    _database.notifyCacheTable('fee_calibrations');
   }
 
   @override

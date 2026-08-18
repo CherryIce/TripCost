@@ -38,6 +38,20 @@ void main() {
       }
     },
   );
+
+  test('onboarding visible copy has no direct string literals', () async {
+    final contents = await File(
+      'lib/features/onboarding/presentation/onboarding_page.dart',
+    ).readAsString();
+
+    expect(
+      RegExp(
+        r'''Text\(\s*(['"])(?!\$\{)[^'"]*[A-Za-z\u4e00-\u9fff]''',
+      ).hasMatch(contents),
+      isFalse,
+    );
+    expect(contents, isNot(contains('currency.name')));
+  });
 }
 
 Future<Map<String, Object?>> _readJson(String path) async {

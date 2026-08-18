@@ -7,7 +7,8 @@ import 'package:trip_cost/core/money/currency.dart' as money;
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 
-final class DriftPaymentMethodRepository implements PaymentMethodRepository {
+final class DriftPaymentMethodRepository
+    implements PaymentMethodRepository, CacheRepositoryObserver {
   DriftPaymentMethodRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -18,6 +19,9 @@ final class DriftPaymentMethodRepository implements PaymentMethodRepository {
   final AppDatabase _database;
   final money.CurrencyCatalog _currencyCatalog;
   final DateTime Function() _clock;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchActivePaymentMethods();
 
   @override
   Future<void> save(PaymentMethodModel paymentMethod) async {
@@ -52,6 +56,7 @@ final class DriftPaymentMethodRepository implements PaymentMethodRepository {
         createdAt: paymentMethod.createdAt,
       ),
     );
+    _database.notifyCacheTable('payment_methods');
   }
 
   @override
@@ -64,6 +69,7 @@ final class DriftPaymentMethodRepository implements PaymentMethodRepository {
   Future<void> softDelete(String id, DateTime deletedAtUtc) async {
     requireUtc(deletedAtUtc, 'deletedAtUtc');
     await _database.coreDao.softDeletePaymentMethod(id, deletedAtUtc);
+    _database.notifyCacheTable('payment_methods');
   }
 
   PaymentMethodModel _toDomain(PaymentMethod row) {

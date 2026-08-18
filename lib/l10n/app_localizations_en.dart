@@ -672,7 +672,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseDate => 'Transaction date';
 
   @override
-  String get expenseReceiptPath => 'Receipt local path (optional)';
+  String get expenseReceiptPath => 'Receipt attachment (optional)';
 
   @override
   String get expenseNotes => 'Notes';
@@ -830,6 +830,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncStatusSucceeded => 'Up to date';
+
+  @override
+  String get syncCompletedNotice =>
+      'iCloud sync complete. Latest data is now shown.';
 
   @override
   String get syncStatusWaiting => 'Waiting to retry';

@@ -7,6 +7,7 @@ import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/features/startup/data/startup_state_store.dart';
 
+import '../helpers/isolated_test_database.dart';
 import '../helpers/m4_fakes.dart';
 import '../helpers/m5_fixtures.dart';
 
@@ -14,9 +15,11 @@ void main() {
   testWidgets('trip budget and ledger are reachable from the app shell', (
     tester,
   ) async {
+    final database = createIsolatedTestDatabase();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
           startupStateStoreProvider.overrideWithValue(_CompletedStore()),
           rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
           settingsRepositoryProvider.overrideWithValue(

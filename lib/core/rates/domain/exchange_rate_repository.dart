@@ -54,7 +54,7 @@ abstract interface class CardNetworkRateProvider {
   });
 }
 
-final class ExchangeRateRepository {
+final class ExchangeRateRepository implements CacheRepositoryObserver {
   ExchangeRateRepository({
     required FrankfurterRatesGateway marketGateway,
     required RateSnapshotRepository snapshotRepository,
@@ -79,6 +79,11 @@ final class ExchangeRateRepository {
   final DateTime Function() _clock;
   final String Function() _idFactory;
   final Duration cacheFreshFor;
+
+  @override
+  Stream<void> watchChanges() => _snapshotRepository is CacheRepositoryObserver
+      ? (_snapshotRepository as CacheRepositoryObserver).watchChanges()
+      : const Stream<void>.empty();
 
   Future<RateResolution> resolveRate({
     required Currency baseCurrency,

@@ -6,6 +6,7 @@ import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/features/settings/presentation/settings_page.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 
+import '../../../helpers/isolated_test_database.dart';
 import '../../../helpers/m4_fakes.dart';
 
 void main() {
@@ -13,9 +14,11 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
+    final database = createIsolatedTestDatabase();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
           settingsRepositoryProvider.overrideWithValue(
             MemorySettingsRepository(),
           ),

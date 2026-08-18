@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/app/locale_controller.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
@@ -11,10 +14,16 @@ final generalSettingsControllerProvider =
     );
 
 final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
+  StreamSubscription<void>? _cacheSubscription;
+
   @override
   Future<UserSettingsModel> build() async {
-    final existing = await ref.watch(settingsRepositoryProvider).load();
-    return existing ?? _defaults();
+    final repository = ref.watch(settingsRepositoryProvider);
+    _observe(repository);
+    final existing = await repository.load();
+    final value = existing ?? _defaults();
+    ref.read(localeControllerProvider.notifier).setMode(value.languageMode);
+    return value;
   }
 
   Future<void> setDefaultCurrency(Currency currency) =>
@@ -85,5 +94,23 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
       wifiOnlyRefresh: false,
       syncEnabled: false,
     );
+  }
+
+  void _observe(SettingsRepository repository) {
+    unawaited(_cacheSubscription?.cancel());
+    _cacheSubscription = repository is CacheRepositoryObserver
+        ? (repository as CacheRepositoryObserver).watchChanges().listen((_) {
+            if (ref.mounted) unawaited(_reloadFromCache());
+          })
+        : null;
+    ref.onDispose(() => _cacheSubscription?.cancel());
+  }
+
+  Future<void> _reloadFromCache() async {
+    final value =
+        await ref.read(settingsRepositoryProvider).load() ?? _defaults();
+    if (!ref.mounted) return;
+    state = AsyncData(value);
+    ref.read(localeControllerProvider.notifier).setMode(value.languageMode);
   }
 }

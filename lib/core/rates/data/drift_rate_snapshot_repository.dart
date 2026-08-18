@@ -7,7 +7,8 @@ import 'package:trip_cost/core/money/currency.dart' as money;
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 
-final class DriftRateSnapshotRepository implements RateSnapshotRepository {
+final class DriftRateSnapshotRepository
+    implements RateSnapshotRepository, CacheRepositoryObserver {
   DriftRateSnapshotRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -18,6 +19,9 @@ final class DriftRateSnapshotRepository implements RateSnapshotRepository {
   final AppDatabase _database;
   final money.CurrencyCatalog _currencyCatalog;
   final DateTime Function() _clock;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchRateSnapshots();
 
   @override
   Future<void> save(RateSnapshotModel snapshot) async {
@@ -39,6 +43,7 @@ final class DriftRateSnapshotRepository implements RateSnapshotRepository {
         isCached: Value<bool>(snapshot.isCached),
       ),
     );
+    _database.notifyCacheTable('rate_snapshots');
   }
 
   @override
@@ -77,6 +82,7 @@ final class DriftRateSnapshotRepository implements RateSnapshotRepository {
       sourceType: sourceType.name,
       deletedAt: deletedAtUtc,
     );
+    _database.notifyCacheTable('rate_snapshots');
   }
 
   RateSnapshotModel _toDomain(RateSnapshot row) {

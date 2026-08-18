@@ -29,6 +29,7 @@ class PaymentMethodsPage extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: methods.when(
           loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (error, stack) => Center(
@@ -38,7 +39,7 @@ class PaymentMethodsPage extends ConsumerWidget {
             ),
           ),
           data: (items) => ListView(
-            padding: const EdgeInsets.all(AppSpacing.medium),
+            padding: AppInsets.secondaryPageScrollPadding(context),
             children: <Widget>[
               Text(
                 localizations.paymentMethodsSubtitle,
@@ -279,8 +280,9 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _ChoiceRow(
               label: localizations.paymentTemplate,

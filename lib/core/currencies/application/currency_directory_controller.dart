@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 
@@ -38,18 +39,44 @@ final currencyDirectoryProvider =
 final class CurrencyDirectoryController
     extends Notifier<CurrencyDirectoryState> {
   var _generation = 0;
+  StreamSubscription<void>? _cacheSubscription;
 
   @override
   CurrencyDirectoryState build() {
-    final fallback = ref
-        .watch(currencyDirectoryRepositoryProvider)
-        .fallbackCurrencies;
+    final repository = ref.watch(currencyDirectoryRepositoryProvider);
+    _observe(repository);
+    final fallback = repository.fallbackCurrencies;
     unawaited(Future<void>(_initialize));
     return CurrencyDirectoryState(
       currencies: fallback,
       source: CurrencyDirectorySource.fallback,
       isRefreshing: true,
     );
+  }
+
+  void _observe(CacheRepositoryObserver repository) {
+    unawaited(_cacheSubscription?.cancel());
+    _cacheSubscription = repository.watchChanges().listen((_) {
+      if (ref.mounted) unawaited(_reloadFromCache());
+    });
+    ref.onDispose(() => _cacheSubscription?.cancel());
+  }
+
+  Future<void> _reloadFromCache() async {
+    final generation = ++_generation;
+    try {
+      final cached = await ref
+          .read(currencyDirectoryRepositoryProvider)
+          .loadCached();
+      if (!ref.mounted || generation != _generation || cached.isEmpty) return;
+      state = CurrencyDirectoryState(
+        currencies: cached,
+        source: CurrencyDirectorySource.cache,
+        isRefreshing: false,
+      );
+    } on Object {
+      // Keep the last displayed directory when a cache read fails.
+    }
   }
 
   Future<void> refresh() => _refreshFromNetwork(++_generation);

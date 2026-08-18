@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:trip_cost/app/locale_controller.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/export/expense_export_service.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/storage/backup/backup_service.dart';
@@ -13,10 +15,6 @@ import 'package:trip_cost/features/startup/data/startup_state_store.dart';
 
 final documentPlatformGatewayProvider = Provider<DocumentPlatformGateway>(
   (ref) => const MethodChannelDocumentPlatformGateway(),
-);
-
-final receiptStorageProvider = Provider<ReceiptStorage>(
-  (ref) => ReceiptStorage(),
 );
 
 final expenseExportServiceProvider = Provider<ExpenseExportService>((ref) {
@@ -38,6 +36,13 @@ final settingsDataServiceProvider = Provider<SettingsDataService>((ref) {
     ),
     platformGateway: gateway,
     startupStateStore: ref.watch(startupStateStoreProvider),
+    onDataReplaced: () async {
+      final mode =
+          (await ref.read(settingsRepositoryProvider).load())?.languageMode ??
+          AppLanguageMode.system;
+      ref.invalidate(localeControllerProvider);
+      ref.read(localeControllerProvider.notifier).setMode(mode);
+    },
   );
 });
 
@@ -49,12 +54,14 @@ final class SettingsDataService {
     required StartupStateStore startupStateStore,
     Future<Directory> Function()? temporaryDirectory,
     DateTime Function()? clock,
+    Future<void> Function()? onDataReplaced,
   }) : _backupService = backupService,
        _resetCoordinator = resetCoordinator,
        _platformGateway = platformGateway,
        _startupStateStore = startupStateStore,
        _temporaryDirectory = temporaryDirectory ?? getTemporaryDirectory,
-       _clock = clock ?? (() => DateTime.now().toUtc());
+       _clock = clock ?? (() => DateTime.now().toUtc()),
+       _onDataReplaced = onDataReplaced ?? _noop;
 
   final BackupService _backupService;
   final DataResetCoordinator _resetCoordinator;
@@ -62,6 +69,7 @@ final class SettingsDataService {
   final StartupStateStore _startupStateStore;
   final Future<Directory> Function() _temporaryDirectory;
   final DateTime Function() _clock;
+  final Future<void> Function() _onDataReplaced;
 
   Future<File> createBackup() async {
     final directory = await _temporaryDirectory();
@@ -78,6 +86,7 @@ final class SettingsDataService {
     final selected = await _platformGateway.pickBackupFile();
     if (selected == null) return false;
     await _backupService.restoreFrom(File(selected));
+    await _onDataReplaced();
     return true;
   }
 
@@ -90,5 +99,8 @@ final class SettingsDataService {
   Future<void> clearAllData(DataResetConfirmation confirmation) async {
     await _resetCoordinator.clearAllData(confirmationToken: confirmation.token);
     await _startupStateStore.resetOnboarding();
+    await _onDataReplaced();
   }
 }
+
+Future<void> _noop() => Future<void>.value();

@@ -17,6 +17,12 @@ final class SyncOrchestrator {
   final DriftSyncStore _store;
   final DateTime Function() _clock;
   Future<SyncRuntimeStatus>? _activeRun;
+  final StreamController<SyncCompletionEvent> _completionController =
+      StreamController<SyncCompletionEvent>.broadcast();
+
+  Stream<SyncCompletionEvent> get completions => _completionController.stream;
+
+  Future<void> dispose() => _completionController.close();
 
   Future<SyncRuntimeStatus> synchronize({bool force = false}) {
     return _activeRun ??= _run(
@@ -58,6 +64,7 @@ final class SyncOrchestrator {
         phase: SyncPhase.pushing,
         lastAttemptAt: now,
       );
+      var pulledRecordCount = 0;
       while (true) {
         final pending = await _store.pendingRecords();
         if (pending.isEmpty) break;
@@ -90,6 +97,7 @@ final class SyncOrchestrator {
           didResetExpiredCursor = true;
           continue;
         }
+        pulledRecordCount += pulled.records.length;
         await _store.applyPullBatch(pulled.records, pulled.cursor);
         cursor = pulled.cursor;
         if (!pulled.hasMore) break;
@@ -102,6 +110,12 @@ final class SyncOrchestrator {
         lastAttemptAt: now,
         lastSuccessAt: completedAt,
         clearRetry: true,
+      );
+      _completionController.add(
+        SyncCompletionEvent(
+          completedAt: completedAt,
+          pulledRecordCount: pulledRecordCount,
+        ),
       );
       return _store.status();
     } on Object catch (error) {
@@ -122,4 +136,14 @@ final class SyncOrchestrator {
     final minutes = math.min(360, math.pow(2, failureCount).toInt());
     return Duration(minutes: minutes);
   }
+}
+
+final class SyncCompletionEvent {
+  const SyncCompletionEvent({
+    required this.completedAt,
+    required this.pulledRecordCount,
+  });
+
+  final DateTime completedAt;
+  final int pulledRecordCount;
 }

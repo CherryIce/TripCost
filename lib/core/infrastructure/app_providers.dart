@@ -11,6 +11,7 @@ import 'package:trip_cost/core/rates/data/drift_rate_snapshot_repository.dart';
 import 'package:trip_cost/core/rates/data/frankfurter_api_client.dart';
 import 'package:trip_cost/core/rates/domain/exchange_rate_repository.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
+import 'package:trip_cost/core/storage/files/receipt_storage.dart';
 import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 import 'package:trip_cost/core/sync/application/local_data_change_coordinator.dart';
 import 'package:trip_cost/core/sync/application/sync_orchestrator.dart';
@@ -23,6 +24,10 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase.open();
   ref.onDispose(database.close);
   return database;
+});
+
+final receiptStorageProvider = Provider<ReceiptStorage>((ref) {
+  return ReceiptStorage();
 });
 
 final rateGatewayProvider = Provider<FrankfurterRatesGateway>((ref) {
@@ -106,10 +111,16 @@ final cloudSyncGatewayProvider = Provider<PlatformCloudSyncGateway>((ref) {
 });
 
 final syncOrchestratorProvider = Provider<SyncOrchestrator>((ref) {
-  return SyncOrchestrator(
+  final orchestrator = SyncOrchestrator(
     gateway: ref.watch(cloudSyncGatewayProvider),
     store: ref.watch(syncStoreProvider),
   );
+  ref.onDispose(orchestrator.dispose);
+  return orchestrator;
+});
+
+final syncCompletionProvider = StreamProvider<SyncCompletionEvent>((ref) {
+  return ref.watch(syncOrchestratorProvider).completions;
 });
 
 final widgetSnapshotServiceProvider = Provider<WidgetSnapshotService>((ref) {

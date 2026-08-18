@@ -2,10 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/app/app.dart';
+import 'package:trip_cost/app/locale_controller.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
+import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/features/startup/data/startup_state_store.dart';
 
+import 'helpers/isolated_test_database.dart';
 import 'helpers/m4_fakes.dart';
 
 void main() {
@@ -69,11 +73,90 @@ void main() {
     expect(store.isComplete, isTrue);
     expect(find.text('Home'), findsOneWidget);
   });
+
+  testWidgets('first launch follows a Chinese device locale', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = const <Locale>[
+      Locale('zh', 'CN'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(_testApp(_FakeStartupStateStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('快速看懂当地价格'), findsOneWidget);
+    expect(find.text('跳过'), findsOneWidget);
+    expect(find.text('下一步'), findsOneWidget);
+
+    await tester.tap(find.text('下一步'));
+    await tester.pumpAndSettle();
+    expect(find.text('比较不同支付成本'), findsOneWidget);
+
+    await tester.tap(find.text('下一步'));
+    await tester.pumpAndSettle();
+    expect(find.text('持续掌握旅行预算'), findsOneWidget);
+    expect(find.text('建议本位币'), findsOneWidget);
+    expect(find.text('创建行程'), findsOneWidget);
+    expect(find.text('添加支付方式'), findsOneWidget);
+    expect(find.text('开始使用'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('onboarding-home-currency')));
+    await tester.pumpAndSettle();
+    for (final currency in CurrencyCatalog.knownCurrencies) {
+      expect(find.textContaining(currency.name), findsNothing);
+    }
+  });
+
+  testWidgets('persisted Chinese ignores an English device locale', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.localesTestValue = const <Locale>[
+      Locale('en', 'US'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(
+      _testApp(
+        _FakeStartupStateStore(),
+        initialLanguageMode: AppLanguageMode.simplifiedChinese,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('快速看懂当地价格'), findsOneWidget);
+    expect(find.text('Understand prices instantly'), findsNothing);
+  });
+
+  testWidgets('persisted English ignores a Chinese device locale', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.localesTestValue = const <Locale>[
+      Locale('zh', 'CN'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+    await tester.pumpWidget(
+      _testApp(
+        _FakeStartupStateStore(),
+        initialLanguageMode: AppLanguageMode.english,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Understand prices instantly'), findsOneWidget);
+    expect(find.text('快速看懂当地价格'), findsNothing);
+  });
 }
 
-Widget _testApp(StartupStateStore store, {MemorySettingsRepository? settings}) {
+Widget _testApp(
+  StartupStateStore store, {
+  MemorySettingsRepository? settings,
+  AppLanguageMode initialLanguageMode = AppLanguageMode.system,
+}) {
+  final database = createIsolatedTestDatabase();
   return ProviderScope(
     overrides: [
+      appDatabaseProvider.overrideWithValue(database),
+      initialAppLanguageModeProvider.overrideWithValue(initialLanguageMode),
       startupStateStoreProvider.overrideWithValue(store),
       rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
       settingsRepositoryProvider.overrideWithValue(

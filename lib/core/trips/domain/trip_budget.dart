@@ -5,7 +5,7 @@ import 'package:trip_cost/core/money/money.dart';
 enum TripListSection { active, upcoming, history }
 
 TripListSection tripListSection(TripModel trip, DateTime now) {
-  final today = _dateOnlyUtc(now);
+  final today = localCalendarDate(now);
   if (trip.status == TripStatus.archived || trip.endDate.isBefore(today)) {
     return TripListSection.history;
   }
@@ -20,7 +20,7 @@ TripStatus tripStatusForDates({
   bool archived = false,
 }) {
   if (archived) return TripStatus.archived;
-  return startDate.isAfter(_dateOnlyUtc(now))
+  return startDate.isAfter(localCalendarDate(now))
       ? TripStatus.upcoming
       : TripStatus.active;
 }
@@ -107,7 +107,7 @@ final class TripBudgetCalculator {
     }
 
     final spent = confirmed + estimated;
-    final today = _dateOnlyUtc(now);
+    final today = localCalendarDate(now);
     final totalDays = trip.endDate.difference(trip.startDate).inDays + 1;
     final elapsedDays = today.isBefore(trip.startDate)
         ? 0
@@ -146,9 +146,9 @@ final class TripBudgetCalculator {
   }
 }
 
-DateTime _dateOnlyUtc(DateTime value) {
-  final utc = value.toUtc();
-  return DateTime.utc(utc.year, utc.month, utc.day);
+DateTime localCalendarDate(DateTime value) {
+  final local = value.toLocal();
+  return DateTime.utc(local.year, local.month, local.day);
 }
 
 extension on DecimalValue {

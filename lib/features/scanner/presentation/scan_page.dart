@@ -70,8 +70,9 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(middle: Text(l10n.scanTitle)),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             Text(l10n.scanSubtitle),
             const SizedBox(height: AppSpacing.small),
@@ -471,12 +472,19 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         });
         return;
       }
+      final receiptLocalPath = _imagePath == null
+          ? null
+          : await ref
+                .read(receiptStorageProvider)
+                .importImage(File(_imagePath!));
+      if (!mounted) return;
       setState(() => _resolvingRate = false);
       await context.push(
         AppRoutes.paymentComparison,
         extra: ConversionDraft(
           transactionAmount: Money(amount: amount, currency: currency),
           rateResolution: rate,
+          receiptLocalPath: receiptLocalPath,
         ),
       );
     } catch (_) {

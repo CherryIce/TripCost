@@ -9,6 +9,7 @@ import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/features/startup/data/startup_state_store.dart';
 
+import '../helpers/isolated_test_database.dart';
 import '../helpers/m4_fakes.dart';
 
 void main() {
@@ -117,8 +118,10 @@ void main() {
 }
 
 Widget _testApp() {
+  final database = createIsolatedTestDatabase();
   return ProviderScope(
     overrides: [
+      appDatabaseProvider.overrideWithValue(database),
       startupStateStoreProvider.overrideWithValue(_CompleteStartupStore()),
       rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
       settingsRepositoryProvider.overrideWithValue(MemorySettingsRepository()),

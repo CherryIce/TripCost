@@ -23,3 +23,16 @@ abstract final class AppSpacing {
   static const double medium = 16;
   static const double large = 24;
 }
+
+abstract final class AppInsets {
+  /// Keeps the bottom safe area inside the scrollable content instead of
+  /// shortening the page's scroll viewport.
+  static EdgeInsets secondaryPageScrollPadding(BuildContext context) {
+    return EdgeInsets.fromLTRB(
+      AppSpacing.medium,
+      AppSpacing.medium,
+      AppSpacing.medium,
+      AppSpacing.medium + MediaQuery.paddingOf(context).bottom,
+    );
+  }
+}

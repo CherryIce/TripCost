@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -31,6 +32,9 @@ final class AppDatabase extends _$AppDatabase {
 
   factory AppDatabase.open() => AppDatabase(_openConnection());
 
+  final StreamController<String> _cacheChanges =
+      StreamController<String>.broadcast();
+
   static const List<String> backupTableOrder = <String>[
     'currencies',
     'rate_snapshots',
@@ -44,6 +48,28 @@ final class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 4;
+
+  Stream<void> watchCacheTable(String tableName) => _cacheChanges.stream
+      .where((changedTable) => changedTable == tableName)
+      .map<void>((_) {});
+
+  void notifyCacheTable(String tableName) {
+    if (!_cacheChanges.isClosed) _cacheChanges.add(tableName);
+  }
+
+  void notifyAllCacheTables() {
+    for (final table in backupTableOrder) {
+      notifyCacheTable(table);
+    }
+    notifyCacheTable('sync_runtime_entries');
+    notifyCacheTable('sync_conflict_entries');
+  }
+
+  @override
+  Future<void> close() async {
+    await _cacheChanges.close();
+    await super.close();
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -130,6 +156,7 @@ final class AppDatabase extends _$AppDatabase {
         }
       }
     });
+    notifyAllCacheTables();
   }
 
   static final RegExp _sqlIdentifier = RegExp(r'^[a-z][a-z0-9_]*$');

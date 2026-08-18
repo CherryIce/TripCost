@@ -62,8 +62,9 @@ class _DccPageState extends ConsumerState<DccPage> {
         middle: Text(localizations.dccTitle),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _DccField(
               label:

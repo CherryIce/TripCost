@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 import 'package:trip_cost/core/sync/domain/sync_models.dart';
 import 'package:uuid/uuid.dart';
 
-final class DriftSyncStore {
+final class DriftSyncStore implements CacheRepositoryObserver {
   DriftSyncStore(this._database, {DateTime Function()? clock, Uuid? uuid})
     : _clock = clock ?? (() => DateTime.now().toUtc()),
       _uuid = uuid ?? const Uuid();
@@ -17,6 +18,9 @@ final class DriftSyncStore {
   final AppDatabase _database;
   final DateTime Function() _clock;
   final Uuid _uuid;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchSyncState();
 
   Future<String> deviceId() async {
     final current = await _database.coreDao.getSyncRuntime(runtimeId);
@@ -30,6 +34,7 @@ final class DriftSyncStore {
         phase: SyncPhase.idle.name,
       ),
     );
+    _database.notifyCacheTable('sync_runtime_entries');
     return value;
   }
 
@@ -68,6 +73,7 @@ final class DriftSyncStore {
         lastErrorCode: Value<String?>(current.lastErrorCode),
       ),
     );
+    _database.notifyCacheTable('sync_runtime_entries');
   }
 
   Future<void> updateRuntime({
@@ -104,6 +110,7 @@ final class DriftSyncStore {
         ),
       ),
     );
+    _database.notifyCacheTable('sync_runtime_entries');
   }
 
   Future<List<CloudSyncRecord>> pendingRecords({int limit = 100}) async {
@@ -383,6 +390,7 @@ final class DriftSyncStore {
           record.id,
         ],
       );
+      _notifyEntityChanged(config.entityType);
     } else {
       await _upsertRaw(config, remotePayload);
     }
@@ -452,6 +460,22 @@ final class DriftSyncStore {
       'ON CONFLICT(id) DO UPDATE SET $updates',
       <Object?>[for (final column in columns) values[column]],
     );
+    _notifyEntityChanged(config.entityType);
+  }
+
+  void _notifyEntityChanged(SyncEntityType type) {
+    switch (type) {
+      case SyncEntityType.rateSnapshot:
+        _database.notifyCacheTable('rate_snapshots');
+      case SyncEntityType.paymentMethod:
+        _database.notifyCacheTable('payment_methods');
+      case SyncEntityType.trip:
+        _database.notifyCacheTable('trips');
+      case SyncEntityType.expense:
+        _database.notifyCacheTable('expenses');
+      case SyncEntityType.userSettings:
+        _database.notifyCacheTable('user_settings_records');
+    }
   }
 
   SyncRuntimeStatus _statusFromRow(SyncRuntimeEntry row) {

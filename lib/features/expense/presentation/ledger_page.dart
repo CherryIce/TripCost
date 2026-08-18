@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,13 +8,16 @@ import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/expenses/domain/expense_calibration.dart';
+import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/money/money.dart';
 import 'package:trip_cost/core/money/money_formatter.dart';
+import 'package:trip_cost/core/storage/files/receipt_storage.dart';
 import 'package:trip_cost/features/expense/application/expense_draft.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
+import 'package:trip_cost/features/scanner/application/scanner_gateways.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:uuid/uuid.dart';
@@ -239,8 +244,9 @@ class _LedgerFilterPageState extends State<LedgerFilterPage> {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _FilterChoice(
               label: l10n.expenseTrip,
@@ -417,8 +423,9 @@ class _LedgerFilterPageState extends State<LedgerFilterPage> {
 }
 
 class ExpenseEditorPage extends ConsumerStatefulWidget {
-  const ExpenseEditorPage({this.arguments, super.key});
+  const ExpenseEditorPage({this.arguments, this.receiptImagePicker, super.key});
   final ExpenseEditorArguments? arguments;
+  final ScannerImagePicker? receiptImagePicker;
 
   @override
   ConsumerState<ExpenseEditorPage> createState() => _ExpenseEditorPageState();
@@ -443,6 +450,8 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   DateTime _occurredAt = DateTime.now().toUtc();
   bool _budgetIncluded = true;
   bool _invalid = false;
+  bool _updatingEstimatedAmount = false;
+  late String _estimatedBaseAmount;
 
   ExpenseDraftSeed? get _seed => widget.arguments?.seed;
 
@@ -458,6 +467,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
       _transactionCurrency = seed.transactionAmount.currency;
       _homeCurrency = seed.breakdown.estimatedCost.currency;
       _paymentMethodId = seed.breakdown.paymentRule.paymentMethodId;
+      _receiptPath.text = seed.receiptLocalPath ?? '';
     }
     if (trip != null) {
       _tripId = trip.metadata.recordId;
@@ -466,10 +476,19 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
       _participants.text = trip.participantCount.toString();
       _paymentMethodId ??= trip.defaultPaymentMethodId;
     }
+    _estimatedBaseAmount = _estimatedAmount.text;
+    _estimatedAmount.addListener(_captureEstimatedBaseAmount);
+    for (final controller in <TextEditingController>[_tax, _tip, _discount]) {
+      controller.addListener(_recalculateEstimatedAmount);
+    }
   }
 
   @override
   void dispose() {
+    _estimatedAmount.removeListener(_captureEstimatedBaseAmount);
+    for (final controller in <TextEditingController>[_tax, _tip, _discount]) {
+      controller.removeListener(_recalculateEstimatedAmount);
+    }
     for (final controller in <TextEditingController>[
       _title,
       _transactionAmount,
@@ -503,8 +522,9 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _Input(label: l10n.expenseTitle, controller: _title),
             _FilterChoice(
@@ -578,7 +598,14 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
               ).add_Hm().format(_occurredAt.toLocal()),
               onPressed: _pickDate,
             ),
-            _Input(label: l10n.expenseReceiptPath, controller: _receiptPath),
+            _FilterChoice(
+              key: const Key('expense-receipt-picker'),
+              label: l10n.expenseReceiptPath,
+              value: _receiptPath.text.isEmpty
+                  ? l10n.commonNone
+                  : _receiptPath.text,
+              onPressed: _chooseReceiptImage,
+            ),
             _Input(label: l10n.expenseNotes, controller: _notes, maxLines: 3),
             CupertinoListTile(
               padding: EdgeInsets.zero,
@@ -704,6 +731,45 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
     if (mounted) setState(() => _occurredAt = selected.toUtc());
   }
 
+  Future<void> _chooseReceiptImage() async {
+    try {
+      final relativePath = await importReceiptFromPhotoLibrary(
+        picker: widget.receiptImagePicker ?? DeviceScannerImagePicker(),
+        storage: ref.read(receiptStorageProvider),
+      );
+      if (relativePath == null) return;
+      if (mounted) setState(() => _receiptPath.text = relativePath);
+    } on Object {
+      if (mounted) setState(() => _invalid = true);
+    }
+  }
+
+  void _captureEstimatedBaseAmount() {
+    if (!_updatingEstimatedAmount) {
+      _estimatedBaseAmount = _estimatedAmount.text;
+    }
+  }
+
+  void _recalculateEstimatedAmount() {
+    try {
+      final finalAmount = calculateEstimatedFinalAmount(
+        baseAmount: Money.parse(_estimatedBaseAmount, _homeCurrency),
+        taxAmount: Money.parse(_tax.text.trim(), _homeCurrency),
+        tipAmount: Money.parse(_tip.text.trim(), _homeCurrency),
+        discountAmount: Money.parse(_discount.text.trim(), _homeCurrency),
+      );
+      _updatingEstimatedAmount = true;
+      _estimatedAmount.text = finalAmount.amount.toString();
+      _estimatedAmount.selection = TextSelection.collapsed(
+        offset: _estimatedAmount.text.length,
+      );
+    } on FormatException {
+      // Partial numeric input is allowed while the user is editing.
+    } finally {
+      _updatingEstimatedAmount = false;
+    }
+  }
+
   Future<void> _save(
     List<TripModel> trips,
     List<PaymentMethodModel> methods,
@@ -820,6 +886,14 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   }
 }
 
+Future<String?> importReceiptFromPhotoLibrary({
+  required ScannerImagePicker picker,
+  required ReceiptStorage storage,
+}) async {
+  final sourcePath = await picker.pick(ScannerImageSource.photoLibrary);
+  return sourcePath == null ? null : storage.importImage(File(sourcePath));
+}
+
 class ExpenseDetailPage extends ConsumerWidget {
   const ExpenseDetailPage({required this.expenseId, this.initial, super.key});
   final String expenseId;
@@ -862,8 +936,9 @@ class ExpenseDetailPage extends ConsumerWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(middle: Text(expense.title)),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _DetailRow(
               label: l10n.expenseTransactionAmount,
@@ -1180,6 +1255,7 @@ class _Input extends StatelessWidget {
 
 class _FilterChoice extends StatelessWidget {
   const _FilterChoice({
+    super.key,
     required this.label,
     required this.value,
     required this.onPressed,

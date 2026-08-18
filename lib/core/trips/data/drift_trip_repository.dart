@@ -7,7 +7,8 @@ import 'package:trip_cost/core/money/currency.dart' as money;
 import 'package:trip_cost/core/money/money.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 
-final class DriftTripRepository implements TripRepository {
+final class DriftTripRepository
+    implements TripRepository, CacheRepositoryObserver {
   DriftTripRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -20,6 +21,9 @@ final class DriftTripRepository implements TripRepository {
   final AppDatabase _database;
   final money.CurrencyCatalog _currencyCatalog;
   final DateTime Function() _clock;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchActiveTrips();
 
   @override
   Future<void> save(TripModel trip) async {
@@ -52,6 +56,7 @@ final class DriftTripRepository implements TripRepository {
       );
       await _saveMetadata(trip.metadata);
     });
+    _database.notifyCacheTable('trips');
   }
 
   @override
@@ -84,6 +89,7 @@ final class DriftTripRepository implements TripRepository {
         ),
       );
     });
+    _database.notifyCacheTable('trips');
   }
 
   Future<TripModel> _toDomain(Trip row) async {

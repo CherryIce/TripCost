@@ -638,7 +638,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseDate => '消费日期';
 
   @override
-  String get expenseReceiptPath => '票据本地路径（可选）';
+  String get expenseReceiptPath => '票据附件（可选）';
 
   @override
   String get expenseNotes => '备注';
@@ -791,6 +791,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get syncStatusSucceeded => '已是最新';
+
+  @override
+  String get syncCompletedNotice => 'iCloud 同步完成，最新数据已更新到界面。';
 
   @override
   String get syncStatusWaiting => '等待重试';

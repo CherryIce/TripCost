@@ -6,15 +6,18 @@ import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/features/startup/data/startup_state_store.dart';
 
+import 'helpers/isolated_test_database.dart';
 import 'helpers/m4_fakes.dart';
 
 void main() {
   testWidgets('shows four destinations and a separate scan action', (
     tester,
   ) async {
+    final database = createIsolatedTestDatabase();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          appDatabaseProvider.overrideWithValue(database),
           startupStateStoreProvider.overrideWithValue(
             _CompletedStartupStateStore(),
           ),

@@ -1,5 +1,9 @@
 import 'package:trip_cost/core/domain/core_models.dart';
 
+abstract interface class CacheRepositoryObserver {
+  Stream<void> watchChanges();
+}
+
 abstract interface class RateSnapshotRepository {
   Future<void> save(RateSnapshotModel snapshot);
 

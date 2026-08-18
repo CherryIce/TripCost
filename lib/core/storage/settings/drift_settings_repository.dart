@@ -7,7 +7,8 @@ import 'package:trip_cost/core/money/currency.dart' as money;
 import 'package:trip_cost/core/storage/database/app_database.dart';
 import 'package:trip_cost/core/storage/database/database_bootstrapper.dart';
 
-final class DriftSettingsRepository implements SettingsRepository {
+final class DriftSettingsRepository
+    implements SettingsRepository, CacheRepositoryObserver {
   DriftSettingsRepository(
     this._database, {
     money.CurrencyCatalog? currencyCatalog,
@@ -17,6 +18,10 @@ final class DriftSettingsRepository implements SettingsRepository {
 
   final AppDatabase _database;
   final money.CurrencyCatalog _currencyCatalog;
+
+  @override
+  Stream<void> watchChanges() =>
+      _database.coreDao.watchUserSettings(settingsRecordId);
 
   @override
   Future<UserSettingsModel?> load() async {
@@ -66,6 +71,7 @@ final class DriftSettingsRepository implements SettingsRepository {
         deletedAt: Value<DateTime?>(settings.metadata.deletedAt),
       ),
     );
+    _database.notifyCacheTable('user_settings_records');
   }
 
   Future<void> _ensureCurrencies(Set<money.Currency> currencies) async {

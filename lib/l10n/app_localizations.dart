@@ -1331,7 +1331,7 @@ abstract class AppLocalizations {
   /// No description provided for @expenseReceiptPath.
   ///
   /// In en, this message translates to:
-  /// **'Receipt local path (optional)'**
+  /// **'Receipt attachment (optional)'**
   String get expenseReceiptPath;
 
   /// No description provided for @expenseNotes.
@@ -1621,6 +1621,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Up to date'**
   String get syncStatusSucceeded;
+
+  /// No description provided for @syncCompletedNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'iCloud sync complete. Latest data is now shown.'**
+  String get syncCompletedNotice;
 
   /// No description provided for @syncStatusWaiting.
   ///

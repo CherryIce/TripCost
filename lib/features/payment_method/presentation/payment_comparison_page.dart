@@ -30,6 +30,7 @@ class PaymentComparisonPage extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: draft == null
             ? Center(child: Text(localizations.paymentComparisonMissing))
             : methods.when(
@@ -51,7 +52,7 @@ class PaymentComparisonPage extends ConsumerWidget {
                     ),
                   );
                   return ListView(
-                    padding: const EdgeInsets.all(AppSpacing.medium),
+                    padding: AppInsets.secondaryPageScrollPadding(context),
                     children: <Widget>[
                       if (items.length < 2)
                         _Notice(
@@ -90,6 +91,7 @@ class PaymentComparisonPage extends ConsumerWidget {
                                   transactionAmount: draft!.transactionAmount,
                                   rateSnapshot: draft!.rateResolution.snapshot!,
                                   breakdown: items[index].breakdown,
+                                  receiptLocalPath: draft!.receiptLocalPath,
                                 ),
                               ),
                             ),

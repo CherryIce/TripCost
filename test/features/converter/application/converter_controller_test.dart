@@ -31,8 +31,13 @@ void main() {
 
   test('evaluates expressions and converts with the resolved rate', () async {
     final initial = await container.read(converterControllerProvider.future);
-    expect(initial.rateResolution!.availability, RateAvailability.liveMarket);
-    expect(initial.convertedMoney!.amount.toFixed(2), '612.36');
+    expect(initial.rateResolution!.availability, RateAvailability.unavailable);
+    expect(initial.isResolvingRate, isTrue);
+    final refreshed = await _waitForAvailability(
+      container,
+      RateAvailability.liveMarket,
+    );
+    expect(refreshed.convertedMoney!.amount.toFixed(2), '612.36');
 
     container
         .read(converterControllerProvider.notifier)
@@ -145,4 +150,16 @@ void main() {
     expect(state.transactionCurrency.code, 'EUR');
     expect(state.rateResolution!.snapshot!.baseCurrency.code, 'EUR');
   });
+}
+
+Future<ConverterState> _waitForAvailability(
+  ProviderContainer container,
+  RateAvailability availability,
+) async {
+  for (var attempt = 0; attempt < 20; attempt += 1) {
+    await Future<void>.delayed(Duration.zero);
+    final value = container.read(converterControllerProvider).value;
+    if (value?.rateResolution?.availability == availability) return value!;
+  }
+  return container.read(converterControllerProvider).requireValue;
 }

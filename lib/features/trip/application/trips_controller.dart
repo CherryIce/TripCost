@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/trips/domain/trip_budget.dart';
 import 'package:uuid/uuid.dart';
@@ -10,9 +13,13 @@ final tripsControllerProvider =
     );
 
 final class TripsController extends AsyncNotifier<List<TripModel>> {
+  StreamSubscription<void>? _cacheSubscription;
+
   @override
   Future<List<TripModel>> build() {
-    return ref.watch(tripRepositoryProvider).listActive();
+    final repository = ref.watch(tripRepositoryProvider);
+    _observe(repository);
+    return repository.listActive();
   }
 
   Future<void> save(TripModel trip) async {
@@ -29,7 +36,7 @@ final class TripsController extends AsyncNotifier<List<TripModel>> {
   Future<void> duplicate(TripModel trip) async {
     final now = DateTime.now().toUtc();
     final duration = trip.endDate.difference(trip.startDate);
-    final start = DateTime.utc(now.year, now.month, now.day);
+    final start = localCalendarDate(now);
     final end = start.add(duration);
     await save(
       TripModel(
@@ -62,7 +69,18 @@ final class TripsController extends AsyncNotifier<List<TripModel>> {
   }
 
   Future<void> _reload() async {
-    state = AsyncData(await ref.read(tripRepositoryProvider).listActive());
+    final cached = await ref.read(tripRepositoryProvider).listActive();
+    if (ref.mounted) state = AsyncData(cached);
+  }
+
+  void _observe(TripRepository repository) {
+    unawaited(_cacheSubscription?.cancel());
+    _cacheSubscription = repository is CacheRepositoryObserver
+        ? (repository as CacheRepositoryObserver).watchChanges().listen((_) {
+            if (ref.mounted) unawaited(_reload());
+          })
+        : null;
+    ref.onDispose(() => _cacheSubscription?.cancel());
   }
 }
 

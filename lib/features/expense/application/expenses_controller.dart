@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/expenses/domain/expense_calibration.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
@@ -16,16 +19,27 @@ final calibrationSummaryProvider =
       ref,
       paymentMethodId,
     ) async {
-      final values = await ref
-          .watch(feeCalibrationRepositoryProvider)
-          .listForPaymentMethod(paymentMethodId);
+      final repository = ref.watch(feeCalibrationRepositoryProvider);
+      if (repository is CacheRepositoryObserver) {
+        final subscription = (repository as CacheRepositoryObserver)
+            .watchChanges()
+            .listen((_) {
+              ref.invalidateSelf();
+            });
+        ref.onDispose(subscription.cancel);
+      }
+      final values = await repository.listForPaymentMethod(paymentMethodId);
       return const ExpenseCalibrationCalculator().summarize(values.take(10));
     });
 
 final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
+  StreamSubscription<void>? _cacheSubscription;
+
   @override
   Future<List<ExpenseModel>> build() {
-    return ref.watch(expenseRepositoryProvider).listActive();
+    final repository = ref.watch(expenseRepositoryProvider);
+    _observe(repository);
+    return repository.listActive();
   }
 
   ExpenseModel? possibleDuplicate(ExpenseModel candidate) {
@@ -176,7 +190,18 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
   }
 
   Future<void> _reload() async {
-    state = AsyncData(await ref.read(expenseRepositoryProvider).listActive());
+    final cached = await ref.read(expenseRepositoryProvider).listActive();
+    if (ref.mounted) state = AsyncData(cached);
+  }
+
+  void _observe(ExpenseRepository repository) {
+    unawaited(_cacheSubscription?.cancel());
+    _cacheSubscription = repository is CacheRepositoryObserver
+        ? (repository as CacheRepositoryObserver).watchChanges().listen((_) {
+            if (ref.mounted) unawaited(_reload());
+          })
+        : null;
+    ref.onDispose(() => _cacheSubscription?.cancel());
   }
 }
 

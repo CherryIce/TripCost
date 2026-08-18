@@ -34,6 +34,9 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
         .get();
   }
 
+  Stream<void> watchActiveCurrencies() =>
+      attachedDatabase.watchCacheTable('currencies');
+
   Future<int> softDeleteCurrenciesNotIn(
     Iterable<String> currencyCodes,
     DateTime deletedAt,
@@ -124,6 +127,9 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
         .get();
   }
 
+  Stream<void> watchActivePaymentMethods() =>
+      attachedDatabase.watchCacheTable('payment_methods');
+
   Future<int> softDeletePaymentMethod(String id, DateTime deletedAt) {
     return (update(
       paymentMethods,
@@ -154,6 +160,8 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
           ]))
         .get();
   }
+
+  Stream<void> watchActiveTrips() => attachedDatabase.watchCacheTable('trips');
 
   Future<int> softDeleteTrip(String id, DateTime deletedAt) {
     return (update(trips)..where((table) => table.id.equals(id))).write(
@@ -190,6 +198,9 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
         .get();
   }
 
+  Stream<void> watchFeeCalibrations() =>
+      attachedDatabase.watchCacheTable('fee_calibrations');
+
   Future<void> upsertUserSettings(UserSettingsRecordsCompanion value) {
     return into(userSettingsRecords).insertOnConflictUpdate(value);
   }
@@ -204,6 +215,9 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
 
+  Stream<void> watchUserSettings(String id) =>
+      attachedDatabase.watchCacheTable('user_settings_records');
+
   Future<List<Expense>> activeExpenses() {
     return (select(expenses)
           ..where((table) => table.deletedAt.isNull())
@@ -213,6 +227,15 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
           ]))
         .get();
   }
+
+  Stream<void> watchActiveExpenses() =>
+      attachedDatabase.watchCacheTable('expenses');
+
+  Stream<void> watchRateSnapshots() =>
+      attachedDatabase.watchCacheTable('rate_snapshots');
+
+  Stream<void> watchSyncState() =>
+      attachedDatabase.watchCacheTable('sync_runtime_entries');
 
   Future<List<Expense>> activeExpensesForTrip(String tripId) {
     return (select(expenses)

@@ -110,4 +110,10 @@ void main() {
       TripListSection.history,
     );
   });
+
+  test('calendar date uses local year month and day near midnight', () {
+    final localMidnight = DateTime(2026, 8, 18, 0, 15);
+
+    expect(localCalendarDate(localMidnight), DateTime.utc(2026, 8, 18));
+  });
 }

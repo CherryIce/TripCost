@@ -16,6 +16,7 @@ void main() {
   late _FakeGateway gateway;
   late _StartupStore startupStore;
   late SettingsDataService service;
+  late int dataReplacementCount;
 
   setUp(() async {
     root = await Directory.systemTemp.createTemp('m8-settings-data-');
@@ -23,6 +24,7 @@ void main() {
     await DatabaseBootstrapper(database).seedCurrencyMetadata();
     gateway = _FakeGateway();
     startupStore = _StartupStore();
+    dataReplacementCount = 0;
     service = SettingsDataService(
       backupService: BackupService(
         database,
@@ -38,6 +40,7 @@ void main() {
       startupStateStore: startupStore,
       temporaryDirectory: () async => root,
       clock: () => DateTime.utc(2026, 8, 17, 8),
+      onDataReplaced: () async => dataReplacementCount += 1,
     );
   });
 
@@ -76,6 +79,16 @@ void main() {
 
     expect(await database.select(database.currencies).get(), isEmpty);
     expect(startupStore.complete, isFalse);
+    expect(dataReplacementCount, 1);
+  });
+
+  test('successful restore invalidates independent runtime state', () async {
+    final backup = await service.createBackup();
+    gateway.pickedPath = backup.path;
+
+    expect(await service.pickAndRestoreBackup(), isTrue);
+
+    expect(dataReplacementCount, 1);
   });
 }
 

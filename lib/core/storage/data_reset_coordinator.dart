@@ -62,12 +62,14 @@ final class DataResetCoordinator {
       throw StateError('Could not remove all local receipt images.');
     }
     await _database.coreDao.clearAllData();
+    _database.notifyAllCacheTables();
   }
 
   Future<ReceiptClearReport> clearReceiptImages() async {
     final report = await _receiptStorage.clearAll();
     if (report.succeeded) {
       await _database.coreDao.clearReceiptReferences();
+      _database.notifyCacheTable('expenses');
     }
     return report;
   }

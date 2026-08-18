@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/domain/repositories.dart';
@@ -19,10 +21,12 @@ final class ConversionDraft {
   const ConversionDraft({
     required this.transactionAmount,
     required this.rateResolution,
+    this.receiptLocalPath,
   });
 
   final Money transactionAmount;
   final RateResolution rateResolution;
+  final String? receiptLocalPath;
 }
 
 final class ConverterState {
@@ -117,10 +121,16 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
   late SettingsRepository _settingsRepository;
   UserSettingsModel? _settings;
   var _resolutionGeneration = 0;
+  final List<StreamSubscription<void>> _cacheSubscriptions =
+      <StreamSubscription<void>>[];
 
   @override
   Future<ConverterState> build() async {
     _settingsRepository = ref.watch(settingsRepositoryProvider);
+    _observeCaches(<Object>[
+      _settingsRepository,
+      ref.watch(rateRepositoryProvider),
+    ]);
     _settings = await _settingsRepository.load();
     final catalog = CurrencyCatalog();
     final homeCurrency = _settings?.defaultCurrency ?? catalog.resolve('CNY');
@@ -145,7 +155,56 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
       rateResolution: null,
       isResolvingRate: true,
     );
-    return _resolve(initial);
+    final cached = await _resolve(initial, allowRefresh: false);
+    unawaited(
+      Future<void>(() => _publishResolved(cached, notifyLocalChange: false)),
+    );
+    return cached.copyWith(isResolvingRate: true);
+  }
+
+  void _observeCaches(List<Object> sources) {
+    for (final subscription in _cacheSubscriptions) {
+      unawaited(subscription.cancel());
+    }
+    _cacheSubscriptions.clear();
+    for (final source in sources.whereType<CacheRepositoryObserver>()) {
+      _cacheSubscriptions.add(
+        source.watchChanges().listen((_) {
+          if (ref.mounted) unawaited(_revalidateFromCache());
+        }),
+      );
+    }
+    ref.onDispose(() {
+      for (final subscription in _cacheSubscriptions) {
+        unawaited(subscription.cancel());
+      }
+    });
+  }
+
+  Future<void> _revalidateFromCache() async {
+    final current = _current;
+    if (current == null) return;
+    _settings = await _settingsRepository.load();
+    if (!ref.mounted) return;
+    final homeCurrency = _settings?.defaultCurrency ?? current.homeCurrency;
+    final favorites =
+        _settings?.favoriteCurrencies ?? current.favoriteCurrencies;
+    final transactionCurrency = current.transactionCurrency == homeCurrency
+        ? favorites.firstWhere(
+            (currency) => currency != homeCurrency,
+            orElse: () => current.transactionCurrency,
+          )
+        : current.transactionCurrency;
+    final cached = await _resolve(
+      current.copyWith(
+        homeCurrency: homeCurrency,
+        transactionCurrency: transactionCurrency,
+        favoriteCurrencies: favorites,
+        rateResolution: null,
+      ),
+      allowRefresh: false,
+    );
+    if (ref.mounted) state = AsyncData(cached);
   }
 
   void updateExpression(String expression) {
@@ -273,6 +332,7 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
   Future<ConverterState> _resolve(
     ConverterState value, {
     bool forceRefresh = false,
+    bool allowRefresh = true,
   }) async {
     final repository = ref.read(rateRepositoryProvider);
     final localResolution = await repository.resolveRate(
@@ -280,9 +340,22 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
       quoteCurrency: value.homeCurrency,
       allowNetwork: false,
     );
+    if (!ref.mounted) {
+      return value.copyWith(
+        rateResolution: localResolution,
+        isResolvingRate: false,
+      );
+    }
     if (localResolution.availability == RateAvailability.manual ||
         localResolution.availability == RateAvailability.cardNetwork ||
         localResolution.availability == RateAvailability.identity) {
+      return value.copyWith(
+        rateResolution: localResolution,
+        isResolvingRate: false,
+      );
+    }
+
+    if (!allowRefresh) {
       return value.copyWith(
         rateResolution: localResolution,
         isResolvingRate: false,
@@ -322,17 +395,26 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
   Future<void> _publishResolved(
     ConverterState value, {
     bool forceRefresh = false,
+    bool allowRefresh = true,
+    bool notifyLocalChange = true,
   }) async {
+    if (!ref.mounted) return;
     final generation = ++_resolutionGeneration;
     state = AsyncData(value.copyWith(isResolvingRate: true));
     try {
-      final resolved = await _resolve(value, forceRefresh: forceRefresh);
-      if (generation == _resolutionGeneration) {
+      final resolved = await _resolve(
+        value,
+        forceRefresh: forceRefresh,
+        allowRefresh: allowRefresh,
+      );
+      if (ref.mounted && generation == _resolutionGeneration) {
         state = AsyncData(resolved);
-        await ref.read(localDataChangeCoordinatorProvider).notify();
+        if (notifyLocalChange) {
+          await ref.read(localDataChangeCoordinatorProvider).notify();
+        }
       }
     } on Exception {
-      if (generation == _resolutionGeneration) {
+      if (ref.mounted && generation == _resolutionGeneration) {
         state = AsyncData(
           value.copyWith(
             rateResolution: const RateResolution(

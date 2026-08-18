@@ -222,9 +222,8 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   void initState() {
     super.initState();
     final initial = widget.initial;
-    final today = DateTime.now().toUtc();
-    _startDate =
-        initial?.startDate ?? DateTime.utc(today.year, today.month, today.day);
+    final today = localCalendarDate(DateTime.now());
+    _startDate = initial?.startDate ?? today;
     _endDate = initial?.endDate ?? _startDate.add(const Duration(days: 6));
     if (initial != null) {
       _name.text = initial.name;
@@ -264,8 +263,9 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _Field(label: l10n.tripName, controller: _name),
             _Field(
@@ -562,8 +562,9 @@ class TripDashboardPage extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.medium),
+          padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _Surface(
               child: Column(
@@ -794,8 +795,9 @@ class _EmptyTrips extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             const Icon(CupertinoIcons.airplane, size: 44),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.medium),
             Text(l10n.tripsSubtitle, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.medium),
             CupertinoButton.filled(
               onPressed: onCreate,
               child: Text(l10n.tripCreate),

@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:trip_cost/core/currencies/data/iso_currency_metadata.dart';
+import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/money/currency.dart' as money;
 import 'package:trip_cost/core/rates/data/frankfurter_api_client.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart' as db;
 
-final class CurrencyDirectoryRepository {
+final class CurrencyDirectoryRepository implements CacheRepositoryObserver {
   CurrencyDirectoryRepository({
     required db.AppDatabase database,
     required FrankfurterRatesGateway gateway,
@@ -21,6 +22,9 @@ final class CurrencyDirectoryRepository {
   final FrankfurterRatesGateway _gateway;
   final IsoCurrencyMetadata metadata;
   final DateTime Function() _clock;
+
+  @override
+  Stream<void> watchChanges() => _database.coreDao.watchActiveCurrencies();
 
   List<money.Currency> get fallbackCurrencies =>
       money.CurrencyCatalog.knownCurrencies;
@@ -64,6 +68,7 @@ final class CurrencyDirectoryRepository {
         now,
       );
     });
+    _database.notifyCacheTable('currencies');
     return List<money.Currency>.unmodifiable(currencies);
   }
 
