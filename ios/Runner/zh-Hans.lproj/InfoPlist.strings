@@ -1,0 +1,2 @@
+"NSCameraUsageDescription" = "拍摄图片并在本机识别价格，图片不会上传。";
+"NSPhotoLibraryUsageDescription" = "选择图片并在本机识别价格，图片不会上传。";

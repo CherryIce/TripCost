@@ -51,3 +51,5 @@
 - RQ-009～RQ-011 的 M4 支付方式、预计成本比较和 DCC 已完成，支付规则与汇率随消费保存为不可变历史快照。
 - RQ-001、RQ-012～RQ-014 的 M5 实现与自动化验收已完成：引导默认币种、行程 CRUD/稳定分组、预算、消费账本、退款/撤销、实际入账和费用校准已接入 Drift schema v3。
 - M5 已通过静态检查、完整测试和 iPhone 17（iOS 26.5）模拟器构建/关键入口视觉检查；完整模拟器数据闭环、真机、iOS 15、深浅色和动态字体仍是运行验收缺口。
+- RQ-018～RQ-020 的 M8 实现与自动化已完成：CSV/PDF 本地导出、系统分享桥接、完整设置、双语隐私/免责声明、权限用途字符串、ARB parity、2.0 倍字号与关键语义均有测试；详见 `PRIVACY_AND_COMPLIANCE.md` 与 `M8_EXCEPTION_MATRIX.md`。
+- M8 Runner 在 iPhone 16 Pro（iOS 18.3.1）模拟器构建和 8 项原生 XCTest 已通过；真机 Share Sheet、VoiceOver、权限拒绝、PDF/CSV 第三方 App 打开及视觉矩阵仍是运行验收缺口。

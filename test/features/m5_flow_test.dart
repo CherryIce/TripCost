@@ -73,4 +73,7 @@ final class _CompletedStore implements StartupStateStore {
 
   @override
   Future<void> markOnboardingComplete() async {}
+
+  @override
+  Future<void> resetOnboarding() async {}
 }

@@ -70,7 +70,16 @@ void main() {
 
       await tester.tap(find.text('Settings').last);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Payment methods').last);
+      final paymentSettings = find.widgetWithText(
+        CupertinoButton,
+        'Payment methods',
+      );
+      await tester.scrollUntilVisible(
+        paymentSettings,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(paymentSettings);
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('No-fee card'));
@@ -162,4 +171,7 @@ final class _CompleteStartupStore implements StartupStateStore {
 
   @override
   Future<void> markOnboardingComplete() async {}
+
+  @override
+  Future<void> resetOnboarding() async {}
 }

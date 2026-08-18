@@ -1,0 +1,2 @@
+"NSCameraUsageDescription" = "Take a photo to recognize prices on this device. The image is not uploaded.";
+"NSPhotoLibraryUsageDescription" = "Choose an image to recognize prices on this device. The image is not uploaded.";

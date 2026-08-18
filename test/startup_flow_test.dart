@@ -104,6 +104,11 @@ class _FakeStartupStateStore implements StartupStateStore {
   Future<void> markOnboardingComplete() async {
     isComplete = true;
   }
+
+  @override
+  Future<void> resetOnboarding() async {
+    isComplete = false;
+  }
 }
 
 class _ThrowingStartupStateStore implements StartupStateStore {
@@ -114,4 +119,7 @@ class _ThrowingStartupStateStore implements StartupStateStore {
 
   @override
   Future<void> markOnboardingComplete() async {}
+
+  @override
+  Future<void> resetOnboarding() async {}
 }

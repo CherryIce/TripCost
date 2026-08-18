@@ -827,4 +827,133 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get syncUseCloud => '使用 iCloud 值';
+
+  @override
+  String get commonContinue => '继续';
+
+  @override
+  String get settingsLoadFailed => '无法载入设置，本地数据保持不变。';
+
+  @override
+  String get rateSettingsTitle => '货币与汇率';
+
+  @override
+  String get defaultCurrency => '默认本位币';
+
+  @override
+  String get favoriteCurrencies => '常用币种';
+
+  @override
+  String get noneSelected => '未选择';
+
+  @override
+  String get refreshInterval => '自动刷新';
+
+  @override
+  String refreshEveryHours(int count) {
+    return '每 $count 小时';
+  }
+
+  @override
+  String get wifiOnlyRefresh => '仅在 Wi-Fi 下刷新汇率';
+
+  @override
+  String get decimalDisplayRule => '小数显示';
+
+  @override
+  String get decimalDisplayCurrencyDefault => '按各币种标准位数显示';
+
+  @override
+  String get dataTitle => '数据、备份与导出';
+
+  @override
+  String get exportCsv => '将消费导出为 CSV';
+
+  @override
+  String get exportPdf => '将消费导出为 PDF';
+
+  @override
+  String get exportEmpty => '暂无可导出的消费记录。';
+
+  @override
+  String get exportTooLarge => '导出记录超过 20,000 条，请缩小数据范围后重试。';
+
+  @override
+  String get exportFailed => '无法生成或分享导出文件。';
+
+  @override
+  String get backupCreate => '创建本地备份';
+
+  @override
+  String get backupRestore => '从备份恢复';
+
+  @override
+  String get backupFailed => '无法创建或分享备份。';
+
+  @override
+  String get backupRestoreTitle => '恢复这个备份？';
+
+  @override
+  String get backupRestoreMessage => '有效备份会替换当前本地数据库；验证失败时不会覆盖当前数据库。';
+
+  @override
+  String get backupRestored => '备份已恢复。';
+
+  @override
+  String get backupRestoreFailed => '备份无效、不受支持或恢复失败，当前数据未被替换。';
+
+  @override
+  String get clearReceiptImages => '清除票据图片';
+
+  @override
+  String get clearReceiptImagesTitle => '清除全部票据图片？';
+
+  @override
+  String get clearReceiptImagesMessage => '消费记录会保留，但本地图片引用将被移除，且无法撤销。';
+
+  @override
+  String get clearReceiptImagesDone => '票据图片及其本地引用已清除。';
+
+  @override
+  String get clearAllData => '清除全部数据';
+
+  @override
+  String get clearAllDataTitle => '清除全部本地数据？';
+
+  @override
+  String get clearAllDataMessage =>
+      '这会删除行程、消费、汇率、支付方式、设置、票据图片、同步状态和 Widget 快照。';
+
+  @override
+  String get clearAllDataAgainTitle => '确认永久删除';
+
+  @override
+  String get clearAllDataAgainMessage => '此操作无法撤销。请确认已经导出需要保留的数据后再继续。';
+
+  @override
+  String get clearDataFailed => '未能完整清除数据，操作没有记录为成功。';
+
+  @override
+  String get privacyTitle => '隐私与关于';
+
+  @override
+  String get privacyPolicyTitle => '隐私政策';
+
+  @override
+  String get privacyPolicyBody =>
+      'TripCost 无需注册账户，也不保存完整卡号、CVV、身份证件或银行登录信息。行程、消费、设置和票据图片保存在本机；OCR 在本机执行，票据原图不会上传。启用 iCloud 同步后，结构化应用数据会发送到你的 CloudKit 私有数据库，票据原图不在同步范围内。市场参考汇率请求会发送到 Frankfurter。Frankfurter 声明其 API 本身不收集个人数据，但公共服务使用 Cloudflare，可能收集基础分析信息。导出和备份均在本机生成，只有你在系统分享面板中选择目标后才会离开应用。';
+
+  @override
+  String get disclaimerTitle => '汇率与成本免责声明';
+
+  @override
+  String get disclaimerBody =>
+      '汇率和费用估算仅供参考，不构成金融或投资建议。汇率为每日参考数据，可能来自缓存或存在延迟。银行、卡组织、支付机构和商户政策可能变化，授权日与清算日也可能不同。实际入账以发卡行、卡组织、支付机构和商户最终处理结果为准。DCC 比较不保证具体交易结果，也不保证绝对最低成本。';
+
+  @override
+  String get permissionsTitle => '权限与数据流';
+
+  @override
+  String get permissionsBody =>
+      '只有你点击对应扫描操作后，应用才会请求相机或相册权限。拍摄和选择的图片使用 Apple Vision 在本机处理。通知和定位不是必要权限。只有开启结构化数据同步后才会访问 iCloud。票据原图保留在本机且不进入 CloudKit。CSV、PDF 和备份均在本机生成。';
 }

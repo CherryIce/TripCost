@@ -20,6 +20,8 @@
 		9CBC068CDB358FC177C78B2D /* TripCostWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8DB65477D42C386C33D081 /* TripCostWidget.swift */; };
 		C8E2B5A093F5F91B65D38F30 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5D8DA090580CFF3340CB628 /* Foundation.framework */; };
 		DE475124B8C84D29418036D1 /* VisionOcrService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0437E3E59BE71D971DB32B /* VisionOcrService.swift */; };
+		D0C8A1000000000000000001 /* DocumentExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C8A1000000000000000002 /* DocumentExportService.swift */; };
+		D0C8A1000000000000000003 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0C8A1000000000000000006 /* InfoPlist.strings */; };
 		E35977A06D0BA1AB4BA46A1F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 9CE330C819CE480CEBC190B6 /* Localizable.strings */; };
 		EB9AED98007474A22E7EC3A0 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 47360EF1D369CB41020AF734 /* Pods_RunnerTests.framework */; };
 		FCF78C2CA0CFDD70342CF256 /* PlatformApiStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C6C51F5367CA011F14964F /* PlatformApiStubs.swift */; };
@@ -96,6 +98,9 @@
 		AD0AC015628111B144E84525 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		B5CCACA01F32910A3FC49D0C /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6C6C51F5367CA011F14964F /* PlatformApiStubs.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlatformApiStubs.swift; sourceTree = "<group>"; };
+		D0C8A1000000000000000002 /* DocumentExportService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DocumentExportService.swift; sourceTree = "<group>"; };
+		D0C8A1000000000000000004 /* InfoPlist.strings */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D0C8A1000000000000000005 /* InfoPlist.strings */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = InfoPlist.strings; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		DAB2E7C91625C343427F07C5 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E842710CCDCDF7B3DCB46E7B /* AppWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AppWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC312F1E25CE9107CB33B452 /* PlatformApis.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlatformApis.g.swift; sourceTree = "<group>"; };
@@ -218,6 +223,8 @@
 				2371E2AEC34DC447CCE2DD02 /* Generated */,
 				C6C6C51F5367CA011F14964F /* PlatformApiStubs.swift */,
 				8F0437E3E59BE71D971DB32B /* VisionOcrService.swift */,
+				D0C8A1000000000000000002 /* DocumentExportService.swift */,
+				D0C8A1000000000000000006 /* InfoPlist.strings */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -376,6 +383,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				D0C8A1000000000000000003 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -506,6 +514,7 @@
 				12AA894B37C4049768FDBF0F /* PlatformApis.g.swift in Sources */,
 				FCF78C2CA0CFDD70342CF256 /* PlatformApiStubs.swift in Sources */,
 				DE475124B8C84D29418036D1 /* VisionOcrService.swift in Sources */,
+				D0C8A1000000000000000001 /* DocumentExportService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -549,6 +558,15 @@
 				365845F425FC792D2060E88B /* Localizable.strings */,
 			);
 			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		D0C8A1000000000000000006 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D0C8A1000000000000000004 /* InfoPlist.strings */,
+				D0C8A1000000000000000005 /* InfoPlist.strings */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

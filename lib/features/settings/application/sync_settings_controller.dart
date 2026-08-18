@@ -37,7 +37,8 @@ final class SyncSettingsController extends AsyncNotifier<SyncSettingsState> {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    final previous = _settings;
+    final repository = ref.read(settingsRepositoryProvider);
+    final previous = await repository.load() ?? _settings;
     final now = DateTime.now().toUtc();
     final next = UserSettingsModel(
       metadata: SyncRecordMetadata(
@@ -54,7 +55,7 @@ final class SyncSettingsController extends AsyncNotifier<SyncSettingsState> {
       wifiOnlyRefresh: previous.wifiOnlyRefresh,
       syncEnabled: enabled,
     );
-    await ref.read(settingsRepositoryProvider).save(next);
+    await repository.save(next);
     _settings = next;
     if (enabled) {
       await _run(force: true);

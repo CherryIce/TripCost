@@ -4,6 +4,8 @@ abstract interface class StartupStateStore {
   Future<bool> isOnboardingComplete();
 
   Future<void> markOnboardingComplete();
+
+  Future<void> resetOnboarding();
 }
 
 final class SharedPreferencesStartupStateStore implements StartupStateStore {
@@ -23,4 +25,7 @@ final class SharedPreferencesStartupStateStore implements StartupStateStore {
   Future<void> markOnboardingComplete() {
     return _preferences.setBool(_onboardingCompleteKey, true);
   }
+
+  @override
+  Future<void> resetOnboarding() => _preferences.remove(_onboardingCompleteKey);
 }

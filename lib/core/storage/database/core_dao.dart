@@ -25,6 +25,30 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
     return into(currencies).insertOnConflictUpdate(value);
   }
 
+  Future<List<Currency>> activeCurrencies() {
+    return (select(currencies)
+          ..where((table) => table.deletedAt.isNull())
+          ..orderBy(<OrderingTerm Function($CurrenciesTable)>[
+            (table) => OrderingTerm.asc(table.code),
+          ]))
+        .get();
+  }
+
+  Future<int> softDeleteCurrenciesNotIn(
+    Iterable<String> currencyCodes,
+    DateTime deletedAt,
+  ) {
+    final codes = currencyCodes.toSet();
+    final query = update(currencies)
+      ..where((table) => table.deletedAt.isNull() & table.code.isNotIn(codes));
+    return query.write(
+      CurrenciesCompanion(
+        deletedAt: Value<DateTime?>(deletedAt),
+        updatedAt: Value<DateTime>(deletedAt),
+      ),
+    );
+  }
+
   Future<void> upsertRateSnapshot(RateSnapshotsCompanion value) {
     return into(rateSnapshots).insertOnConflictUpdate(value);
   }

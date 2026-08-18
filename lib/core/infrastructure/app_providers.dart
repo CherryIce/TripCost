@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/core/config/app_environment.dart';
+import 'package:trip_cost/core/currencies/data/currency_directory_repository.dart';
 import 'package:trip_cost/core/domain/repositories.dart';
 import 'package:trip_cost/core/expenses/data/drift_expense_repository.dart';
 import 'package:trip_cost/core/payments/data/drift_payment_method_repository.dart';
@@ -35,6 +36,14 @@ final rateGatewayProvider = Provider<FrankfurterRatesGateway>((ref) {
       : Uri.parse('$base/v2/');
   return FrankfurterApiClient(baseUri: uri);
 });
+
+final currencyDirectoryRepositoryProvider =
+    Provider<CurrencyDirectoryRepository>((ref) {
+      return CurrencyDirectoryRepository(
+        database: ref.watch(appDatabaseProvider),
+        gateway: ref.watch(rateGatewayProvider),
+      );
+    });
 
 final rateRepositoryProvider = Provider<ExchangeRateRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);

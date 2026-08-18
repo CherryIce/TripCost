@@ -5,6 +5,44 @@ import XCTest
 @testable import Runner
 
 class RunnerTests: XCTestCase {
+  func testExpensePdfRendererPaginatesChineseContent() throws {
+    let row: [String: Any] = [
+      "occurredAt": "2026-08-17T08:00:00Z",
+      "title": "东京晚餐与交通消费明细",
+      "transactionAmount": "12800",
+      "transactionCurrency": "JPY",
+      "homeCurrency": "CNY",
+      "rate": "0.05",
+      "rateDate": "2026-08-17",
+      "rateSource": "Frankfurter",
+      "estimatedAmount": "640",
+      "actualAmount": "645.50",
+    ]
+    let labels = [
+      "originalAmount": "原币金额",
+      "homeCurrency": "本位币",
+      "rate": "汇率",
+      "rateDate": "汇率日期",
+      "source": "汇率来源",
+      "estimated": "预计金额",
+      "actual": "实际入账金额",
+    ]
+    let url = try ExpensePdfRenderer.render(document: [
+      "filename": "expenses-中文.pdf",
+      "title": "TripCost 消费导出",
+      "generatedAt": "2026年8月17日 16:00",
+      "labels": labels,
+      "rows": Array(repeating: row, count: 30),
+      "disclaimer": "结果仅供参考，实际入账以最终处理结果为准。",
+    ])
+    addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+
+    let data = try Data(contentsOf: url)
+    XCTAssertTrue(data.starts(with: Data("%PDF".utf8)))
+    let document = try XCTUnwrap(CGPDFDocument(url as CFURL))
+    XCTAssertGreaterThan(document.numberOfPages, 1)
+  }
+
   func testPreferredLanguagesUseOnlyDeviceSupportedValues() {
     let result = VisionOcrSupport.matchedLanguages(
       preferred: ["zh_Hans", "en", "fr-FR"],

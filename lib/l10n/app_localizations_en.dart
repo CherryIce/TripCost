@@ -866,4 +866,142 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncUseCloud => 'Use iCloud';
+
+  @override
+  String get commonContinue => 'Continue';
+
+  @override
+  String get settingsLoadFailed =>
+      'Settings could not be loaded. Local data is unchanged.';
+
+  @override
+  String get rateSettingsTitle => 'Currency and rates';
+
+  @override
+  String get defaultCurrency => 'Default home currency';
+
+  @override
+  String get favoriteCurrencies => 'Favorite currencies';
+
+  @override
+  String get noneSelected => 'None selected';
+
+  @override
+  String get refreshInterval => 'Automatic refresh';
+
+  @override
+  String refreshEveryHours(int count) {
+    return 'Every $count hours';
+  }
+
+  @override
+  String get wifiOnlyRefresh => 'Refresh rates on Wi-Fi only';
+
+  @override
+  String get decimalDisplayRule => 'Decimal display';
+
+  @override
+  String get decimalDisplayCurrencyDefault =>
+      'Use each currency’s standard digits';
+
+  @override
+  String get dataTitle => 'Data, backup, and export';
+
+  @override
+  String get exportCsv => 'Export expenses as CSV';
+
+  @override
+  String get exportPdf => 'Export expenses as PDF';
+
+  @override
+  String get exportEmpty => 'There are no expenses to export.';
+
+  @override
+  String get exportTooLarge =>
+      'This export contains more than 20,000 records. Export a smaller data set.';
+
+  @override
+  String get exportFailed => 'The export could not be created or shared.';
+
+  @override
+  String get backupCreate => 'Create local backup';
+
+  @override
+  String get backupRestore => 'Restore from backup';
+
+  @override
+  String get backupFailed => 'The backup could not be created or shared.';
+
+  @override
+  String get backupRestoreTitle => 'Restore this backup?';
+
+  @override
+  String get backupRestoreMessage =>
+      'A valid backup replaces the current local database. If validation fails, the current database remains unchanged.';
+
+  @override
+  String get backupRestored => 'The backup was restored.';
+
+  @override
+  String get backupRestoreFailed =>
+      'This backup is invalid, unsupported, or could not be restored. Current data was not replaced.';
+
+  @override
+  String get clearReceiptImages => 'Clear receipt images';
+
+  @override
+  String get clearReceiptImagesTitle => 'Clear all receipt images?';
+
+  @override
+  String get clearReceiptImagesMessage =>
+      'Expense records remain, but their local image references will be removed. This cannot be undone.';
+
+  @override
+  String get clearReceiptImagesDone =>
+      'Receipt images and their local references were cleared.';
+
+  @override
+  String get clearAllData => 'Clear all data';
+
+  @override
+  String get clearAllDataTitle => 'Clear all local data?';
+
+  @override
+  String get clearAllDataMessage =>
+      'This removes trips, expenses, rates, payment methods, settings, receipt images, sync state, and the Widget snapshot.';
+
+  @override
+  String get clearAllDataAgainTitle => 'Confirm permanent deletion';
+
+  @override
+  String get clearAllDataAgainMessage =>
+      'This action cannot be undone. Continue only if you have exported anything you need.';
+
+  @override
+  String get clearDataFailed =>
+      'The data could not be cleared completely. No success was recorded.';
+
+  @override
+  String get privacyTitle => 'Privacy and about';
+
+  @override
+  String get privacyPolicyTitle => 'Privacy policy';
+
+  @override
+  String get privacyPolicyBody =>
+      'TripCost does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.';
+
+  @override
+  String get disclaimerTitle => 'Rates and cost disclaimer';
+
+  @override
+  String get disclaimerBody =>
+      'Rates and fee estimates are reference information, not financial or investment advice. Rates are daily reference data and may be cached or delayed. Bank, card-network, payment-provider, and merchant policies can change. Authorization and settlement dates may differ. Final posted amounts are determined by the issuer, card network, payment provider, and merchant. DCC comparisons do not guarantee a transaction result or the lowest possible cost.';
+
+  @override
+  String get permissionsTitle => 'Permissions and data flow';
+
+  @override
+  String get permissionsBody =>
+      'Camera and photo-library access are requested only after you choose the matching scan action. Camera photos and selected images are processed locally with Apple Vision. Notifications and location are not required. iCloud is contacted only when structured-data sync is enabled. Receipt originals stay on this device and are not included in CloudKit sync. CSV, PDF, and backups are generated on this device.';
 }

@@ -1681,6 +1681,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use iCloud'**
   String get syncUseCloud;
+
+  /// No description provided for @commonContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get commonContinue;
+
+  /// No description provided for @settingsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings could not be loaded. Local data is unchanged.'**
+  String get settingsLoadFailed;
+
+  /// No description provided for @rateSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency and rates'**
+  String get rateSettingsTitle;
+
+  /// No description provided for @defaultCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Default home currency'**
+  String get defaultCurrency;
+
+  /// No description provided for @favoriteCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite currencies'**
+  String get favoriteCurrencies;
+
+  /// No description provided for @noneSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'None selected'**
+  String get noneSelected;
+
+  /// No description provided for @refreshInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic refresh'**
+  String get refreshInterval;
+
+  /// No description provided for @refreshEveryHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {count} hours'**
+  String refreshEveryHours(int count);
+
+  /// No description provided for @wifiOnlyRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh rates on Wi-Fi only'**
+  String get wifiOnlyRefresh;
+
+  /// No description provided for @decimalDisplayRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Decimal display'**
+  String get decimalDisplayRule;
+
+  /// No description provided for @decimalDisplayCurrencyDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Use each currency’s standard digits'**
+  String get decimalDisplayCurrencyDefault;
+
+  /// No description provided for @dataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data, backup, and export'**
+  String get dataTitle;
+
+  /// No description provided for @exportCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export expenses as CSV'**
+  String get exportCsv;
+
+  /// No description provided for @exportPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export expenses as PDF'**
+  String get exportPdf;
+
+  /// No description provided for @exportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no expenses to export.'**
+  String get exportEmpty;
+
+  /// No description provided for @exportTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This export contains more than 20,000 records. Export a smaller data set.'**
+  String get exportTooLarge;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The export could not be created or shared.'**
+  String get exportFailed;
+
+  /// No description provided for @backupCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create local backup'**
+  String get backupCreate;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup'**
+  String get backupRestore;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup could not be created or shared.'**
+  String get backupFailed;
+
+  /// No description provided for @backupRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this backup?'**
+  String get backupRestoreTitle;
+
+  /// No description provided for @backupRestoreMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A valid backup replaces the current local database. If validation fails, the current database remains unchanged.'**
+  String get backupRestoreMessage;
+
+  /// No description provided for @backupRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup was restored.'**
+  String get backupRestored;
+
+  /// No description provided for @backupRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup is invalid, unsupported, or could not be restored. Current data was not replaced.'**
+  String get backupRestoreFailed;
+
+  /// No description provided for @clearReceiptImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear receipt images'**
+  String get clearReceiptImages;
+
+  /// No description provided for @clearReceiptImagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all receipt images?'**
+  String get clearReceiptImagesTitle;
+
+  /// No description provided for @clearReceiptImagesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense records remain, but their local image references will be removed. This cannot be undone.'**
+  String get clearReceiptImagesMessage;
+
+  /// No description provided for @clearReceiptImagesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt images and their local references were cleared.'**
+  String get clearReceiptImagesDone;
+
+  /// No description provided for @clearAllData.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all data'**
+  String get clearAllData;
+
+  /// No description provided for @clearAllDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all local data?'**
+  String get clearAllDataTitle;
+
+  /// No description provided for @clearAllDataMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes trips, expenses, rates, payment methods, settings, receipt images, sync state, and the Widget snapshot.'**
+  String get clearAllDataMessage;
+
+  /// No description provided for @clearAllDataAgainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm permanent deletion'**
+  String get clearAllDataAgainTitle;
+
+  /// No description provided for @clearAllDataAgainMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. Continue only if you have exported anything you need.'**
+  String get clearAllDataAgainMessage;
+
+  /// No description provided for @clearDataFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The data could not be cleared completely. No success was recorded.'**
+  String get clearDataFailed;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy and about'**
+  String get privacyTitle;
+
+  /// No description provided for @privacyPolicyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicyTitle;
+
+  /// No description provided for @privacyPolicyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'TripCost does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.'**
+  String get privacyPolicyBody;
+
+  /// No description provided for @disclaimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rates and cost disclaimer'**
+  String get disclaimerTitle;
+
+  /// No description provided for @disclaimerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rates and fee estimates are reference information, not financial or investment advice. Rates are daily reference data and may be cached or delayed. Bank, card-network, payment-provider, and merchant policies can change. Authorization and settlement dates may differ. Final posted amounts are determined by the issuer, card network, payment provider, and merchant. DCC comparisons do not guarantee a transaction result or the lowest possible cost.'**
+  String get disclaimerBody;
+
+  /// No description provided for @permissionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions and data flow'**
+  String get permissionsTitle;
+
+  /// No description provided for @permissionsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera and photo-library access are requested only after you choose the matching scan action. Camera photos and selected images are processed locally with Apple Vision. Notifications and location are not required. iCloud is contacted only when structured-data sync is enabled. Receipt originals stay on this device and are not included in CloudKit sync. CSV, PDF, and backups are generated on this device.'**
+  String get permissionsBody;
 }
 
 class _AppLocalizationsDelegate

@@ -5,6 +5,7 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate {
   private let platformApis = PlatformApiStubs()
   private let visionOcrApi = VisionOcrService()
+  private var documentExportService: DocumentExportService?
 
   override func application(
     _ application: UIApplication,
@@ -19,6 +20,10 @@ import UIKit
     CloudSyncApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: platformApis)
     SharedSnapshotApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: platformApis)
     WidgetControlApiSetup.setUp(binaryMessenger: controller.binaryMessenger, api: platformApis)
+    documentExportService = DocumentExportService.register(
+      binaryMessenger: controller.binaryMessenger,
+      presentingViewController: controller
+    )
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

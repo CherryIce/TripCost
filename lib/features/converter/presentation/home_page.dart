@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
+import 'package:trip_cost/core/currencies/application/currency_directory_controller.dart';
+import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/money/money_formatter.dart';
@@ -11,6 +13,7 @@ import 'package:trip_cost/core/rates/domain/exchange_rate_repository.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_sheet.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -32,6 +35,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final converter = ref.watch(converterControllerProvider);
+    ref.watch(currencyDirectoryProvider);
     final recentExpenses =
         (ref.watch(expensesControllerProvider).value ?? const [])
             .take(3)
@@ -61,6 +65,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onSelectTransactionCurrency: () => _selectCurrency(
                   selected: state.transactionCurrency,
                   excluded: state.homeCurrency,
+                  favoriteCurrencies: state.favoriteCurrencies,
+                  title: localizations.currencyLocal,
                   onSelected: ref
                       .read(converterControllerProvider.notifier)
                       .changeTransactionCurrency,
@@ -68,6 +74,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onSelectHomeCurrency: () => _selectCurrency(
                   selected: state.homeCurrency,
                   excluded: state.transactionCurrency,
+                  favoriteCurrencies: state.favoriteCurrencies,
+                  title: localizations.currencyHome,
                   onSelected: ref
                       .read(converterControllerProvider.notifier)
                       .changeHomeCurrency,
@@ -166,26 +174,33 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _selectCurrency({
     required Currency selected,
     required Currency excluded,
+    required List<Currency> favoriteCurrencies,
+    required String title,
     required Future<void> Function(Currency) onSelected,
   }) async {
     final localizations = AppLocalizations.of(context);
     final currency = await showCupertinoModalPopup<Currency>(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(localizations.currencyLocal),
-        actions: <Widget>[
-          for (final item in CurrencyCatalog.knownCurrencies)
-            if (item != excluded)
-              CupertinoActionSheetAction(
-                isDefaultAction: item == selected,
-                onPressed: () => Navigator.of(context).pop(item),
-                child: Text('${item.code} · ${item.name}'),
-              ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(localizations.commonCancel),
-        ),
+      builder: (context) => Consumer(
+        builder: (context, modalRef, child) {
+          final directory = modalRef.watch(currencyDirectoryProvider);
+          final metadata = modalRef
+              .read(currencyDirectoryRepositoryProvider)
+              .metadata;
+          return CurrencyPickerSheet(
+            currencies: directory.currencies,
+            selected: selected,
+            excluded: excluded,
+            favoriteCurrencies: favoriteCurrencies,
+            title: title,
+            cancelLabel: localizations.commonCancel,
+            displayName: (item) => metadata.localizedName(
+              item,
+              Localizations.localeOf(context).languageCode,
+            ),
+            isRefreshing: directory.isRefreshing,
+          );
+        },
       ),
     );
     if (currency != null) {
