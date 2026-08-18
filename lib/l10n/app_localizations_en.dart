@@ -117,6 +117,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Access was not granted. Choose the other image source or enter the amount manually.';
 
   @override
+  String get permissionCameraUnavailableTitle => 'Camera access is unavailable';
+
+  @override
+  String get permissionCameraUnavailableBody =>
+      'Allow Trip Cost to use the camera in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.';
+
+  @override
+  String get permissionPhotoLibraryUnavailableTitle =>
+      'Photo access is unavailable';
+
+  @override
+  String get permissionPhotoLibraryUnavailableBody =>
+      'Allow Trip Cost to access photos in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.';
+
+  @override
+  String get permissionOpenSettings => 'Open Settings';
+
+  @override
   String get scanImageUnavailable =>
       'This image is no longer available. Choose it again or enter the amount manually.';
 
@@ -276,6 +294,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonAdd => 'Add';
 
   @override
+  String get commonManage => 'Manage';
+
+  @override
   String get commonEstimated => 'Estimated';
 
   @override
@@ -392,6 +413,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get paymentComparisonNeedTwo =>
       'Add at least two applicable methods for a useful comparison.';
+
+  @override
+  String paymentComparisonNoApplicable(String currency) {
+    return 'You have payment methods, but none apply to purchases billed in $currency. Check their billing currency and transaction type.';
+  }
+
+  @override
+  String paymentComparisonOnlyOne(String currency) {
+    return 'Only one payment method applies to purchases billed in $currency. Manage your existing rules to compare another.';
+  }
+
+  @override
+  String get paymentComparisonConfiguredButUnavailable =>
+      'Your payment methods are still saved; they just cannot be used for this conversion.';
 
   @override
   String get paymentRecommended => 'Lowest estimated cost';

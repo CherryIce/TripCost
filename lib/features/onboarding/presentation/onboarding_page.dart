@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:trip_cost/app/locale_controller.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
-import 'package:trip_cost/core/currencies/data/iso_currency_metadata.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
@@ -12,6 +11,7 @@ import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 import 'package:trip_cost/features/onboarding/application/default_currency_recommender.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -24,7 +24,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   static const _pageCount = 3;
 
   final _pageController = PageController();
-  final _currencyMetadata = IsoCurrencyMetadata();
   int _currentPage = 0;
   bool _isFinishing = false;
   Currency? _selectedCurrency;
@@ -220,28 +219,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _chooseHomeCurrency() async {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    final selected = await showCupertinoModalPopup<Currency>(
+    final result = await showCurrencyPickerPage(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: <Widget>[
-          for (final currency in CurrencyCatalog.knownCurrencies)
-            CupertinoActionSheetAction(
-              isDefaultAction: currency == _selectedCurrency,
-              onPressed: () => Navigator.of(context).pop(currency),
-              child: Text(
-                '${currency.code} · '
-                '${_currencyMetadata.localizedName(currency, languageCode)}',
-              ),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppLocalizations.of(context).commonCancel),
-        ),
-      ),
+      title: AppLocalizations.of(context).onboardingHomeCurrency,
+      selected: _selectedCurrency,
     );
-    if (selected != null) setState(() => _selectedCurrency = selected);
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
+      setState(() => _selectedCurrency = selected);
+    }
   }
 }
 

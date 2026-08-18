@@ -107,6 +107,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanPermissionDenied => '未获得访问权限。可改用另一种图片来源，或手动输入金额。';
 
   @override
+  String get permissionCameraUnavailableTitle => '无法使用相机';
+
+  @override
+  String get permissionCameraUnavailableBody =>
+      '请前往系统设置允许 Trip Cost 使用相机，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
+
+  @override
+  String get permissionPhotoLibraryUnavailableTitle => '无法访问相册';
+
+  @override
+  String get permissionPhotoLibraryUnavailableBody =>
+      '请前往系统设置允许 Trip Cost 访问相册，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
+
+  @override
+  String get permissionOpenSettings => '前往设置';
+
+  @override
   String get scanImageUnavailable => '图片已不可用，请重新选择或手动输入金额。';
 
   @override
@@ -256,6 +273,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonAdd => '添加';
 
   @override
+  String get commonManage => '管理';
+
+  @override
   String get commonEstimated => '预计';
 
   @override
@@ -365,6 +385,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paymentComparisonNeedTwo => '至少添加两个适用的支付方式，比较才更有意义。';
+
+  @override
+  String paymentComparisonNoApplicable(String currency) {
+    return '已有支付方式，但没有适用于以 $currency 入账的消费。请检查其账单币种和适用交易。';
+  }
+
+  @override
+  String paymentComparisonOnlyOne(String currency) {
+    return '当前只有一个支付方式适用于以 $currency 入账的消费。管理现有规则后可继续比较。';
+  }
+
+  @override
+  String get paymentComparisonConfiguredButUnavailable =>
+      '支付方式仍已保存，只是当前换算无法使用。';
 
   @override
   String get paymentRecommended => '最低预计成本';

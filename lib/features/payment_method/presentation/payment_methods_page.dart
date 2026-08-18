@@ -7,6 +7,7 @@ import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/payments/domain/payment_method_templates.dart';
 import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 import 'package:uuid/uuid.dart';
 
 class PaymentMethodsPage extends ConsumerWidget {
@@ -399,11 +400,15 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
   }
 
   Future<void> _chooseCurrency() async {
-    final selected = await _choose<Currency>(<Currency, String>{
-      for (final value in CurrencyCatalog.knownCurrencies)
-        value: '${value.code} · ${value.name}',
-    });
-    if (selected != null) setState(() => _billingCurrency = selected);
+    final result = await showCurrencyPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).paymentBillingCurrency,
+      selected: _billingCurrency,
+    );
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
+      setState(() => _billingCurrency = selected);
+    }
   }
 
   Future<void> _chooseTransactionScope() async {

@@ -290,6 +290,36 @@ abstract class AppLocalizations {
   /// **'Access was not granted. Choose the other image source or enter the amount manually.'**
   String get scanPermissionDenied;
 
+  /// No description provided for @permissionCameraUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is unavailable'**
+  String get permissionCameraUnavailableTitle;
+
+  /// No description provided for @permissionCameraUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Trip Cost to use the camera in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
+  String get permissionCameraUnavailableBody;
+
+  /// No description provided for @permissionPhotoLibraryUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access is unavailable'**
+  String get permissionPhotoLibraryUnavailableTitle;
+
+  /// No description provided for @permissionPhotoLibraryUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Trip Cost to access photos in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
+  String get permissionPhotoLibraryUnavailableBody;
+
+  /// No description provided for @permissionOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get permissionOpenSettings;
+
   /// No description provided for @scanImageUnavailable.
   ///
   /// In en, this message translates to:
@@ -572,6 +602,12 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get commonAdd;
 
+  /// No description provided for @commonManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get commonManage;
+
   /// No description provided for @commonEstimated.
   ///
   /// In en, this message translates to:
@@ -793,6 +829,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add at least two applicable methods for a useful comparison.'**
   String get paymentComparisonNeedTwo;
+
+  /// No description provided for @paymentComparisonNoApplicable.
+  ///
+  /// In en, this message translates to:
+  /// **'You have payment methods, but none apply to purchases billed in {currency}. Check their billing currency and transaction type.'**
+  String paymentComparisonNoApplicable(String currency);
+
+  /// No description provided for @paymentComparisonOnlyOne.
+  ///
+  /// In en, this message translates to:
+  /// **'Only one payment method applies to purchases billed in {currency}. Manage your existing rules to compare another.'**
+  String paymentComparisonOnlyOne(String currency);
+
+  /// No description provided for @paymentComparisonConfiguredButUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment methods are still saved; they just cannot be used for this conversion.'**
+  String get paymentComparisonConfiguredButUnavailable;
 
   /// No description provided for @paymentRecommended.
   ///

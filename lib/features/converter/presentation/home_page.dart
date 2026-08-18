@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/currencies/application/currency_directory_controller.dart';
-import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/money/money_formatter.dart';
@@ -13,7 +14,7 @@ import 'package:trip_cost/core/rates/domain/exchange_rate_repository.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
-import 'package:trip_cost/shared/widgets/currency_picker_sheet.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -178,32 +179,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     required String title,
     required Future<void> Function(Currency) onSelected,
   }) async {
-    final localizations = AppLocalizations.of(context);
-    final currency = await showCupertinoModalPopup<Currency>(
+    final result = await showCurrencyPickerPage(
       context: context,
-      builder: (context) => Consumer(
-        builder: (context, modalRef, child) {
-          final directory = modalRef.watch(currencyDirectoryProvider);
-          final metadata = modalRef
-              .read(currencyDirectoryRepositoryProvider)
-              .metadata;
-          return CurrencyPickerSheet(
-            currencies: directory.currencies,
-            selected: selected,
-            excluded: excluded,
-            favoriteCurrencies: favoriteCurrencies,
-            title: title,
-            cancelLabel: localizations.commonCancel,
-            displayName: (item) => metadata.localizedName(
-              item,
-              Localizations.localeOf(context).languageCode,
-            ),
-            isRefreshing: directory.isRefreshing,
-          );
-        },
-      ),
+      title: title,
+      selected: selected,
+      excluded: excluded,
+      favoriteCurrencies: favoriteCurrencies,
     );
-    if (currency != null) {
+    if (result?.currency case final currency?) {
+      if (!mounted) return;
       await onSelected(currency);
     }
   }
@@ -213,44 +197,174 @@ class _HomePageState extends ConsumerState<HomePage> {
     final localizations = AppLocalizations.of(context);
     final value = await showCupertinoDialog<DecimalValue>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(localizations.converterManualRate),
-        content: Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.medium),
-          child: CupertinoTextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            placeholder: localizations.converterManualRateHint,
-          ),
-        ),
-        actions: <Widget>[
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(localizations.commonCancel),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () {
-              try {
-                final rate = DecimalValue.parse(controller.text.trim());
-                if (rate.compareTo(DecimalValue.zero) <= 0) {
-                  return;
-                }
-                Navigator.of(context).pop(rate);
-              } on FormatException {
-                return;
-              }
-            },
-            child: Text(localizations.commonSave),
-          ),
-        ],
+      builder: (context) => _ManualRateDialog(
+        controller: controller,
+        title: localizations.converterManualRate,
+        placeholder: localizations.converterManualRateHint,
+        cancelLabel: localizations.commonCancel,
+        saveLabel: localizations.commonSave,
       ),
     );
     controller.dispose();
     if (value != null) {
       await ref.read(converterControllerProvider.notifier).setManualRate(value);
     }
+  }
+}
+
+class _ManualRateDialog extends StatelessWidget {
+  const _ManualRateDialog({
+    required this.controller,
+    required this.title,
+    required this.placeholder,
+    required this.cancelLabel,
+    required this.saveLabel,
+  });
+
+  static const double _width = 270;
+  static const double _height = 190;
+  static const double _actionHeight = 56;
+
+  final TextEditingController controller;
+  final String title;
+  final String placeholder;
+  final String cancelLabel;
+  final String saveLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final dividerColor = CupertinoColors.separator.resolveFrom(context);
+    return AnimatedPadding(
+      padding:
+          MediaQuery.viewInsetsOf(context) +
+          const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      duration: const Duration(milliseconds: 100),
+      curve: Curves.decelerate,
+      child: MediaQuery.removeViewInsets(
+        removeLeft: true,
+        removeTop: true,
+        removeRight: true,
+        removeBottom: true,
+        context: context,
+        child: Center(
+          child: CupertinoPopupSurface(
+            child: SizedBox(
+              key: const Key('manual-rate-dialog'),
+              width: _width,
+              height: _height,
+              child: Semantics(
+                role: SemanticsRole.alertDialog,
+                namesRoute: true,
+                scopesRoute: true,
+                explicitChildNodes: true,
+                child: Column(
+                  children: <Widget>[
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            CupertinoTextField(
+                              controller: controller,
+                              autofocus: true,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              placeholder: placeholder,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(height: 0.5, color: dividerColor),
+                    SizedBox(
+                      height: _actionHeight,
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: _ManualRateDialogAction(
+                              label: cancelLabel,
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                          ),
+                          Container(width: 0.5, color: dividerColor),
+                          Expanded(
+                            child: _ManualRateDialogAction(
+                              label: saveLabel,
+                              isDefault: true,
+                              onPressed: () {
+                                try {
+                                  final rate = DecimalValue.parse(
+                                    controller.text.trim(),
+                                  );
+                                  if (rate.compareTo(DecimalValue.zero) <= 0) {
+                                    return;
+                                  }
+                                  Navigator.of(context).pop(rate);
+                                } on FormatException {
+                                  return;
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ManualRateDialogAction extends StatelessWidget {
+  const _ManualRateDialogAction({
+    required this.label,
+    required this.onPressed,
+    this.isDefault = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool isDefault;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      minimumSize: Size.zero,
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.zero,
+      onPressed: onPressed,
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 17,
+          fontWeight: isDefault ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+    );
   }
 }
 

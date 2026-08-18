@@ -6,7 +6,6 @@ import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/export/expense_export_service.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
-import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/sync/domain/sync_models.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
@@ -16,6 +15,7 @@ import 'package:trip_cost/features/settings/application/settings_data_service.da
 import 'package:trip_cost/features/settings/application/sync_settings_controller.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -181,25 +181,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _chooseDefaultCurrency(UserSettingsModel settings) async {
-    final selected = await showCupertinoModalPopup<Currency>(
+    final result = await showCurrencyPickerPage(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(AppLocalizations.of(context).defaultCurrency),
-        actions: <Widget>[
-          for (final currency in CurrencyCatalog.knownCurrencies)
-            CupertinoActionSheetAction(
-              isDefaultAction: currency == settings.defaultCurrency,
-              onPressed: () => Navigator.of(context).pop(currency),
-              child: Text('${currency.code} · ${currency.name}'),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppLocalizations.of(context).commonCancel),
-        ),
-      ),
+      title: AppLocalizations.of(context).defaultCurrency,
+      selected: settings.defaultCurrency,
+      favoriteCurrencies: settings.favoriteCurrencies,
     );
-    if (selected != null) {
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
       await ref
           .read(generalSettingsControllerProvider.notifier)
           .setDefaultCurrency(selected);
@@ -208,72 +197,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _chooseFavorites(UserSettingsModel settings) async {
-    final selected = settings.favoriteCurrencies.toSet();
-    final result = await showCupertinoModalPopup<List<Currency>>(
+    final result = await showCurrencyMultiPickerPage(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => CupertinoPopupSurface(
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: SizedBox(
-              height: 480 + MediaQuery.paddingOf(context).bottom,
-              child: Column(
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.medium),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context).favoriteCurrencies,
-                            style: CupertinoTheme.of(
-                              context,
-                            ).textTheme.navTitleTextStyle,
-                          ),
-                        ),
-                        CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () => Navigator.of(
-                            context,
-                          ).pop(selected.toList(growable: false)),
-                          child: Text(AppLocalizations.of(context).commonDone),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.medium,
-                        0,
-                        AppSpacing.medium,
-                        AppInsets.scrollableBottomPadding(context),
-                      ),
-                      children: <Widget>[
-                        for (final currency in CurrencyCatalog.knownCurrencies)
-                          _SwitchRow(
-                            label: '${currency.code} · ${currency.name}',
-                            value: selected.contains(currency),
-                            onChanged: (value) => setModalState(() {
-                              if (value) {
-                                selected.add(currency);
-                              } else {
-                                selected.remove(currency);
-                              }
-                            }),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      title: AppLocalizations.of(context).favoriteCurrencies,
+      doneLabel: AppLocalizations.of(context).commonDone,
+      selected: settings.favoriteCurrencies,
     );
     if (result != null) {
+      if (!mounted) return;
       await ref
           .read(generalSettingsControllerProvider.notifier)
           .setFavoriteCurrencies(result);

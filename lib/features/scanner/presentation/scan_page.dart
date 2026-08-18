@@ -11,24 +11,36 @@ import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/money/money.dart';
 import 'package:trip_cost/core/platform/generated/platform_apis.g.dart';
+import 'package:trip_cost/core/platform/system_permissions.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 import 'package:trip_cost/features/scanner/application/scanner_gateways.dart';
 import 'package:trip_cost/features/scanner/domain/ocr_amount_parser.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
+import 'package:trip_cost/shared/widgets/system_permission_alert.dart';
 
 class ScanPage extends ConsumerStatefulWidget {
-  const ScanPage({this.imagePicker, this.ocrGateway, super.key});
+  const ScanPage({
+    this.imagePicker,
+    this.ocrGateway,
+    this.permissionGateway,
+    super.key,
+  });
 
   final ScannerImagePicker? imagePicker;
   final ScannerOcrGateway? ocrGateway;
+  final SystemPermissionGateway? permissionGateway;
 
   @override
   ConsumerState<ScanPage> createState() => _ScanPageState();
 }
 
 class _ScanPageState extends ConsumerState<ScanPage> {
+  late final SystemPermissionGateway _permissionGateway =
+      widget.permissionGateway ?? const MethodChannelSystemPermissionGateway();
   late final ScannerImagePicker _imagePicker =
-      widget.imagePicker ?? DeviceScannerImagePicker();
+      widget.imagePicker ??
+      DeviceScannerImagePicker(permissionGateway: _permissionGateway);
   late final ScannerOcrGateway _ocrGateway =
       widget.ocrGateway ?? PigeonScannerOcrGateway();
   final OcrAmountParser _parser = OcrAmountParser();
@@ -238,12 +250,24 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         _selected = parsed.length == 1 ? <int>{0} : <int>{};
         _issue = parsed.isEmpty ? _ScanIssue.noCandidates : null;
       });
+    } on SystemPermissionUnavailable catch (error) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _recognizing = false;
+        _issue = _ScanIssue.permissionDenied;
+      });
+      await showSystemPermissionUnavailableAlert(
+        context: context,
+        error: error,
+        gateway: _permissionGateway,
+      );
     } on PlatformException catch (error) {
       if (!mounted || generation != _generation) return;
       final permissionDenied = <String>{
         'camera_access_denied',
         'camera_access_restricted',
         'photo_access_denied',
+        'photo_access_restricted',
       }.contains(error.code);
       setState(() {
         _recognizing = false;
@@ -253,6 +277,20 @@ class _ScanPageState extends ConsumerState<ScanPage> {
             ? _ScanIssue.imageUnavailable
             : _ScanIssue.recognitionFailed;
       });
+      if (permissionDenied && mounted && generation == _generation) {
+        await showSystemPermissionUnavailableAlert(
+          context: context,
+          error: SystemPermissionUnavailable(
+            source == ScannerImageSource.camera
+                ? SystemPermission.camera
+                : SystemPermission.photoLibrary,
+            error.code.endsWith('_restricted')
+                ? SystemPermissionStatus.restricted
+                : SystemPermissionStatus.denied,
+          ),
+          gateway: _permissionGateway,
+        );
+      }
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() {
@@ -416,32 +454,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     return value;
   }
 
-  Future<Currency?> _showCurrencyPicker(Currency? selected) {
-    final l10n = AppLocalizations.of(context);
-    final currencies = <Currency>[
-      ...CurrencyCatalog.knownCurrencies,
-      if (selected != null &&
-          !CurrencyCatalog.knownCurrencies.contains(selected))
-        selected,
-    ];
-    return showCupertinoModalPopup<Currency>(
+  Future<Currency?> _showCurrencyPicker(Currency? selected) async {
+    final result = await showCurrencyPickerPage(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(l10n.scanChooseCurrency),
-        actions: <Widget>[
-          for (final currency in currencies)
-            CupertinoActionSheetAction(
-              isDefaultAction: currency == selected,
-              onPressed: () => Navigator.of(context).pop(currency),
-              child: Text('${currency.code} · ${currency.name}'),
-            ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-      ),
+      title: AppLocalizations.of(context).scanChooseCurrency,
+      selected: selected,
     );
+    return result?.currency;
   }
 
   Future<void> _continueToComparison() async {

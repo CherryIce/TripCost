@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
+import 'package:trip_cost/core/currencies/application/currency_directory_controller.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/export/expense_export_service.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
@@ -17,6 +18,7 @@ import 'package:trip_cost/features/payment_method/application/payment_methods_co
 import 'package:trip_cost/features/settings/application/settings_data_service.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 import 'package:uuid/uuid.dart';
 
 class TripsPage extends ConsumerWidget {
@@ -391,33 +393,15 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
               value: _homeCurrency.code,
               onPressed: _pickHomeCurrency,
             ),
-            const SizedBox(height: AppSpacing.small),
-            Text(l10n.tripLocalCurrencies),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final currency in CurrencyCatalog.knownCurrencies)
-                  CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    onPressed: () => setState(() {
-                      if (_localCurrencies.contains(currency)) {
-                        if (_localCurrencies.length > 1) {
-                          _localCurrencies.remove(currency);
-                        }
-                      } else {
-                        _localCurrencies.add(currency);
-                      }
-                    }),
-                    child: Text(
-                      currency.code,
-                      style: TextStyle(
-                        fontWeight: _localCurrencies.contains(currency)
-                            ? FontWeight.w700
-                            : FontWeight.w400,
-                      ),
-                    ),
-                  ),
-              ],
+            _Choice(
+              label: l10n.tripLocalCurrencies,
+              value:
+                  (_localCurrencies.toList()..sort(
+                        (left, right) => left.code.compareTo(right.code),
+                      ))
+                      .map((currency) => currency.code)
+                      .join(' / '),
+              onPressed: _pickLocalCurrencies,
             ),
             _Field(
               label: l10n.tripBudget,
@@ -508,11 +492,32 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   }
 
   Future<void> _pickHomeCurrency() async {
-    final selected = await _choose<Currency>(<Currency, String>{
-      for (final item in CurrencyCatalog.knownCurrencies)
-        item: '${item.code} · ${item.name}',
-    });
-    if (selected != null) setState(() => _homeCurrency = selected);
+    final result = await showCurrencyPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).currencyHome,
+      selected: _homeCurrency,
+    );
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
+      setState(() => _homeCurrency = selected);
+    }
+  }
+
+  Future<void> _pickLocalCurrencies() async {
+    final selected = await showCurrencyMultiPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).tripLocalCurrencies,
+      doneLabel: AppLocalizations.of(context).commonDone,
+      selected: _localCurrencies.toList(growable: false),
+      minimumSelection: 1,
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _localCurrencies
+          ..clear()
+          ..addAll(selected);
+      });
+    }
   }
 
   void _recommendLocalCurrencies(String value) {
@@ -521,9 +526,12 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
         .map((item) => item.trim().toUpperCase())
         .where((item) => item.isNotEmpty)
         .toSet();
-    final recommended = CurrencyCatalog.knownCurrencies.where(
-      (currency) => currency.countryCodes.any(destinationCodes.contains),
-    );
+    final recommended = ref
+        .read(currencyDirectoryProvider)
+        .currencies
+        .where(
+          (currency) => currency.countryCodes.any(destinationCodes.contains),
+        );
     if (recommended.isNotEmpty) {
       setState(() => _localCurrencies.addAll(recommended));
     }

@@ -13,6 +13,7 @@ import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/money/money.dart';
 import 'package:trip_cost/core/money/money_formatter.dart';
+import 'package:trip_cost/core/platform/system_permissions.dart';
 import 'package:trip_cost/core/storage/files/receipt_storage.dart';
 import 'package:trip_cost/features/expense/application/expense_draft.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
@@ -20,6 +21,8 @@ import 'package:trip_cost/features/payment_method/application/payment_methods_co
 import 'package:trip_cost/features/scanner/application/scanner_gateways.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
+import 'package:trip_cost/shared/widgets/system_permission_alert.dart';
 import 'package:uuid/uuid.dart';
 
 enum LedgerViewMode { timeline, calendar, category }
@@ -363,11 +366,18 @@ class _LedgerFilterPageState extends State<LedgerFilterPage> {
   }
 
   Future<void> _chooseCurrency() async {
-    final value = await _choose<String?>(<String?, String>{
-      null: AppLocalizations.of(context).commonAll,
-      for (final item in CurrencyCatalog.knownCurrencies) item.code: item.code,
-    });
-    if (mounted) setState(() => _currency = value);
+    final selected = _currency == null
+        ? null
+        : CurrencyCatalog().resolve(_currency!);
+    final result = await showCurrencyPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).currencyLocal,
+      selected: selected,
+      allLabel: AppLocalizations.of(context).commonAll,
+    );
+    if (result != null && mounted) {
+      setState(() => _currency = result.currency?.code);
+    }
   }
 
   Future<void> _choosePayment() async {
@@ -431,15 +441,23 @@ class _LedgerFilterPageState extends State<LedgerFilterPage> {
 }
 
 class ExpenseEditorPage extends ConsumerStatefulWidget {
-  const ExpenseEditorPage({this.arguments, this.receiptImagePicker, super.key});
+  const ExpenseEditorPage({
+    this.arguments,
+    this.receiptImagePicker,
+    this.permissionGateway,
+    super.key,
+  });
   final ExpenseEditorArguments? arguments;
   final ScannerImagePicker? receiptImagePicker;
+  final SystemPermissionGateway? permissionGateway;
 
   @override
   ConsumerState<ExpenseEditorPage> createState() => _ExpenseEditorPageState();
 }
 
 class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
+  late final SystemPermissionGateway _permissionGateway =
+      widget.permissionGateway ?? const MethodChannelSystemPermissionGateway();
   final _title = TextEditingController();
   final _transactionAmount = TextEditingController();
   final _referenceAmount = TextEditingController();
@@ -691,11 +709,16 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   }
 
   Future<void> _chooseCurrency(bool transaction) async {
-    final selected = await _choose<Currency>(<Currency, String>{
-      for (final item in CurrencyCatalog.knownCurrencies)
-        item: '${item.code} · ${item.name}',
-    });
-    if (selected != null && mounted) {
+    final current = transaction ? _transactionCurrency : _homeCurrency;
+    final result = await showCurrencyPickerPage(
+      context: context,
+      title: transaction
+          ? AppLocalizations.of(context).currencyLocal
+          : AppLocalizations.of(context).currencyHome,
+      selected: current,
+    );
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
       setState(() {
         if (transaction) {
           _transactionCurrency = selected;
@@ -742,11 +765,20 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   Future<void> _chooseReceiptImage() async {
     try {
       final relativePath = await importReceiptFromPhotoLibrary(
-        picker: widget.receiptImagePicker ?? DeviceScannerImagePicker(),
+        picker:
+            widget.receiptImagePicker ??
+            DeviceScannerImagePicker(permissionGateway: _permissionGateway),
         storage: ref.read(receiptStorageProvider),
       );
       if (relativePath == null) return;
       if (mounted) setState(() => _receiptPath.text = relativePath);
+    } on SystemPermissionUnavailable catch (error) {
+      if (!mounted) return;
+      await showSystemPermissionUnavailableAlert(
+        context: context,
+        error: error,
+        gateway: _permissionGateway,
+      );
     } on Object {
       if (mounted) setState(() => _invalid = true);
     }

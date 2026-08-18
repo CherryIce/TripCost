@@ -20,14 +20,22 @@ class PaymentComparisonPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context);
     final methods = ref.watch(paymentMethodsControllerProvider);
+    final configuredMethods = methods.asData?.value;
+    final methodAction = configuredMethods == null
+        ? null
+        : configuredMethods.isEmpty
+        ? localizations.commonAdd
+        : localizations.commonManage;
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(localizations.paymentComparisonTitle),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => context.push(AppRoutes.paymentMethods),
-          child: Text(localizations.commonAdd),
-        ),
+        trailing: methodAction == null
+            ? null
+            : CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () => context.push(AppRoutes.paymentMethods),
+                child: Text(methodAction),
+              ),
       ),
       child: SafeArea(
         bottom: false,
@@ -44,6 +52,8 @@ class PaymentComparisonPage extends ConsumerWidget {
                   ),
                 ),
                 data: (paymentMethods) {
+                  final billingCurrency =
+                      draft!.rateResolution.snapshot!.quoteCurrency.code;
                   final items = const PaymentCostEngine().compare(
                     transactionAmount: draft!.transactionAmount,
                     rateSnapshot: draft!.rateResolution.snapshot!,
@@ -56,8 +66,18 @@ class PaymentComparisonPage extends ConsumerWidget {
                     children: <Widget>[
                       if (items.length < 2)
                         _Notice(
-                          text: localizations.paymentComparisonNeedTwo,
-                          action: localizations.commonAdd,
+                          text: paymentMethods.isEmpty
+                              ? localizations.paymentComparisonNeedTwo
+                              : items.isEmpty
+                              ? localizations.paymentComparisonNoApplicable(
+                                  billingCurrency,
+                                )
+                              : localizations.paymentComparisonOnlyOne(
+                                  billingCurrency,
+                                ),
+                          action: paymentMethods.isEmpty
+                              ? localizations.commonAdd
+                              : localizations.commonManage,
                           onPressed: () =>
                               context.push(AppRoutes.paymentMethods),
                         ),
@@ -75,7 +95,10 @@ class PaymentComparisonPage extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.large),
                           child: Text(
-                            localizations.paymentMethodsEmpty,
+                            paymentMethods.isEmpty
+                                ? localizations.paymentMethodsEmpty
+                                : localizations
+                                      .paymentComparisonConfiguredButUnavailable,
                             textAlign: TextAlign.center,
                           ),
                         )

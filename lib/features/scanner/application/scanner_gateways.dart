@@ -1,5 +1,7 @@
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:trip_cost/core/platform/generated/platform_apis.g.dart';
+import 'package:trip_cost/core/platform/system_permissions.dart';
 
 enum ScannerImageSource { camera, photoLibrary }
 
@@ -14,20 +16,44 @@ abstract interface class ScannerOcrGateway {
 }
 
 final class DeviceScannerImagePicker implements ScannerImagePicker {
-  DeviceScannerImagePicker({ImagePicker? imagePicker})
-    : _imagePicker = imagePicker ?? ImagePicker();
+  DeviceScannerImagePicker({
+    ImagePicker? imagePicker,
+    SystemPermissionGateway? permissionGateway,
+  }) : _imagePicker = imagePicker ?? ImagePicker(),
+       _permissionGuard = SystemPermissionGuard(
+         permissionGateway ?? const MethodChannelSystemPermissionGateway(),
+       );
 
   final ImagePicker _imagePicker;
+  final SystemPermissionGuard _permissionGuard;
 
   @override
   Future<String?> pick(ScannerImageSource source) async {
-    final image = await _imagePicker.pickImage(
-      source: source == ScannerImageSource.camera
-          ? ImageSource.camera
-          : ImageSource.gallery,
-      requestFullMetadata: false,
-    );
-    return image?.path;
+    final permission = source == ScannerImageSource.camera
+        ? SystemPermission.camera
+        : SystemPermission.photoLibrary;
+    await _permissionGuard.ensureAvailable(permission);
+    try {
+      final image = await _imagePicker.pickImage(
+        source: source == ScannerImageSource.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
+        requestFullMetadata: false,
+      );
+      return image?.path;
+    } on PlatformException catch (error) {
+      final status = switch (error.code) {
+        'camera_access_restricted' ||
+        'photo_access_restricted' => SystemPermissionStatus.restricted,
+        'camera_access_denied' ||
+        'photo_access_denied' => SystemPermissionStatus.denied,
+        _ => null,
+      };
+      if (status != null) {
+        throw SystemPermissionUnavailable(permission, status);
+      }
+      rethrow;
+    }
   }
 }
 

@@ -63,6 +63,31 @@ void main() {
       (widget) => widget is SafeArea && !widget.top,
     );
     expect(MediaQuery.paddingOf(tester.element(navigationSafeArea)).bottom, 34);
+    expect(
+      tester.widget<SafeArea>(navigationSafeArea).maintainBottomViewPadding,
+      isTrue,
+    );
+    final navigationRect = tester.getRect(navigationSafeArea);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 900);
+    await tester.pump();
+    expect(tester.getRect(navigationSafeArea), navigationRect);
+    tester.view.viewInsets = const FakeViewPadding();
+    await tester.pump();
+
+    await tester.tap(find.byIcon(CupertinoIcons.pencil));
+    await tester.pumpAndSettle();
+    final manualRateDialog = find.byKey(const Key('manual-rate-dialog'));
+    expect(manualRateDialog, findsOneWidget);
+    expect(tester.getSize(manualRateDialog), const Size(270, 190));
+    expect(
+      find.descendant(
+        of: manualRateDialog,
+        matching: find.byType(SingleChildScrollView),
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Trips'));
     await tester.pumpAndSettle();

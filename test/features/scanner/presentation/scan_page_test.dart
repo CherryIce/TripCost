@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/platform/generated/platform_apis.g.dart';
+import 'package:trip_cost/core/platform/system_permissions.dart';
 import 'package:trip_cost/features/scanner/application/scanner_gateways.dart';
 import 'package:trip_cost/features/scanner/presentation/scan_page.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
@@ -74,16 +75,24 @@ void main() {
   testWidgets('permission denial keeps manual fallback available', (
     tester,
   ) async {
+    final permissions = _FakePermissionGateway();
     await tester.pumpWidget(
       _testApp(
         picker: _DeniedImagePicker(),
         gateway: _FakeOcrGateway(const <OcrCandidate>[]),
+        permissionGateway: permissions,
       ),
     );
 
     await tester.tap(find.byKey(const Key('scan-camera')));
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('system-permission-alert')), findsOneWidget);
+    expect(find.text('Camera access is unavailable'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('system-permission-open-settings')));
+    await tester.pumpAndSettle();
+
+    expect(permissions.openSettingsCalls, 1);
     expect(find.textContaining('Access was not granted'), findsOneWidget);
     expect(find.byKey(const Key('scan-manual-entry')), findsOneWidget);
   });
@@ -114,7 +123,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('scan-edit-amount')), '25.75');
     await tester.tap(find.byKey(const Key('scan-edit-currency')));
     await tester.pumpAndSettle();
-    await tester.tap(find.textContaining('USD · US Dollar').last);
+    await tester.tap(find.byKey(const Key('currency-option-USD')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
@@ -130,11 +139,16 @@ void main() {
 Widget _testApp({
   required ScannerImagePicker picker,
   required ScannerOcrGateway gateway,
+  SystemPermissionGateway? permissionGateway,
 }) => ProviderScope(
   child: CupertinoApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: ScanPage(imagePicker: picker, ocrGateway: gateway),
+    home: ScanPage(
+      imagePicker: picker,
+      ocrGateway: gateway,
+      permissionGateway: permissionGateway,
+    ),
   ),
 );
 
@@ -161,6 +175,24 @@ final class _DeniedImagePicker implements ScannerImagePicker {
   @override
   Future<String?> pick(ScannerImageSource source) =>
       Future<String?>.error(PlatformException(code: 'camera_access_denied'));
+}
+
+final class _FakePermissionGateway implements SystemPermissionGateway {
+  var openSettingsCalls = 0;
+
+  @override
+  Future<bool> openSettings() async {
+    openSettingsCalls++;
+    return true;
+  }
+
+  @override
+  Future<SystemPermissionStatus> request(SystemPermission permission) async =>
+      SystemPermissionStatus.denied;
+
+  @override
+  Future<SystemPermissionStatus> status(SystemPermission permission) async =>
+      SystemPermissionStatus.denied;
 }
 
 final class _FakeOcrGateway implements ScannerOcrGateway {

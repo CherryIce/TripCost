@@ -12,6 +12,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      resizeToAvoidBottomInset: false,
       child: Column(
         children: <Widget>[
           Expanded(
@@ -66,6 +67,7 @@ class _AppNavigationBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
+        maintainBottomViewPadding: true,
         child: SizedBox(
           height: 58,
           child: Row(

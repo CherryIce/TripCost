@@ -99,7 +99,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('favorite currency sheet insets rows and scrollable safe area', (
+  testWidgets('favorite currency opens the shared full-screen picker', (
     tester,
   ) async {
     addTearDown(tester.view.reset);
@@ -132,12 +132,10 @@ void main() {
     await tester.tap(favoriteCurrencies);
     await tester.pumpAndSettle();
 
-    final sheet = find.byType(CupertinoPopupSurface);
-    final sheetList = find.descendant(
-      of: sheet,
-      matching: find.byType(ListView),
-    );
-    final list = tester.widget<ListView>(sheetList);
-    expect(list.padding, const EdgeInsets.fromLTRB(16, 0, 16, 50));
+    expect(find.byType(CupertinoPopupSurface), findsNothing);
+    expect(find.byType(CupertinoSearchTextField), findsOneWidget);
+    expect(find.byKey(const Key('currency-option-CNY')), findsOneWidget);
+    final list = tester.widget<ListView>(find.byType(ListView));
+    expect(list.padding, const EdgeInsets.only(bottom: 50));
   });
 }
