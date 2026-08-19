@@ -19,7 +19,7 @@ void main() {
   tearDown(() => database.close());
 
   test(
-    'round-trips default currency, favorites, locale and refresh policy',
+    'round-trips home, transaction, favorites, locale and refresh policy',
     () async {
       await repository.save(
         UserSettingsModel(
@@ -29,6 +29,7 @@ void main() {
             updatedAt: now,
           ),
           defaultCurrency: catalog.resolve('CNY'),
+          lastTransactionCurrency: catalog.resolve('USD'),
           favoriteCurrencies: <Currency>[
             catalog.resolve('JPY'),
             catalog.resolve('EUR'),
@@ -43,6 +44,7 @@ void main() {
       final restored = await repository.load();
       expect(restored, isNotNull);
       expect(restored!.defaultCurrency.code, 'CNY');
+      expect(restored.lastTransactionCurrency.code, 'USD');
       expect(
         restored.favoriteCurrencies.map((currency) => currency.code),
         <String>['JPY', 'EUR'],

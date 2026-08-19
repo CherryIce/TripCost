@@ -252,6 +252,50 @@ class AppLocalizationsEn extends AppLocalizations {
       '1 local currency = how much home currency';
 
   @override
+  String get converterAdjustRate => 'Adjust';
+
+  @override
+  String get converterRateSheetTitle => 'Choose exchange rate';
+
+  @override
+  String get converterMarketReference => 'API reference rate';
+
+  @override
+  String get converterMarketUnavailable => 'No API reference rate available';
+
+  @override
+  String get converterManualReference => 'Manual rate';
+
+  @override
+  String converterRateSourceDetail(String source, String time) {
+    return '$source · $time';
+  }
+
+  @override
+  String converterRateUnit(String quote, String base) {
+    return '$quote / $base';
+  }
+
+  @override
+  String get converterUseMarketRate => 'Use API reference rate';
+
+  @override
+  String get converterSaveAndUse => 'Save and use';
+
+  @override
+  String converterRateDifferenceLower(String percent) {
+    return '$percent% below the API reference rate';
+  }
+
+  @override
+  String converterRateDifferenceHigher(String percent) {
+    return '$percent% above the API reference rate';
+  }
+
+  @override
+  String get converterRateDifferenceSame => 'Matches the API reference rate';
+
+  @override
   String get converterRefresh => 'Refresh rate';
 
   @override
@@ -273,10 +317,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currencyHome => 'Home currency';
 
   @override
-  String get currencyFavorite => 'Favorite currency';
+  String get currencyCommonTrading => 'Common trading currencies';
 
   @override
-  String get currencyUnfavorite => 'Remove favorite';
+  String get currencyAllTrading => 'All trading currencies';
 
   @override
   String get commonCancel => 'Cancel';
@@ -604,6 +648,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDestinationsHint => 'For example: JP, KR';
 
   @override
+  String get tripDestinationsEmpty => 'Select';
+
+  @override
+  String get countrySearchEmpty => 'No countries or regions found';
+
+  @override
+  String get countryUnknownSaved =>
+      'Saved but unrecognized; select a valid destination before removing';
+
+  @override
   String get tripStartDate => 'Start date';
 
   @override
@@ -611,6 +665,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripLocalCurrencies => 'Local currencies';
+
+  @override
+  String get tripLocalCurrenciesPending =>
+      'Recommended after destination selection';
+
+  @override
+  String get tripLocalCurrenciesMissing => 'Not recognized; select manually';
+
+  @override
+  String tripLocalCurrenciesRecommended(String currencies) {
+    return '$currencies · Recommended';
+  }
+
+  @override
+  String get tripCurrencyRecommendationTitle => 'Update local currencies?';
+
+  @override
+  String tripCurrencyRecommendationMessage(String currencies) {
+    return 'The selected countries or regions commonly use $currencies. Update the local currencies?';
+  }
+
+  @override
+  String get tripCurrencyRecommendationKeep => 'Keep current';
+
+  @override
+  String get tripCurrencyRecommendationUpdate => 'Update';
 
   @override
   String get tripBudget => 'Total budget';
@@ -931,12 +1011,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get defaultCurrency => 'Default home currency';
-
-  @override
-  String get favoriteCurrencies => 'Favorite currencies';
-
-  @override
-  String get noneSelected => 'None selected';
 
   @override
   String get refreshInterval => 'Automatic refresh';

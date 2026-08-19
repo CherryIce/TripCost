@@ -231,6 +231,50 @@ class AppLocalizationsZh extends AppLocalizations {
   String get converterManualRateHint => '1 单位交易币种等于多少本位币';
 
   @override
+  String get converterAdjustRate => '调整';
+
+  @override
+  String get converterRateSheetTitle => '选择换算汇率';
+
+  @override
+  String get converterMarketReference => '接口参考汇率';
+
+  @override
+  String get converterMarketUnavailable => '暂无接口参考汇率';
+
+  @override
+  String get converterManualReference => '手动汇率';
+
+  @override
+  String converterRateSourceDetail(String source, String time) {
+    return '$source · $time';
+  }
+
+  @override
+  String converterRateUnit(String quote, String base) {
+    return '$quote / $base';
+  }
+
+  @override
+  String get converterUseMarketRate => '改用接口参考汇率';
+
+  @override
+  String get converterSaveAndUse => '保存并使用';
+
+  @override
+  String converterRateDifferenceLower(String percent) {
+    return '比接口参考汇率低 $percent%';
+  }
+
+  @override
+  String converterRateDifferenceHigher(String percent) {
+    return '比接口参考汇率高 $percent%';
+  }
+
+  @override
+  String get converterRateDifferenceSame => '与接口参考汇率一致';
+
+  @override
   String get converterRefresh => '刷新汇率';
 
   @override
@@ -252,10 +296,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get currencyHome => '本位币';
 
   @override
-  String get currencyFavorite => '收藏币种';
+  String get currencyCommonTrading => '常用交易货币';
 
   @override
-  String get currencyUnfavorite => '取消收藏';
+  String get currencyAllTrading => '全部交易货币';
 
   @override
   String get commonCancel => '取消';
@@ -570,6 +614,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tripDestinationsHint => '例如：JP, KR';
 
   @override
+  String get tripDestinationsEmpty => '请选择';
+
+  @override
+  String get countrySearchEmpty => '未找到国家或地区';
+
+  @override
+  String get countryUnknownSaved => '已保存但未识别，请选择有效地区后移除';
+
+  @override
   String get tripStartDate => '开始日期';
 
   @override
@@ -577,6 +630,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tripLocalCurrencies => '当地货币';
+
+  @override
+  String get tripLocalCurrenciesPending => '选择目的地后推荐';
+
+  @override
+  String get tripLocalCurrenciesMissing => '未识别，请手动选择';
+
+  @override
+  String tripLocalCurrenciesRecommended(String currencies) {
+    return '$currencies · 已推荐';
+  }
+
+  @override
+  String get tripCurrencyRecommendationTitle => '更新当地货币？';
+
+  @override
+  String tripCurrencyRecommendationMessage(String currencies) {
+    return '所选国家或地区通常使用 $currencies。是否更新当地货币？';
+  }
+
+  @override
+  String get tripCurrencyRecommendationKeep => '保留当前';
+
+  @override
+  String get tripCurrencyRecommendationUpdate => '更新';
 
   @override
   String get tripBudget => '总预算';
@@ -888,12 +966,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get defaultCurrency => '默认本位币';
-
-  @override
-  String get favoriteCurrencies => '常用币种';
-
-  @override
-  String get noneSelected => '未选择';
 
   @override
   String get refreshInterval => '自动刷新';

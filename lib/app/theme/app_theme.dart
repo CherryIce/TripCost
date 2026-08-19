@@ -1,20 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:trip_cost/app/theme/app_colors.dart';
+
+export 'package:trip_cost/app/theme/app_colors.dart';
 
 abstract final class AppTheme {
-  static const launchBackground = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFF2F2F7),
-    darkColor: Color(0xFF000000),
-  );
-
-  static const accent = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFF176B5B),
-    darkColor: Color(0xFF66D6BD),
-  );
-
   static const cupertino = CupertinoThemeData(
     applyThemeToAll: true,
-    primaryColor: accent,
-    scaffoldBackgroundColor: launchBackground,
+    primaryColor: AppColors.primary,
+    scaffoldBackgroundColor: AppColors.launchBackground,
   );
 }
 

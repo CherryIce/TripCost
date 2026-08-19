@@ -85,13 +85,34 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
   }
 
   Future<Map<String, Object?>?> _rateSummary(DateTime now) async {
-    final row = await _database
-        .customSelect(
-          'SELECT base_currency, quote_currency, rate, source_timestamp, '
-          'is_cached FROM rate_snapshots WHERE deleted_at IS NULL '
-          'ORDER BY fetched_at DESC LIMIT 1',
-        )
-        .getSingleOrNull();
+    UserSettingsModel? settings;
+    try {
+      settings = await DriftSettingsRepository(_database).load();
+    } on Object {
+      // Older or partially restored databases can still show their latest rate.
+    }
+    final row = settings == null
+        ? await _database
+              .customSelect(
+                'SELECT base_currency, quote_currency, rate, '
+                'source_timestamp, is_cached FROM rate_snapshots '
+                'WHERE deleted_at IS NULL '
+                'ORDER BY fetched_at DESC LIMIT 1',
+              )
+              .getSingleOrNull()
+        : await _database
+              .customSelect(
+                'SELECT base_currency, quote_currency, rate, '
+                'source_timestamp, is_cached FROM rate_snapshots '
+                'WHERE deleted_at IS NULL AND base_currency = ? '
+                'AND quote_currency = ? '
+                'ORDER BY fetched_at DESC LIMIT 1',
+                variables: <Variable<Object>>[
+                  Variable<String>(settings.lastTransactionCurrency.code),
+                  Variable<String>(settings.defaultCurrency.code),
+                ],
+              )
+              .getSingleOrNull();
     if (row == null) return null;
     final sourceAt = _dateFromDb(row.data['source_timestamp']);
     final rate = row.data['rate']! as String;

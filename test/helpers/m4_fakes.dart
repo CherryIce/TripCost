@@ -10,14 +10,24 @@ ExchangeRateRepository createFakeRateRepository({
   DateTime? now,
   String rate = '0.047840625',
   Map<String, Duration> delays = const <String, Duration>{},
+  FakeRateRequestCounter? requestCounter,
 }) {
   final clock = now ?? DateTime.utc(2026, 8, 17, 8);
   return ExchangeRateRepository(
-    marketGateway: _FakeRateGateway(rate: rate, now: clock, delays: delays),
+    marketGateway: _FakeRateGateway(
+      rate: rate,
+      now: clock,
+      delays: delays,
+      requestCounter: requestCounter,
+    ),
     snapshotRepository: MemoryRateSnapshotRepository(),
     clock: () => clock,
     idFactory: () => 'fake-rate',
   );
+}
+
+final class FakeRateRequestCounter {
+  int count = 0;
 }
 
 final class MemoryRateSnapshotRepository implements RateSnapshotRepository {
@@ -214,11 +224,13 @@ final class _FakeRateGateway implements FrankfurterRatesGateway {
     required this.rate,
     required this.now,
     required this.delays,
+    this.requestCounter,
   });
 
   final String rate;
   final DateTime now;
   final Map<String, Duration> delays;
+  final FakeRateRequestCounter? requestCounter;
 
   @override
   Future<List<FrankfurterCurrencyDto>> getCurrencies() async => const [];
@@ -229,6 +241,7 @@ final class _FakeRateGateway implements FrankfurterRatesGateway {
     required String quoteCurrencyCode,
     DateTime? date,
   }) async {
+    requestCounter?.count += 1;
     final delay = delays['$baseCurrencyCode:$quoteCurrencyCode'];
     if (delay != null) {
       await Future<void>.delayed(delay);

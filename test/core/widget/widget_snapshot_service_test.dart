@@ -97,6 +97,60 @@ void main() {
     },
   );
 
+  test('writes the rate for the currently selected currency pair', () async {
+    await database.coreDao.upsertUserSettings(
+      UserSettingsRecordsCompanion.insert(
+        id: 'app',
+        updatedAt: now,
+        defaultCurrency: 'CNY',
+        lastTransactionCurrency: const Value<String?>('JPY'),
+        favoriteCurrenciesJson: '[]',
+        languageMode: 'system',
+        refreshIntervalMinutes: 360,
+      ),
+    );
+    await database.coreDao.upsertRateSnapshot(
+      RateSnapshotsCompanion.insert(
+        id: 'selected-rate',
+        updatedAt: now,
+        baseCurrency: 'JPY',
+        quoteCurrency: 'CNY',
+        rate: '0.0478',
+        sourceType: 'market',
+        sourceName: 'Frankfurter',
+        sourceTimestamp: now,
+        fetchedAt: now.subtract(const Duration(minutes: 1)),
+        isCached: const Value<bool>(true),
+      ),
+    );
+    await database.coreDao.upsertRateSnapshot(
+      RateSnapshotsCompanion.insert(
+        id: 'newer-unrelated-rate',
+        updatedAt: now,
+        baseCurrency: 'USD',
+        quoteCurrency: 'CNY',
+        rate: '6.7372',
+        sourceType: 'market',
+        sourceName: 'Frankfurter',
+        sourceTimestamp: now,
+        fetchedAt: now,
+        isCached: const Value<bool>(false),
+      ),
+    );
+
+    await WidgetSnapshotService(
+      database,
+      gateway: gateway,
+      clock: () => now,
+    ).refresh();
+
+    final payload = jsonDecode(gateway.payload!) as Map<String, Object?>;
+    final rate = payload['rate']! as Map<String, Object?>;
+    expect(rate['baseCurrency'], 'JPY');
+    expect(rate['quoteCurrency'], 'CNY');
+    expect(rate['rate'], '0.0478');
+  });
+
   test('summarizes the latest standalone expense without a trip', () async {
     await database.coreDao.upsertExpense(
       ExpensesCompanion.insert(

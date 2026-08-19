@@ -3,14 +3,17 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 import 'package:trip_cost/core/storage/database/database_bootstrapper.dart';
+import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 
 import '../../../generated_migrations/schema.dart';
 import '../../../generated_migrations/schema_v1.dart' as v1;
 import '../../../generated_migrations/schema_v2.dart' as v2;
 import '../../../generated_migrations/schema_v3.dart' as v3;
 import '../../../generated_migrations/schema_v4.dart' as v4;
+import '../../../generated_migrations/schema_v5.dart' as v5;
 
 void main() {
   late AppDatabase database;
@@ -26,14 +29,14 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('schema v4 matches the exported migration baseline', () async {
+  test('schema v5 matches the exported migration baseline', () async {
     await database.close();
     final verifier = SchemaVerifier(GeneratedHelper());
-    final connection = await verifier.startAt(4);
+    final connection = await verifier.startAt(5);
     final schemaDatabase = AppDatabase(connection);
     addTearDown(schemaDatabase.close);
 
-    await verifier.migrateAndValidate(schemaDatabase, 4);
+    await verifier.migrateAndValidate(schemaDatabase, 5);
   });
 
   test('migrates v1 payment methods with a nullable cash rate', () async {
@@ -80,10 +83,10 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 4);
+    await verifier.migrateAndValidate(migrationDatabase, 5);
     await migrationDatabase.close();
 
-    final checkDatabase = v4.DatabaseAtV4(schema.newConnection());
+    final checkDatabase = v5.DatabaseAtV5(schema.newConnection());
     final row = await checkDatabase
         .customSelect(
           'SELECT id, cash_exchange_rate FROM payment_methods '
@@ -145,7 +148,7 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 4);
+    await verifier.migrateAndValidate(migrationDatabase, 5);
     final row = await migrationDatabase
         .customSelect(
           'SELECT entry_type, related_expense_id FROM expenses WHERE id = ?',
@@ -178,10 +181,10 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 4);
+    await verifier.migrateAndValidate(migrationDatabase, 5);
     await migrationDatabase.close();
 
-    final checkDatabase = v4.DatabaseAtV4(schema.newConnection());
+    final checkDatabase = v5.DatabaseAtV5(schema.newConnection());
     final metadata = await checkDatabase
         .customSelect(
           'SELECT record_id, device_id, change_id, '
@@ -200,6 +203,50 @@ void main() {
         .get();
     expect(tables, hasLength(2));
     await checkDatabase.close();
+  });
+
+  test('migrates v4 settings with a fallback transaction currency', () async {
+    await database.close();
+    final verifier = SchemaVerifier(GeneratedHelper());
+    final schema = await verifier.schemaAt(4);
+    addTearDown(schema.close);
+    final oldDatabase = v4.DatabaseAtV4(schema.newConnection());
+    for (final currency in <String>['CNY', 'USD']) {
+      await oldDatabase.customStatement(
+        'INSERT INTO currencies '
+        '(code, name, symbol, minor_units, updated_at) '
+        'VALUES (?, ?, ?, ?, ?)',
+        <Object?>[
+          currency,
+          currency,
+          currency,
+          2,
+          now.millisecondsSinceEpoch ~/ 1000,
+        ],
+      );
+    }
+    await oldDatabase.customStatement(
+      'INSERT INTO user_settings_records '
+      '(id, updated_at, default_currency, favorite_currencies_json, '
+      'language_mode, refresh_interval_minutes) '
+      'VALUES (?, ?, ?, ?, ?, ?)',
+      <Object?>[
+        DriftSettingsRepository.settingsRecordId,
+        now.millisecondsSinceEpoch ~/ 1000,
+        'CNY',
+        '["USD"]',
+        AppLanguageMode.system.name,
+        360,
+      ],
+    );
+    await oldDatabase.close();
+
+    final migrationDatabase = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(migrationDatabase, 5);
+    final restored = await DriftSettingsRepository(migrationDatabase).load();
+    expect(restored!.defaultCurrency.code, 'CNY');
+    expect(restored.lastTransactionCurrency.code, 'USD');
+    await migrationDatabase.close();
   });
 
   test('foreign keys are enabled and reject unknown currencies', () async {

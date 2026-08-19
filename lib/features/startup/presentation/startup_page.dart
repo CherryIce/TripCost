@@ -20,7 +20,7 @@ class _StartupPageState extends ConsumerState<StartupPage> {
     ref.watch(startupDestinationProvider).whenData(_scheduleNavigation);
 
     return const CupertinoPageScaffold(
-      backgroundColor: AppTheme.launchBackground,
+      backgroundColor: AppColors.launchBackground,
       child: Center(child: LaunchMark()),
     );
   }
@@ -50,7 +50,7 @@ class LaunchMark extends StatelessWidget {
       'assets/branding/launch_mark.png',
       width: size,
       height: size,
-      color: AppTheme.accent.resolveFrom(context),
+      color: AppColors.primary.resolveFrom(context),
       colorBlendMode: BlendMode.srcIn,
       filterQuality: FilterQuality.high,
       semanticLabel: 'TripCost',

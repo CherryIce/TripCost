@@ -34,7 +34,6 @@ final class ConverterState {
     required this.expression,
     required this.transactionCurrency,
     required this.homeCurrency,
-    required this.favoriteCurrencies,
     required this.evaluatedAmount,
     required this.expressionError,
     required this.rateResolution,
@@ -44,7 +43,6 @@ final class ConverterState {
   final String expression;
   final Currency transactionCurrency;
   final Currency homeCurrency;
-  final List<Currency> favoriteCurrencies;
   final DecimalValue? evaluatedAmount;
   final ExpressionErrorCode? expressionError;
   final RateResolution? rateResolution;
@@ -80,13 +78,10 @@ final class ConverterState {
     );
   }
 
-  bool isFavorite(Currency currency) => favoriteCurrencies.contains(currency);
-
   ConverterState copyWith({
     String? expression,
     Currency? transactionCurrency,
     Currency? homeCurrency,
-    List<Currency>? favoriteCurrencies,
     Object? evaluatedAmount = _unchanged,
     Object? expressionError = _unchanged,
     Object? rateResolution = _unchanged,
@@ -96,9 +91,6 @@ final class ConverterState {
       expression: expression ?? this.expression,
       transactionCurrency: transactionCurrency ?? this.transactionCurrency,
       homeCurrency: homeCurrency ?? this.homeCurrency,
-      favoriteCurrencies: List<Currency>.unmodifiable(
-        favoriteCurrencies ?? this.favoriteCurrencies,
-      ),
       evaluatedAmount: identical(evaluatedAmount, _unchanged)
           ? this.evaluatedAmount
           : evaluatedAmount as DecimalValue?,
@@ -134,22 +126,16 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     _settings = await _settingsRepository.load();
     final catalog = CurrencyCatalog();
     final homeCurrency = _settings?.defaultCurrency ?? catalog.resolve('CNY');
-    final favorites =
-        _settings?.favoriteCurrencies ??
-        <Currency>[
-          catalog.resolve('JPY'),
-          catalog.resolve('USD'),
-          catalog.resolve('EUR'),
-        ];
-    final transactionCurrency = favorites.firstWhere(
-      (currency) => currency != homeCurrency,
-      orElse: () => catalog.resolve('JPY'),
-    );
+    final transactionCurrency =
+        _settings?.lastTransactionCurrency ??
+        fallbackTransactionCurrency(
+          homeCurrency: homeCurrency,
+          catalog: catalog,
+        );
     final initial = ConverterState(
       expression: '12800',
       transactionCurrency: transactionCurrency,
       homeCurrency: homeCurrency,
-      favoriteCurrencies: favorites,
       evaluatedAmount: DecimalValue.parse('12800'),
       expressionError: null,
       rateResolution: null,
@@ -187,19 +173,15 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     _settings = await _settingsRepository.load();
     if (!ref.mounted) return;
     final homeCurrency = _settings?.defaultCurrency ?? current.homeCurrency;
-    final favorites =
-        _settings?.favoriteCurrencies ?? current.favoriteCurrencies;
-    final transactionCurrency = current.transactionCurrency == homeCurrency
-        ? favorites.firstWhere(
-            (currency) => currency != homeCurrency,
-            orElse: () => current.transactionCurrency,
-          )
-        : current.transactionCurrency;
+    final storedTransactionCurrency =
+        _settings?.lastTransactionCurrency ?? current.transactionCurrency;
+    final transactionCurrency = storedTransactionCurrency == homeCurrency
+        ? fallbackTransactionCurrency(homeCurrency: homeCurrency)
+        : storedTransactionCurrency;
     final cached = await _resolve(
       current.copyWith(
         homeCurrency: homeCurrency,
         transactionCurrency: transactionCurrency,
-        favoriteCurrencies: favorites,
         rateResolution: null,
       ),
       allowRefresh: false,
@@ -237,9 +219,15 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     if (current == null || currency == current.homeCurrency) {
       return;
     }
-    await _publishResolved(
+    final resolution = _publishResolved(
       current.copyWith(transactionCurrency: currency, rateResolution: null),
+      notifyLocalChange: false,
     );
+    await _persistSettings(lastTransactionCurrency: currency);
+    await resolution;
+    if (ref.mounted) {
+      await ref.read(localDataChangeCoordinatorProvider).notify();
+    }
   }
 
   Future<void> changeHomeCurrency(Currency currency) async {
@@ -247,11 +235,17 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     if (current == null || currency == current.transactionCurrency) {
       return;
     }
-    await _publishResolved(
+    final resolution = _publishResolved(
       current.copyWith(homeCurrency: currency, rateResolution: null),
+      notifyLocalChange: false,
     );
-    if (_current?.homeCurrency == currency) {
-      await _persistSettings(defaultCurrency: currency);
+    await _persistSettings(
+      defaultCurrency: currency,
+      lastTransactionCurrency: current.transactionCurrency,
+    );
+    await resolution;
+    if (ref.mounted) {
+      await ref.read(localDataChangeCoordinatorProvider).notify();
     }
   }
 
@@ -260,15 +254,21 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     if (current == null) {
       return;
     }
-    await _publishResolved(
+    final resolution = _publishResolved(
       current.copyWith(
         transactionCurrency: current.homeCurrency,
         homeCurrency: current.transactionCurrency,
         rateResolution: null,
       ),
+      notifyLocalChange: false,
     );
-    if (_current?.homeCurrency == current.transactionCurrency) {
-      await _persistSettings(defaultCurrency: current.transactionCurrency);
+    await _persistSettings(
+      defaultCurrency: current.transactionCurrency,
+      lastTransactionCurrency: current.homeCurrency,
+    );
+    await resolution;
+    if (ref.mounted) {
+      await ref.read(localDataChangeCoordinatorProvider).notify();
     }
   }
 
@@ -307,19 +307,49 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     }
   }
 
-  Future<void> toggleFavorite(Currency currency) async {
+  Future<RateSnapshotModel?> loadMarketReference({
+    bool forceRefresh = false,
+  }) async {
+    final current = _current;
+    if (current == null ||
+        current.transactionCurrency == current.homeCurrency) {
+      return null;
+    }
+    final refresh = await ref
+        .read(rateRefreshSchedulerProvider)
+        .refreshIfNeeded(
+          baseCurrency: current.transactionCurrency,
+          quoteCurrencies: <Currency>[current.homeCurrency],
+          refreshInterval:
+              _settings?.refreshInterval ?? const Duration(hours: 6),
+          wifiOnly: _settings?.wifiOnlyRefresh ?? false,
+          force: forceRefresh,
+        );
+    if (refresh.snapshots.isNotEmpty) {
+      return refresh.snapshots.single;
+    }
+    return ref
+        .read(rateRepositoryProvider)
+        .latestCachedMarketRate(
+          baseCurrency: current.transactionCurrency,
+          quoteCurrency: current.homeCurrency,
+        );
+  }
+
+  Future<void> useMarketRate() async {
     final current = _current;
     if (current == null) {
       return;
     }
-    final favorites = current.favoriteCurrencies.toList();
-    if (favorites.contains(currency)) {
-      favorites.remove(currency);
-    } else {
-      favorites.add(currency);
-    }
-    state = AsyncData(current.copyWith(favoriteCurrencies: favorites));
-    await _persistSettings(favoriteCurrencies: favorites);
+    final repository = ref.read(rateRepositoryProvider);
+    await repository.clearManualRate(
+      baseCurrency: current.transactionCurrency,
+      quoteCurrency: current.homeCurrency,
+    );
+    await _publishResolved(
+      current.copyWith(rateResolution: null),
+      forceRefresh: true,
+    );
   }
 
   ConverterState? get _current {
@@ -430,7 +460,7 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
 
   Future<void> _persistSettings({
     Currency? defaultCurrency,
-    List<Currency>? favoriteCurrencies,
+    Currency? lastTransactionCurrency,
   }) async {
     final current = _current;
     if (current == null) {
@@ -446,10 +476,12 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
       ),
       defaultCurrency:
           defaultCurrency ?? previous?.defaultCurrency ?? current.homeCurrency,
-      favoriteCurrencies:
-          favoriteCurrencies ??
-          previous?.favoriteCurrencies ??
-          current.favoriteCurrencies,
+      lastTransactionCurrency:
+          lastTransactionCurrency ??
+          previous?.lastTransactionCurrency ??
+          current.transactionCurrency,
+      // The legacy field remains round-tripped for storage compatibility only.
+      favoriteCurrencies: previous?.favoriteCurrencies ?? const <Currency>[],
       languageMode: previous?.languageMode ?? AppLanguageMode.system,
       refreshInterval: previous?.refreshInterval ?? const Duration(hours: 6),
       wifiOnlyRefresh: previous?.wifiOnlyRefresh ?? false,
@@ -457,6 +489,5 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     );
     await _settingsRepository.save(next);
     _settings = next;
-    await ref.read(localDataChangeCoordinatorProvider).notify();
   }
 }

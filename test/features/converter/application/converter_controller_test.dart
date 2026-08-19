@@ -6,6 +6,7 @@ import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/rates/application/rate_refresh_scheduler.dart';
 import 'package:trip_cost/core/rates/domain/exchange_rate_repository.dart';
+import 'package:trip_cost/core/sync/application/local_data_change_coordinator.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 
 import '../../../helpers/m4_fakes.dart';
@@ -64,7 +65,7 @@ void main() {
   });
 
   test(
-    'swaps currencies, applies manual rate and persists favorites',
+    'swaps currencies, applies manual rate and persists home currency',
     () async {
       final initial = await container.read(converterControllerProvider.future);
       final notifier = container.read(converterControllerProvider.notifier);
@@ -77,10 +78,22 @@ void main() {
       updated = container.read(converterControllerProvider).requireValue;
       expect(updated.rateResolution!.availability, RateAvailability.manual);
 
-      final usd = CurrencyCatalog().resolve('USD');
-      await notifier.toggleFavorite(usd);
+      final marketReference = await notifier.loadMarketReference();
+      expect(marketReference, isNotNull);
+      expect(marketReference!.sourceType, RateSourceType.market);
+
+      await notifier.useMarketRate();
+      updated = container.read(converterControllerProvider).requireValue;
+      expect(
+        updated.rateResolution!.availability,
+        isNot(RateAvailability.manual),
+      );
+      expect(
+        updated.rateResolution!.snapshot!.sourceType,
+        RateSourceType.market,
+      );
+
       expect(settings.value, isNotNull);
-      expect(settings.value!.favoriteCurrencies.contains(usd), isFalse);
       expect(
         settings.value!.defaultCurrency.code,
         initial.transactionCurrency.code,
@@ -99,6 +112,7 @@ void main() {
           updatedAt: DateTime.utc(2026, 8, 17, 8),
         ),
         defaultCurrency: catalog.resolve('CNY'),
+        lastTransactionCurrency: catalog.resolve('JPY'),
         favoriteCurrencies: <Currency>[catalog.resolve('JPY')],
         languageMode: AppLanguageMode.system,
         refreshInterval: const Duration(hours: 6),
@@ -150,6 +164,116 @@ void main() {
     expect(state.transactionCurrency.code, 'EUR');
     expect(state.rateResolution!.snapshot!.baseCurrency.code, 'EUR');
   });
+
+  test('persists selection before a slow rate refresh completes', () async {
+    container.dispose();
+    container = ProviderContainer(
+      overrides: [
+        rateRepositoryProvider.overrideWithValue(
+          createFakeRateRepository(
+            delays: <String, Duration>{
+              'USD:CNY': const Duration(milliseconds: 50),
+            },
+          ),
+        ),
+        settingsRepositoryProvider.overrideWithValue(settings),
+        networkStatusProvider.overrideWithValue(
+          const FakeNetworkStatusProvider(),
+        ),
+      ],
+    );
+    await container.read(converterControllerProvider.future);
+    final change = container
+        .read(converterControllerProvider.notifier)
+        .changeTransactionCurrency(CurrencyCatalog().resolve('USD'));
+
+    expect(settings.value!.lastTransactionCurrency.code, 'USD');
+    expect(
+      container
+          .read(converterControllerProvider)
+          .requireValue
+          .transactionCurrency
+          .code,
+      'USD',
+    );
+    await change;
+  });
+
+  test(
+    'refreshes the widget after each currency pair change resolves',
+    () async {
+      container.dispose();
+      final changes = _RecordingLocalDataChangeNotifier();
+      container = ProviderContainer(
+        overrides: [
+          rateRepositoryProvider.overrideWithValue(
+            createFakeRateRepository(
+              delays: <String, Duration>{
+                'USD:CNY': const Duration(milliseconds: 20),
+              },
+            ),
+          ),
+          settingsRepositoryProvider.overrideWithValue(settings),
+          networkStatusProvider.overrideWithValue(
+            const FakeNetworkStatusProvider(),
+          ),
+          localDataChangeCoordinatorProvider.overrideWithValue(changes),
+        ],
+      );
+      await container.read(converterControllerProvider.future);
+      final notifier = container.read(converterControllerProvider.notifier);
+      final catalog = CurrencyCatalog();
+
+      final transactionChange = notifier.changeTransactionCurrency(
+        catalog.resolve('USD'),
+      );
+      expect(changes.count, 0);
+      await transactionChange;
+      expect(changes.count, 1);
+
+      await notifier.changeHomeCurrency(catalog.resolve('EUR'));
+      expect(changes.count, 2);
+
+      await notifier.swapCurrencies();
+      expect(changes.count, 3);
+    },
+  );
+
+  test(
+    'restores the last transaction currency after controller rebuild',
+    () async {
+      await container.read(converterControllerProvider.future);
+      await container
+          .read(converterControllerProvider.notifier)
+          .changeTransactionCurrency(CurrencyCatalog().resolve('USD'));
+
+      expect(settings.value!.lastTransactionCurrency.code, 'USD');
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [
+          rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
+          settingsRepositoryProvider.overrideWithValue(settings),
+          networkStatusProvider.overrideWithValue(
+            const FakeNetworkStatusProvider(),
+          ),
+        ],
+      );
+
+      final restored = await container.read(converterControllerProvider.future);
+      expect(restored.transactionCurrency.code, 'USD');
+      expect(restored.homeCurrency.code, 'CNY');
+    },
+  );
+}
+
+final class _RecordingLocalDataChangeNotifier
+    implements LocalDataChangeNotifier {
+  int count = 0;
+
+  @override
+  Future<void> notify() async {
+    count += 1;
+  }
 }
 
 Future<ConverterState> _waitForAvailability(

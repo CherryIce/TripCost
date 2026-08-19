@@ -5854,6 +5854,20 @@ class $UserSettingsRecordsTable extends UserSettingsRecords
       'REFERENCES currencies (code) ON DELETE RESTRICT',
     ),
   );
+  static const VerificationMeta _lastTransactionCurrencyMeta =
+      const VerificationMeta('lastTransactionCurrency');
+  @override
+  late final GeneratedColumn<String> lastTransactionCurrency =
+      GeneratedColumn<String>(
+        'last_transaction_currency',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES currencies (code) ON DELETE RESTRICT',
+        ),
+      );
   static const VerificationMeta _favoriteCurrenciesJsonMeta =
       const VerificationMeta('favoriteCurrenciesJson');
   @override
@@ -5923,6 +5937,7 @@ class $UserSettingsRecordsTable extends UserSettingsRecords
     updatedAt,
     deletedAt,
     defaultCurrency,
+    lastTransactionCurrency,
     favoriteCurrenciesJson,
     languageMode,
     refreshIntervalMinutes,
@@ -5979,6 +5994,15 @@ class $UserSettingsRecordsTable extends UserSettingsRecords
       );
     } else if (isInserting) {
       context.missing(_defaultCurrencyMeta);
+    }
+    if (data.containsKey('last_transaction_currency')) {
+      context.handle(
+        _lastTransactionCurrencyMeta,
+        lastTransactionCurrency.isAcceptableOrUnknown(
+          data['last_transaction_currency']!,
+          _lastTransactionCurrencyMeta,
+        ),
+      );
     }
     if (data.containsKey('favorite_currencies_json')) {
       context.handle(
@@ -6060,6 +6084,10 @@ class $UserSettingsRecordsTable extends UserSettingsRecords
         DriftSqlType.string,
         data['${effectivePrefix}default_currency'],
       )!,
+      lastTransactionCurrency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_transaction_currency'],
+      ),
       favoriteCurrenciesJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}favorite_currencies_json'],
@@ -6096,6 +6124,7 @@ class UserSettingsRecord extends DataClass
   final DateTime updatedAt;
   final DateTime? deletedAt;
   final String defaultCurrency;
+  final String? lastTransactionCurrency;
   final String favoriteCurrenciesJson;
   final String languageMode;
   final int refreshIntervalMinutes;
@@ -6107,6 +6136,7 @@ class UserSettingsRecord extends DataClass
     required this.updatedAt,
     this.deletedAt,
     required this.defaultCurrency,
+    this.lastTransactionCurrency,
     required this.favoriteCurrenciesJson,
     required this.languageMode,
     required this.refreshIntervalMinutes,
@@ -6123,6 +6153,11 @@ class UserSettingsRecord extends DataClass
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
     map['default_currency'] = Variable<String>(defaultCurrency);
+    if (!nullToAbsent || lastTransactionCurrency != null) {
+      map['last_transaction_currency'] = Variable<String>(
+        lastTransactionCurrency,
+      );
+    }
     map['favorite_currencies_json'] = Variable<String>(favoriteCurrenciesJson);
     map['language_mode'] = Variable<String>(languageMode);
     map['refresh_interval_minutes'] = Variable<int>(refreshIntervalMinutes);
@@ -6140,6 +6175,9 @@ class UserSettingsRecord extends DataClass
           ? const Value.absent()
           : Value(deletedAt),
       defaultCurrency: Value(defaultCurrency),
+      lastTransactionCurrency: lastTransactionCurrency == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastTransactionCurrency),
       favoriteCurrenciesJson: Value(favoriteCurrenciesJson),
       languageMode: Value(languageMode),
       refreshIntervalMinutes: Value(refreshIntervalMinutes),
@@ -6159,6 +6197,9 @@ class UserSettingsRecord extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       defaultCurrency: serializer.fromJson<String>(json['defaultCurrency']),
+      lastTransactionCurrency: serializer.fromJson<String?>(
+        json['lastTransactionCurrency'],
+      ),
       favoriteCurrenciesJson: serializer.fromJson<String>(
         json['favoriteCurrenciesJson'],
       ),
@@ -6179,6 +6220,9 @@ class UserSettingsRecord extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'defaultCurrency': serializer.toJson<String>(defaultCurrency),
+      'lastTransactionCurrency': serializer.toJson<String?>(
+        lastTransactionCurrency,
+      ),
       'favoriteCurrenciesJson': serializer.toJson<String>(
         favoriteCurrenciesJson,
       ),
@@ -6195,6 +6239,7 @@ class UserSettingsRecord extends DataClass
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
     String? defaultCurrency,
+    Value<String?> lastTransactionCurrency = const Value.absent(),
     String? favoriteCurrenciesJson,
     String? languageMode,
     int? refreshIntervalMinutes,
@@ -6206,6 +6251,9 @@ class UserSettingsRecord extends DataClass
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     defaultCurrency: defaultCurrency ?? this.defaultCurrency,
+    lastTransactionCurrency: lastTransactionCurrency.present
+        ? lastTransactionCurrency.value
+        : this.lastTransactionCurrency,
     favoriteCurrenciesJson:
         favoriteCurrenciesJson ?? this.favoriteCurrenciesJson,
     languageMode: languageMode ?? this.languageMode,
@@ -6225,6 +6273,9 @@ class UserSettingsRecord extends DataClass
       defaultCurrency: data.defaultCurrency.present
           ? data.defaultCurrency.value
           : this.defaultCurrency,
+      lastTransactionCurrency: data.lastTransactionCurrency.present
+          ? data.lastTransactionCurrency.value
+          : this.lastTransactionCurrency,
       favoriteCurrenciesJson: data.favoriteCurrenciesJson.present
           ? data.favoriteCurrenciesJson.value
           : this.favoriteCurrenciesJson,
@@ -6251,6 +6302,7 @@ class UserSettingsRecord extends DataClass
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('defaultCurrency: $defaultCurrency, ')
+          ..write('lastTransactionCurrency: $lastTransactionCurrency, ')
           ..write('favoriteCurrenciesJson: $favoriteCurrenciesJson, ')
           ..write('languageMode: $languageMode, ')
           ..write('refreshIntervalMinutes: $refreshIntervalMinutes, ')
@@ -6267,6 +6319,7 @@ class UserSettingsRecord extends DataClass
     updatedAt,
     deletedAt,
     defaultCurrency,
+    lastTransactionCurrency,
     favoriteCurrenciesJson,
     languageMode,
     refreshIntervalMinutes,
@@ -6282,6 +6335,7 @@ class UserSettingsRecord extends DataClass
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.defaultCurrency == this.defaultCurrency &&
+          other.lastTransactionCurrency == this.lastTransactionCurrency &&
           other.favoriteCurrenciesJson == this.favoriteCurrenciesJson &&
           other.languageMode == this.languageMode &&
           other.refreshIntervalMinutes == this.refreshIntervalMinutes &&
@@ -6295,6 +6349,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
   final Value<String> defaultCurrency;
+  final Value<String?> lastTransactionCurrency;
   final Value<String> favoriteCurrenciesJson;
   final Value<String> languageMode;
   final Value<int> refreshIntervalMinutes;
@@ -6307,6 +6362,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.defaultCurrency = const Value.absent(),
+    this.lastTransactionCurrency = const Value.absent(),
     this.favoriteCurrenciesJson = const Value.absent(),
     this.languageMode = const Value.absent(),
     this.refreshIntervalMinutes = const Value.absent(),
@@ -6320,6 +6376,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
     required String defaultCurrency,
+    this.lastTransactionCurrency = const Value.absent(),
     required String favoriteCurrenciesJson,
     required String languageMode,
     required int refreshIntervalMinutes,
@@ -6338,6 +6395,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
     Expression<String>? defaultCurrency,
+    Expression<String>? lastTransactionCurrency,
     Expression<String>? favoriteCurrenciesJson,
     Expression<String>? languageMode,
     Expression<int>? refreshIntervalMinutes,
@@ -6351,6 +6409,8 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (defaultCurrency != null) 'default_currency': defaultCurrency,
+      if (lastTransactionCurrency != null)
+        'last_transaction_currency': lastTransactionCurrency,
       if (favoriteCurrenciesJson != null)
         'favorite_currencies_json': favoriteCurrenciesJson,
       if (languageMode != null) 'language_mode': languageMode,
@@ -6368,6 +6428,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
     Value<String>? defaultCurrency,
+    Value<String?>? lastTransactionCurrency,
     Value<String>? favoriteCurrenciesJson,
     Value<String>? languageMode,
     Value<int>? refreshIntervalMinutes,
@@ -6381,6 +6442,8 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
       defaultCurrency: defaultCurrency ?? this.defaultCurrency,
+      lastTransactionCurrency:
+          lastTransactionCurrency ?? this.lastTransactionCurrency,
       favoriteCurrenciesJson:
           favoriteCurrenciesJson ?? this.favoriteCurrenciesJson,
       languageMode: languageMode ?? this.languageMode,
@@ -6409,6 +6472,11 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
     }
     if (defaultCurrency.present) {
       map['default_currency'] = Variable<String>(defaultCurrency.value);
+    }
+    if (lastTransactionCurrency.present) {
+      map['last_transaction_currency'] = Variable<String>(
+        lastTransactionCurrency.value,
+      );
     }
     if (favoriteCurrenciesJson.present) {
       map['favorite_currencies_json'] = Variable<String>(
@@ -6443,6 +6511,7 @@ class UserSettingsRecordsCompanion extends UpdateCompanion<UserSettingsRecord> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('defaultCurrency: $defaultCurrency, ')
+          ..write('lastTransactionCurrency: $lastTransactionCurrency, ')
           ..write('favoriteCurrenciesJson: $favoriteCurrenciesJson, ')
           ..write('languageMode: $languageMode, ')
           ..write('refreshIntervalMinutes: $refreshIntervalMinutes, ')
@@ -8595,6 +8664,39 @@ final class $$CurrenciesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $UserSettingsRecordsTable,
+    List<UserSettingsRecord>
+  >
+  _lastTransactionCurrencySettingsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.userSettingsRecords,
+        aliasName: $_aliasNameGenerator(
+          db.currencies.code,
+          db.userSettingsRecords.lastTransactionCurrency,
+        ),
+      );
+
+  $$UserSettingsRecordsTableProcessedTableManager
+  get lastTransactionCurrencySettings {
+    final manager =
+        $$UserSettingsRecordsTableTableManager(
+          $_db,
+          $_db.userSettingsRecords,
+        ).filter(
+          (f) => f.lastTransactionCurrency.code.sqlEquals(
+            $_itemColumn<String>('code')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _lastTransactionCurrencySettingsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$CurrenciesTableFilterComposer
@@ -8804,6 +8906,31 @@ class $$CurrenciesTableFilterComposer
       getCurrentColumn: (t) => t.code,
       referencedTable: $db.userSettingsRecords,
       getReferencedColumn: (t) => t.defaultCurrency,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserSettingsRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.userSettingsRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> lastTransactionCurrencySettings(
+    Expression<bool> Function($$UserSettingsRecordsTableFilterComposer f) f,
+  ) {
+    final $$UserSettingsRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.code,
+      referencedTable: $db.userSettingsRecords,
+      getReferencedColumn: (t) => t.lastTransactionCurrency,
       builder:
           (
             joinBuilder, {
@@ -9086,6 +9213,32 @@ class $$CurrenciesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> lastTransactionCurrencySettings<T extends Object>(
+    Expression<T> Function($$UserSettingsRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$UserSettingsRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.code,
+          referencedTable: $db.userSettingsRecords,
+          getReferencedColumn: (t) => t.lastTransactionCurrency,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$UserSettingsRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.userSettingsRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$CurrenciesTableTableManager
@@ -9109,6 +9262,7 @@ class $$CurrenciesTableTableManager
             bool transactionCurrencyExpenses,
             bool homeCurrencyExpenses,
             bool userSettingsRecordsRefs,
+            bool lastTransactionCurrencySettings,
           })
         > {
   $$CurrenciesTableTableManager(_$AppDatabase db, $CurrenciesTable table)
@@ -9183,6 +9337,7 @@ class $$CurrenciesTableTableManager
                 transactionCurrencyExpenses = false,
                 homeCurrencyExpenses = false,
                 userSettingsRecordsRefs = false,
+                lastTransactionCurrencySettings = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -9194,6 +9349,7 @@ class $$CurrenciesTableTableManager
                     if (transactionCurrencyExpenses) db.expenses,
                     if (homeCurrencyExpenses) db.expenses,
                     if (userSettingsRecordsRefs) db.userSettingsRecords,
+                    if (lastTransactionCurrencySettings) db.userSettingsRecords,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -9345,6 +9501,27 @@ class $$CurrenciesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (lastTransactionCurrencySettings)
+                        await $_getPrefetchedData<
+                          Currency,
+                          $CurrenciesTable,
+                          UserSettingsRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CurrenciesTableReferences
+                              ._lastTransactionCurrencySettingsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CurrenciesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).lastTransactionCurrencySettings,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.lastTransactionCurrency == item.code,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -9373,6 +9550,7 @@ typedef $$CurrenciesTableProcessedTableManager =
         bool transactionCurrencyExpenses,
         bool homeCurrencyExpenses,
         bool userSettingsRecordsRefs,
+        bool lastTransactionCurrencySettings,
       })
     >;
 typedef $$RateSnapshotsTableCreateCompanionBuilder =
@@ -13553,6 +13731,7 @@ typedef $$UserSettingsRecordsTableCreateCompanionBuilder =
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
       required String defaultCurrency,
+      Value<String?> lastTransactionCurrency,
       required String favoriteCurrenciesJson,
       required String languageMode,
       required int refreshIntervalMinutes,
@@ -13567,6 +13746,7 @@ typedef $$UserSettingsRecordsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
       Value<String> defaultCurrency,
+      Value<String?> lastTransactionCurrency,
       Value<String> favoriteCurrenciesJson,
       Value<String> languageMode,
       Value<int> refreshIntervalMinutes,
@@ -13604,6 +13784,30 @@ final class $$UserSettingsRecordsTableReferences
       $_db.currencies,
     ).filter((f) => f.code.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_defaultCurrencyTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CurrenciesTable _lastTransactionCurrencyTable(_$AppDatabase db) =>
+      db.currencies.createAlias(
+        $_aliasNameGenerator(
+          db.userSettingsRecords.lastTransactionCurrency,
+          db.currencies.code,
+        ),
+      );
+
+  $$CurrenciesTableProcessedTableManager? get lastTransactionCurrency {
+    final $_column = $_itemColumn<String>('last_transaction_currency');
+    if ($_column == null) return null;
+    final manager = $$CurrenciesTableTableManager(
+      $_db,
+      $_db.currencies,
+    ).filter((f) => f.code.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _lastTransactionCurrencyTable($_db),
+    );
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -13669,6 +13873,29 @@ class $$UserSettingsRecordsTableFilterComposer
     final $$CurrenciesTableFilterComposer composer = $composerBuilder(
       composer: this,
       getCurrentColumn: (t) => t.defaultCurrency,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CurrenciesTableFilterComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CurrenciesTableFilterComposer get lastTransactionCurrency {
+    final $$CurrenciesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lastTransactionCurrency,
       referencedTable: $db.currencies,
       getReferencedColumn: (t) => t.code,
       builder:
@@ -13765,6 +13992,29 @@ class $$UserSettingsRecordsTableOrderingComposer
     );
     return composer;
   }
+
+  $$CurrenciesTableOrderingComposer get lastTransactionCurrency {
+    final $$CurrenciesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lastTransactionCurrency,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CurrenciesTableOrderingComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$UserSettingsRecordsTableAnnotationComposer
@@ -13837,6 +14087,29 @@ class $$UserSettingsRecordsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$CurrenciesTableAnnotationComposer get lastTransactionCurrency {
+    final $$CurrenciesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.lastTransactionCurrency,
+      referencedTable: $db.currencies,
+      getReferencedColumn: (t) => t.code,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CurrenciesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.currencies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$UserSettingsRecordsTableTableManager
@@ -13852,7 +14125,10 @@ class $$UserSettingsRecordsTableTableManager
           $$UserSettingsRecordsTableUpdateCompanionBuilder,
           (UserSettingsRecord, $$UserSettingsRecordsTableReferences),
           UserSettingsRecord,
-          PrefetchHooks Function({bool defaultCurrency})
+          PrefetchHooks Function({
+            bool defaultCurrency,
+            bool lastTransactionCurrency,
+          })
         > {
   $$UserSettingsRecordsTableTableManager(
     _$AppDatabase db,
@@ -13880,6 +14156,7 @@ class $$UserSettingsRecordsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> defaultCurrency = const Value.absent(),
+                Value<String?> lastTransactionCurrency = const Value.absent(),
                 Value<String> favoriteCurrenciesJson = const Value.absent(),
                 Value<String> languageMode = const Value.absent(),
                 Value<int> refreshIntervalMinutes = const Value.absent(),
@@ -13892,6 +14169,7 @@ class $$UserSettingsRecordsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 defaultCurrency: defaultCurrency,
+                lastTransactionCurrency: lastTransactionCurrency,
                 favoriteCurrenciesJson: favoriteCurrenciesJson,
                 languageMode: languageMode,
                 refreshIntervalMinutes: refreshIntervalMinutes,
@@ -13906,6 +14184,7 @@ class $$UserSettingsRecordsTableTableManager
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
                 required String defaultCurrency,
+                Value<String?> lastTransactionCurrency = const Value.absent(),
                 required String favoriteCurrenciesJson,
                 required String languageMode,
                 required int refreshIntervalMinutes,
@@ -13918,6 +14197,7 @@ class $$UserSettingsRecordsTableTableManager
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
                 defaultCurrency: defaultCurrency,
+                lastTransactionCurrency: lastTransactionCurrency,
                 favoriteCurrenciesJson: favoriteCurrenciesJson,
                 languageMode: languageMode,
                 refreshIntervalMinutes: refreshIntervalMinutes,
@@ -13933,49 +14213,66 @@ class $$UserSettingsRecordsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({defaultCurrency = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (defaultCurrency) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.defaultCurrency,
-                                referencedTable:
-                                    $$UserSettingsRecordsTableReferences
-                                        ._defaultCurrencyTable(db),
-                                referencedColumn:
-                                    $$UserSettingsRecordsTableReferences
-                                        ._defaultCurrencyTable(db)
-                                        .code,
-                              )
-                              as T;
-                    }
+          prefetchHooksCallback:
+              ({defaultCurrency = false, lastTransactionCurrency = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (defaultCurrency) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.defaultCurrency,
+                                    referencedTable:
+                                        $$UserSettingsRecordsTableReferences
+                                            ._defaultCurrencyTable(db),
+                                    referencedColumn:
+                                        $$UserSettingsRecordsTableReferences
+                                            ._defaultCurrencyTable(db)
+                                            .code,
+                                  )
+                                  as T;
+                        }
+                        if (lastTransactionCurrency) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn:
+                                        table.lastTransactionCurrency,
+                                    referencedTable:
+                                        $$UserSettingsRecordsTableReferences
+                                            ._lastTransactionCurrencyTable(db),
+                                    referencedColumn:
+                                        $$UserSettingsRecordsTableReferences
+                                            ._lastTransactionCurrencyTable(db)
+                                            .code,
+                                  )
+                                  as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -13992,7 +14289,10 @@ typedef $$UserSettingsRecordsTableProcessedTableManager =
       $$UserSettingsRecordsTableUpdateCompanionBuilder,
       (UserSettingsRecord, $$UserSettingsRecordsTableReferences),
       UserSettingsRecord,
-      PrefetchHooks Function({bool defaultCurrency})
+      PrefetchHooks Function({
+        bool defaultCurrency,
+        bool lastTransactionCurrency,
+      })
     >;
 typedef $$SyncMetadataEntriesTableCreateCompanionBuilder =
     SyncMetadataEntriesCompanion Function({

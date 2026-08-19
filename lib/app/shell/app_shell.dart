@@ -96,7 +96,7 @@ class _AppNavigationBar extends StatelessWidget {
                     onPressed: onScanPressed,
                     child: const DecoratedBox(
                       decoration: BoxDecoration(
-                        color: AppTheme.accent,
+                        color: AppColors.primary,
                         shape: BoxShape.circle,
                       ),
                       child: SizedBox(
@@ -152,7 +152,7 @@ class _Destination extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = index == selectedIndex;
     final color = isSelected
-        ? AppTheme.accent
+        ? AppColors.primary
         : CupertinoColors.secondaryLabel.resolveFrom(context);
 
     return Expanded(

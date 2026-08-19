@@ -35,7 +35,8 @@ void main() {
     );
     expect(result.data, contains('196.15'));
     expect(result.data, contains('CNY'));
-    expect(find.textContaining('Latest reference rate'), findsOneWidget);
+    expect(find.byKey(const Key('converter-active-rate')), findsOneWidget);
+    expect(find.text('API reference rate'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Compare payment methods'));
     await tester.tap(find.text('Compare payment methods'));

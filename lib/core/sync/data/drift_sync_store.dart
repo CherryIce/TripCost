@@ -125,6 +125,9 @@ final class DriftSyncStore implements CacheRepositoryObserver {
       for (final row in rows) {
         final data = Map<String, Object?>.from(row.data);
         final recordId = data['id'] as String;
+        if (config.entityType == SyncEntityType.userSettings) {
+          data.remove('last_transaction_currency');
+        }
         final metadata = await _database.coreDao.getSyncMetadata(
           config.entityType.name,
           recordId,

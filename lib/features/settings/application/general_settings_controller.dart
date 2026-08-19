@@ -29,9 +29,6 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
   Future<void> setDefaultCurrency(Currency currency) =>
       _update(defaultCurrency: currency);
 
-  Future<void> setFavoriteCurrencies(List<Currency> currencies) =>
-      _update(favoriteCurrencies: currencies);
-
   Future<void> setRefreshInterval(Duration interval) =>
       _update(refreshInterval: interval);
 
@@ -45,21 +42,30 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
 
   Future<void> _update({
     Currency? defaultCurrency,
-    List<Currency>? favoriteCurrencies,
     AppLanguageMode? languageMode,
     Duration? refreshInterval,
     bool? wifiOnlyRefresh,
   }) async {
     final repository = ref.read(settingsRepositoryProvider);
     final previous = await repository.load() ?? state.value ?? _defaults();
+    final nextDefaultCurrency = defaultCurrency ?? previous.defaultCurrency;
+    final nextTransactionCurrency =
+        previous.lastTransactionCurrency == nextDefaultCurrency
+        ? fallbackTransactionCurrency(
+            homeCurrency: nextDefaultCurrency,
+            preferredCurrencies: previous.favoriteCurrencies,
+          )
+        : previous.lastTransactionCurrency;
     final next = UserSettingsModel(
       metadata: SyncRecordMetadata(
         recordId: DriftSettingsRepository.settingsRecordId,
         syncVersion: previous.metadata.syncVersion + 1,
         updatedAt: DateTime.now().toUtc(),
       ),
-      defaultCurrency: defaultCurrency ?? previous.defaultCurrency,
-      favoriteCurrencies: favoriteCurrencies ?? previous.favoriteCurrencies,
+      defaultCurrency: nextDefaultCurrency,
+      lastTransactionCurrency: nextTransactionCurrency,
+      // Retained only for backward-compatible decoding of older settings.
+      favoriteCurrencies: previous.favoriteCurrencies,
       languageMode: languageMode ?? previous.languageMode,
       refreshInterval: refreshInterval ?? previous.refreshInterval,
       wifiOnlyRefresh: wifiOnlyRefresh ?? previous.wifiOnlyRefresh,
@@ -84,11 +90,8 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
         updatedAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       ),
       defaultCurrency: catalog.resolve('CNY'),
-      favoriteCurrencies: <Currency>[
-        catalog.resolve('JPY'),
-        catalog.resolve('USD'),
-        catalog.resolve('EUR'),
-      ],
+      lastTransactionCurrency: catalog.resolve('JPY'),
+      favoriteCurrencies: const <Currency>[],
       languageMode: AppLanguageMode.system,
       refreshInterval: const Duration(hours: 6),
       wifiOnlyRefresh: false,

@@ -123,7 +123,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('scan-edit-amount')), '25.75');
     await tester.tap(find.byKey(const Key('scan-edit-currency')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('currency-option-USD')));
+    await tester.tap(find.byKey(const Key('currency-common-option-USD')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();

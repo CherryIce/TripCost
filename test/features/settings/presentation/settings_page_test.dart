@@ -48,9 +48,8 @@ void main() {
       return tester.getCenter(chevron).dx;
     }
 
-    final favoritesChevronX = trailingChevronX('JPY, USD, EUR');
-    expect(trailingChevronX('CNY'), closeTo(favoritesChevronX, 0.1));
-    expect(trailingChevronX('每 6 小时'), closeTo(favoritesChevronX, 0.1));
+    final defaultCurrencyChevronX = trailingChevronX('CNY');
+    expect(trailingChevronX('每 6 小时'), closeTo(defaultCurrencyChevronX, 0.1));
   });
 
   testWidgets('settings remain navigable at large text with button semantics', (
@@ -99,7 +98,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('favorite currency opens the shared full-screen picker', (
+  testWidgets('favorite setting is removed and default uses shared picker', (
     tester,
   ) async {
     addTearDown(tester.view.reset);
@@ -127,15 +126,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final favoriteCurrencies = find.text('Favorite currencies');
-    await tester.ensureVisible(favoriteCurrencies);
-    await tester.tap(favoriteCurrencies);
+    expect(find.text('Favorite currencies'), findsNothing);
+    final defaultCurrency = find.text('Default home currency');
+    await tester.ensureVisible(defaultCurrency);
+    await tester.tap(defaultCurrency);
     await tester.pumpAndSettle();
 
     expect(find.byType(CupertinoPopupSurface), findsNothing);
     expect(find.byType(CupertinoSearchTextField), findsOneWidget);
+    expect(find.text('Common trading currencies'), findsOneWidget);
+    expect(find.text('All trading currencies'), findsOneWidget);
     expect(find.byKey(const Key('currency-option-CNY')), findsOneWidget);
-    final list = tester.widget<ListView>(find.byType(ListView));
-    expect(list.padding, const EdgeInsets.only(bottom: 50));
+    final list = tester.widget<ListView>(
+      find.byKey(const Key('currency-directory-list')),
+    );
+    final padding = (list.padding! as EdgeInsetsDirectional).resolve(
+      TextDirection.ltr,
+    );
+    expect(padding.bottom, 50);
+    expect(padding.right, 28);
   });
 }

@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
-import 'package:trip_cost/core/storage/database/app_database.dart';
+import 'package:trip_cost/core/money/currency.dart';
+import 'package:trip_cost/core/storage/database/app_database.dart'
+    hide Currency;
 import 'package:trip_cost/core/storage/database/database_bootstrapper.dart';
+import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 import 'package:trip_cost/core/sync/data/drift_sync_store.dart';
 import 'package:trip_cost/core/sync/domain/sync_models.dart';
 
@@ -50,6 +53,34 @@ void main() {
       for (final item in firstBatch) item.key,
     });
     expect(await store.pendingRecords(), isEmpty);
+  });
+
+  test('last transaction currency remains a device-local setting', () async {
+    final catalog = CurrencyCatalog();
+    await DriftSettingsRepository(database).save(
+      UserSettingsModel(
+        metadata: SyncRecordMetadata(
+          recordId: DriftSettingsRepository.settingsRecordId,
+          syncVersion: 1,
+          updatedAt: first,
+        ),
+        defaultCurrency: catalog.resolve('CNY'),
+        lastTransactionCurrency: catalog.resolve('USD'),
+        favoriteCurrencies: const <Currency>[],
+        languageMode: AppLanguageMode.system,
+        refreshInterval: const Duration(hours: 6),
+        wifiOnlyRefresh: false,
+        syncEnabled: true,
+      ),
+    );
+
+    final settingsRecord = (await store.pendingRecords()).singleWhere(
+      (record) => record.entityType == SyncEntityType.userSettings,
+    );
+    expect(
+      settingsRecord.payload.containsKey('last_transaction_currency'),
+      isFalse,
+    );
   });
 
   test('push acknowledgement cannot clean a newer local generation', () async {

@@ -47,7 +47,7 @@ final class AppDatabase extends _$AppDatabase {
   ];
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   Stream<void> watchCacheTable(String tableName) => _cacheChanges.stream
       .where((changedTable) => changedTable == tableName)
@@ -106,6 +106,12 @@ final class AppDatabase extends _$AppDatabase {
       );
       await migrator.createTable(syncRuntimeEntries);
       await migrator.createTable(syncConflictEntries);
+    }
+    if (from < 5) {
+      await migrator.addColumn(
+        userSettingsRecords,
+        userSettingsRecords.lastTransactionCurrency,
+      );
     }
   }
 

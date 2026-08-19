@@ -80,7 +80,8 @@ final class SyncSettingsController extends AsyncNotifier<SyncSettingsState> {
       defaultCurrency:
           previous?.defaultCurrency ??
           (throw StateError('Complete onboarding before changing sync.')),
-      favoriteCurrencies: previous!.favoriteCurrencies,
+      lastTransactionCurrency: previous!.lastTransactionCurrency,
+      favoriteCurrencies: previous.favoriteCurrencies,
       languageMode: previous.languageMode,
       refreshInterval: previous.refreshInterval,
       wifiOnlyRefresh: previous.wifiOnlyRefresh,

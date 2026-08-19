@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -477,6 +478,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   bool _budgetIncluded = true;
   bool _invalid = false;
   bool _updatingEstimatedAmount = false;
+  bool _isLoadingCurrencyDefaults = false;
   late String _estimatedBaseAmount;
 
   ExpenseDraftSeed? get _seed => widget.arguments?.seed;
@@ -501,6 +503,10 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
       _transactionCurrency = trip.localCurrencies.first;
       _participants.text = trip.participantCount.toString();
       _paymentMethodId ??= trip.defaultPaymentMethodId;
+    }
+    if (seed == null && trip == null) {
+      _isLoadingCurrencyDefaults = true;
+      unawaited(_loadCurrencyDefaults());
     }
     _estimatedBaseAmount = _estimatedAmount.text;
     _estimatedAmount.addListener(_captureEstimatedBaseAmount);
@@ -543,113 +549,152 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
         middle: Text(l10n.expenseManualAdd),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: () => _save(trips, methods),
+          onPressed: _isLoadingCurrencyDefaults
+              ? null
+              : () => _save(trips, methods),
           child: Text(l10n.commonSave),
         ),
       ),
       child: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: AppInsets.secondaryPageScrollPadding(context),
-          children: <Widget>[
-            _Input(label: l10n.expenseTitle, controller: _title),
-            _FilterChoice(
-              label: l10n.expenseTrip,
-              value:
-                  trips
-                      .where((item) => item.metadata.recordId == _tripId)
-                      .firstOrNull
-                      ?.name ??
-                  l10n.commonNone,
-              onPressed: () => _chooseTrip(trips),
-            ),
-            _FilterChoice(
-              label: l10n.expenseCategory,
-              value: _categoryLabel(l10n, _category),
-              onPressed: _chooseCategory,
-            ),
-            _FilterChoice(
-              label: l10n.currencyLocal,
-              value: _transactionCurrency.code,
-              onPressed: () => _chooseCurrency(true),
-            ),
-            _Input(
-              label: l10n.expenseTransactionAmount,
-              controller: _transactionAmount,
-              numeric: true,
-            ),
-            _FilterChoice(
-              label: l10n.currencyHome,
-              value: _homeCurrency.code,
-              onPressed: _tripId == null ? () => _chooseCurrency(false) : () {},
-            ),
-            _Input(
-              label: l10n.expenseReferenceAmount,
-              controller: _referenceAmount,
-              numeric: true,
-            ),
-            _Input(
-              label: l10n.expenseEstimatedAmount,
-              controller: _estimatedAmount,
-              numeric: true,
-            ),
-            _FilterChoice(
-              label: l10n.expensePaymentMethod,
-              value:
-                  methods
-                      .where(
-                        (item) => item.metadata.recordId == _paymentMethodId,
-                      )
-                      .firstOrNull
-                      ?.name ??
-                  l10n.commonNone,
-              onPressed: () => _choosePayment(methods),
-            ),
-            _Input(label: l10n.expenseTax, controller: _tax, numeric: true),
-            _Input(label: l10n.expenseTip, controller: _tip, numeric: true),
-            _Input(
-              label: l10n.expenseDiscount,
-              controller: _discount,
-              numeric: true,
-            ),
-            _Input(
-              label: l10n.tripParticipants,
-              controller: _participants,
-              numeric: true,
-            ),
-            _FilterChoice(
-              label: l10n.expenseDate,
-              value: DateFormat.yMd(
-                Localizations.localeOf(context).toLanguageTag(),
-              ).add_Hm().format(_occurredAt.toLocal()),
-              onPressed: _pickDate,
-            ),
-            _FilterChoice(
-              key: const Key('expense-receipt-picker'),
-              label: l10n.expenseReceiptPath,
-              value: _receiptPath.text.isEmpty
-                  ? l10n.commonNone
-                  : _receiptPath.text,
-              onPressed: _chooseReceiptImage,
-            ),
-            _Input(label: l10n.expenseNotes, controller: _notes, maxLines: 3),
-            CupertinoListTile(
-              padding: EdgeInsets.zero,
-              title: Text(l10n.expenseBudgetIncluded),
-              trailing: CupertinoSwitch(
-                value: _budgetIncluded,
-                onChanged: (value) => setState(() => _budgetIncluded = value),
+        child: _isLoadingCurrencyDefaults
+            ? const Center(child: CupertinoActivityIndicator())
+            : ListView(
+                padding: AppInsets.secondaryPageScrollPadding(context),
+                children: <Widget>[
+                  _Input(label: l10n.expenseTitle, controller: _title),
+                  _FilterChoice(
+                    label: l10n.expenseTrip,
+                    value:
+                        trips
+                            .where((item) => item.metadata.recordId == _tripId)
+                            .firstOrNull
+                            ?.name ??
+                        l10n.commonNone,
+                    onPressed: () => _chooseTrip(trips),
+                  ),
+                  _FilterChoice(
+                    label: l10n.expenseCategory,
+                    value: _categoryLabel(l10n, _category),
+                    onPressed: _chooseCategory,
+                  ),
+                  _FilterChoice(
+                    key: const Key('expense-transaction-currency'),
+                    label: l10n.currencyLocal,
+                    value: _transactionCurrency.code,
+                    onPressed: () => _chooseCurrency(true),
+                  ),
+                  _Input(
+                    label: l10n.expenseTransactionAmount,
+                    controller: _transactionAmount,
+                    numeric: true,
+                  ),
+                  _FilterChoice(
+                    key: const Key('expense-home-currency'),
+                    label: l10n.currencyHome,
+                    value: _homeCurrency.code,
+                    onPressed: _tripId == null
+                        ? () => _chooseCurrency(false)
+                        : () {},
+                  ),
+                  _Input(
+                    label: l10n.expenseReferenceAmount,
+                    controller: _referenceAmount,
+                    numeric: true,
+                  ),
+                  _Input(
+                    label: l10n.expenseEstimatedAmount,
+                    controller: _estimatedAmount,
+                    numeric: true,
+                  ),
+                  _FilterChoice(
+                    label: l10n.expensePaymentMethod,
+                    value:
+                        methods
+                            .where(
+                              (item) =>
+                                  item.metadata.recordId == _paymentMethodId,
+                            )
+                            .firstOrNull
+                            ?.name ??
+                        l10n.commonNone,
+                    onPressed: () => _choosePayment(methods),
+                  ),
+                  _Input(
+                    label: l10n.expenseTax,
+                    controller: _tax,
+                    numeric: true,
+                  ),
+                  _Input(
+                    label: l10n.expenseTip,
+                    controller: _tip,
+                    numeric: true,
+                  ),
+                  _Input(
+                    label: l10n.expenseDiscount,
+                    controller: _discount,
+                    numeric: true,
+                  ),
+                  _Input(
+                    label: l10n.tripParticipants,
+                    controller: _participants,
+                    numeric: true,
+                  ),
+                  _FilterChoice(
+                    label: l10n.expenseDate,
+                    value: DateFormat.yMd(
+                      Localizations.localeOf(context).toLanguageTag(),
+                    ).add_Hm().format(_occurredAt.toLocal()),
+                    onPressed: _pickDate,
+                  ),
+                  _FilterChoice(
+                    key: const Key('expense-receipt-picker'),
+                    label: l10n.expenseReceiptPath,
+                    value: _receiptPath.text.isEmpty
+                        ? l10n.commonNone
+                        : _receiptPath.text,
+                    onPressed: _chooseReceiptImage,
+                  ),
+                  _Input(
+                    label: l10n.expenseNotes,
+                    controller: _notes,
+                    maxLines: 3,
+                  ),
+                  CupertinoListTile(
+                    padding: EdgeInsets.zero,
+                    title: Text(l10n.expenseBudgetIncluded),
+                    trailing: CupertinoSwitch(
+                      value: _budgetIncluded,
+                      onChanged: (value) =>
+                          setState(() => _budgetIncluded = value),
+                    ),
+                  ),
+                  if (_invalid)
+                    Text(
+                      l10n.expenseInvalid,
+                      style: const TextStyle(color: CupertinoColors.systemRed),
+                    ),
+                ],
               ),
-            ),
-            if (_invalid)
-              Text(
-                l10n.expenseInvalid,
-                style: const TextStyle(color: CupertinoColors.systemRed),
-              ),
-          ],
-        ),
       ),
     );
+  }
+
+  Future<void> _loadCurrencyDefaults() async {
+    try {
+      final settings = await ref.read(settingsRepositoryProvider).load();
+      if (!mounted) return;
+      setState(() {
+        if (settings != null) {
+          _transactionCurrency = settings.lastTransactionCurrency;
+          _homeCurrency = settings.defaultCurrency;
+        }
+        _isLoadingCurrencyDefaults = false;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() => _isLoadingCurrencyDefaults = false);
+    }
   }
 
   Future<T?> _choose<T>(Map<T, String> values) => showCupertinoModalPopup<T>(

@@ -20,6 +20,7 @@ void main() {
           updatedAt: DateTime.utc(2026, 8, 17),
         ),
         defaultCurrency: catalog.resolve('CNY'),
+        lastTransactionCurrency: catalog.resolve('JPY'),
         favoriteCurrencies: <Currency>[catalog.resolve('JPY')],
         languageMode: AppLanguageMode.system,
         refreshInterval: const Duration(hours: 6),
@@ -47,21 +48,10 @@ void main() {
     expect(repository.value?.wifiOnlyRefresh, isTrue);
     expect(repository.value?.languageMode, AppLanguageMode.simplifiedChinese);
     expect(repository.value?.syncEnabled, isTrue);
-    expect(container.read(localeControllerProvider), const Locale('zh', 'US'));
-  });
-
-  test('favorite currencies may be explicitly cleared', () async {
-    final repository = MemorySettingsRepository();
-    final container = ProviderContainer(
-      overrides: [settingsRepositoryProvider.overrideWithValue(repository)],
+    expect(
+      repository.value?.favoriteCurrencies.map((currency) => currency.code),
+      <String>['JPY'],
     );
-    addTearDown(container.dispose);
-    await container.read(generalSettingsControllerProvider.future);
-
-    await container
-        .read(generalSettingsControllerProvider.notifier)
-        .setFavoriteCurrencies(const <Currency>[]);
-
-    expect(repository.value?.favoriteCurrencies, isEmpty);
+    expect(container.read(localeControllerProvider), const Locale('zh', 'US'));
   });
 }

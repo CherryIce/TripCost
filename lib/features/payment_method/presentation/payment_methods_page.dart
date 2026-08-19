@@ -374,9 +374,7 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
       _foreignFee.text = template.foreignFeePercent.toString();
       _crossBorderFee.text = template.crossBorderFeePercent.toString();
       _rateMarkup.text = template.rateMarkupPercent.toString();
-      if (_name.text.trim().isEmpty) {
-        _name.text = _templateLabel(localizations, selected);
-      }
+      _name.text = _templateLabel(localizations, selected);
     });
   }
 

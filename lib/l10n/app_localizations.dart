@@ -518,6 +518,78 @@ abstract class AppLocalizations {
   /// **'1 local currency = how much home currency'**
   String get converterManualRateHint;
 
+  /// No description provided for @converterAdjustRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get converterAdjustRate;
+
+  /// No description provided for @converterRateSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose exchange rate'**
+  String get converterRateSheetTitle;
+
+  /// No description provided for @converterMarketReference.
+  ///
+  /// In en, this message translates to:
+  /// **'API reference rate'**
+  String get converterMarketReference;
+
+  /// No description provided for @converterMarketUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No API reference rate available'**
+  String get converterMarketUnavailable;
+
+  /// No description provided for @converterManualReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual rate'**
+  String get converterManualReference;
+
+  /// No description provided for @converterRateSourceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{source} · {time}'**
+  String converterRateSourceDetail(String source, String time);
+
+  /// No description provided for @converterRateUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'{quote} / {base}'**
+  String converterRateUnit(String quote, String base);
+
+  /// No description provided for @converterUseMarketRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Use API reference rate'**
+  String get converterUseMarketRate;
+
+  /// No description provided for @converterSaveAndUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and use'**
+  String get converterSaveAndUse;
+
+  /// No description provided for @converterRateDifferenceLower.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% below the API reference rate'**
+  String converterRateDifferenceLower(String percent);
+
+  /// No description provided for @converterRateDifferenceHigher.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% above the API reference rate'**
+  String converterRateDifferenceHigher(String percent);
+
+  /// No description provided for @converterRateDifferenceSame.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches the API reference rate'**
+  String get converterRateDifferenceSame;
+
   /// No description provided for @converterRefresh.
   ///
   /// In en, this message translates to:
@@ -560,17 +632,17 @@ abstract class AppLocalizations {
   /// **'Home currency'**
   String get currencyHome;
 
-  /// No description provided for @currencyFavorite.
+  /// No description provided for @currencyCommonTrading.
   ///
   /// In en, this message translates to:
-  /// **'Favorite currency'**
-  String get currencyFavorite;
+  /// **'Common trading currencies'**
+  String get currencyCommonTrading;
 
-  /// No description provided for @currencyUnfavorite.
+  /// No description provided for @currencyAllTrading.
   ///
   /// In en, this message translates to:
-  /// **'Remove favorite'**
-  String get currencyUnfavorite;
+  /// **'All trading currencies'**
+  String get currencyAllTrading;
 
   /// No description provided for @commonCancel.
   ///
@@ -1178,6 +1250,24 @@ abstract class AppLocalizations {
   /// **'For example: JP, KR'**
   String get tripDestinationsHint;
 
+  /// No description provided for @tripDestinationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get tripDestinationsEmpty;
+
+  /// No description provided for @countrySearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No countries or regions found'**
+  String get countrySearchEmpty;
+
+  /// No description provided for @countryUnknownSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved but unrecognized; select a valid destination before removing'**
+  String get countryUnknownSaved;
+
   /// No description provided for @tripStartDate.
   ///
   /// In en, this message translates to:
@@ -1195,6 +1285,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local currencies'**
   String get tripLocalCurrencies;
+
+  /// No description provided for @tripLocalCurrenciesPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended after destination selection'**
+  String get tripLocalCurrenciesPending;
+
+  /// No description provided for @tripLocalCurrenciesMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recognized; select manually'**
+  String get tripLocalCurrenciesMissing;
+
+  /// No description provided for @tripLocalCurrenciesRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'{currencies} · Recommended'**
+  String tripLocalCurrenciesRecommended(String currencies);
+
+  /// No description provided for @tripCurrencyRecommendationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update local currencies?'**
+  String get tripCurrencyRecommendationTitle;
+
+  /// No description provided for @tripCurrencyRecommendationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected countries or regions commonly use {currencies}. Update the local currencies?'**
+  String tripCurrencyRecommendationMessage(String currencies);
+
+  /// No description provided for @tripCurrencyRecommendationKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current'**
+  String get tripCurrencyRecommendationKeep;
+
+  /// No description provided for @tripCurrencyRecommendationUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get tripCurrencyRecommendationUpdate;
 
   /// No description provided for @tripBudget.
   ///
@@ -1789,18 +1921,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Default home currency'**
   String get defaultCurrency;
-
-  /// No description provided for @favoriteCurrencies.
-  ///
-  /// In en, this message translates to:
-  /// **'Favorite currencies'**
-  String get favoriteCurrencies;
-
-  /// No description provided for @noneSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'None selected'**
-  String get noneSelected;
 
   /// No description provided for @refreshInterval.
   ///

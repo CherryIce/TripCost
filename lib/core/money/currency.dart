@@ -159,3 +159,17 @@ final class CurrencyCatalog {
     ],
   );
 }
+
+Currency fallbackTransactionCurrency({
+  required Currency homeCurrency,
+  Iterable<Currency> preferredCurrencies = const <Currency>[],
+  CurrencyCatalog? catalog,
+}) {
+  final resolvedCatalog = catalog ?? CurrencyCatalog();
+  return <Currency>[
+    ...preferredCurrencies,
+    resolvedCatalog.resolve('JPY'),
+    resolvedCatalog.resolve('USD'),
+    resolvedCatalog.resolve('EUR'),
+  ].firstWhere((currency) => currency != homeCurrency);
+}

@@ -64,7 +64,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ];
 
     return CupertinoPageScaffold(
-      backgroundColor: AppTheme.launchBackground,
+      backgroundColor: AppColors.launchBackground,
       child: SafeArea(
         child: Column(
           children: <Widget>[
@@ -187,12 +187,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             updatedAt: now,
           ),
           defaultCurrency: selected,
+          lastTransactionCurrency: previous?.lastTransactionCurrency == selected
+              ? fallbackTransactionCurrency(
+                  homeCurrency: selected,
+                  preferredCurrencies:
+                      previous?.favoriteCurrencies ?? const <Currency>[],
+                )
+              : previous?.lastTransactionCurrency ??
+                    fallbackTransactionCurrency(homeCurrency: selected),
+          // Kept only to preserve compatibility with existing settings rows.
           favoriteCurrencies:
-              previous?.favoriteCurrencies ??
-              <Currency>[
-                for (final currency in CurrencyCatalog.knownCurrencies)
-                  if (currency != selected) currency,
-              ].take(3).toList(growable: false),
+              previous?.favoriteCurrencies ?? const <Currency>[],
           languageMode: previous?.languageMode ?? AppLanguageMode.system,
           refreshInterval:
               previous?.refreshInterval ?? const Duration(hours: 6),
@@ -315,7 +320,7 @@ class _PageIndicator extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             color: isCurrent
-                ? AppTheme.accent.resolveFrom(context)
+                ? AppColors.primary.resolveFrom(context)
                 : CupertinoColors.systemGrey4.resolveFrom(context),
           ),
         );

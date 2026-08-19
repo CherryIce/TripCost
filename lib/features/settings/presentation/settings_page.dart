@@ -60,7 +60,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               data: (settings) => _GeneralSettingsSection(
                 settings: settings,
                 onDefaultCurrency: () => _chooseDefaultCurrency(settings),
-                onFavorites: () => _chooseFavorites(settings),
                 onRefreshInterval: () => _chooseRefreshInterval(settings),
                 onWifiOnly: _setWifiOnlyRefresh,
               ),
@@ -185,29 +184,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       context: context,
       title: AppLocalizations.of(context).defaultCurrency,
       selected: settings.defaultCurrency,
-      favoriteCurrencies: settings.favoriteCurrencies,
     );
     if (result?.currency case final selected?) {
       if (!mounted) return;
       await ref
           .read(generalSettingsControllerProvider.notifier)
           .setDefaultCurrency(selected);
-      ref.invalidate(converterControllerProvider);
-    }
-  }
-
-  Future<void> _chooseFavorites(UserSettingsModel settings) async {
-    final result = await showCurrencyMultiPickerPage(
-      context: context,
-      title: AppLocalizations.of(context).favoriteCurrencies,
-      doneLabel: AppLocalizations.of(context).commonDone,
-      selected: settings.favoriteCurrencies,
-    );
-    if (result != null) {
-      if (!mounted) return;
-      await ref
-          .read(generalSettingsControllerProvider.notifier)
-          .setFavoriteCurrencies(result);
       ref.invalidate(converterControllerProvider);
     }
   }
@@ -470,14 +452,12 @@ class _GeneralSettingsSection extends StatelessWidget {
   const _GeneralSettingsSection({
     required this.settings,
     required this.onDefaultCurrency,
-    required this.onFavorites,
     required this.onRefreshInterval,
     required this.onWifiOnly,
   });
 
   final UserSettingsModel settings;
   final VoidCallback onDefaultCurrency;
-  final VoidCallback onFavorites;
   final VoidCallback onRefreshInterval;
   final ValueChanged<bool> onWifiOnly;
 
@@ -493,16 +473,6 @@ class _GeneralSettingsSection extends StatelessWidget {
           label: l10n.defaultCurrency,
           value: settings.defaultCurrency.code,
           onPressed: onDefaultCurrency,
-        ),
-        _SettingsButton(
-          icon: CupertinoIcons.star,
-          label: l10n.favoriteCurrencies,
-          value: settings.favoriteCurrencies.isEmpty
-              ? l10n.noneSelected
-              : settings.favoriteCurrencies
-                    .map((currency) => currency.code)
-                    .join(', '),
-          onPressed: onFavorites,
         ),
         _SettingsButton(
           icon: CupertinoIcons.refresh,

@@ -21,6 +21,7 @@ void main() {
     addTearDown(tester.view.reset);
     tester.view.padding = const FakeViewPadding(bottom: 102);
     final database = createIsolatedTestDatabase();
+    final rateRequests = FakeRateRequestCounter();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -28,7 +29,9 @@ void main() {
           startupStateStoreProvider.overrideWithValue(
             _CompletedStartupStateStore(),
           ),
-          rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
+          rateRepositoryProvider.overrideWithValue(
+            createFakeRateRepository(requestCounter: rateRequests),
+          ),
           settingsRepositoryProvider.overrideWithValue(
             MemorySettingsRepository(),
           ),
@@ -74,20 +77,52 @@ void main() {
     tester.view.viewInsets = const FakeViewPadding();
     await tester.pump();
 
-    await tester.tap(find.byIcon(CupertinoIcons.pencil));
-    await tester.pumpAndSettle();
-    final manualRateDialog = find.byKey(const Key('manual-rate-dialog'));
-    expect(manualRateDialog, findsOneWidget);
-    expect(tester.getSize(manualRateDialog), const Size(270, 190));
-    expect(
-      find.descendant(
-        of: manualRateDialog,
-        matching: find.byType(SingleChildScrollView),
-      ),
-      findsNothing,
+    expect(find.byKey(const Key('converter-active-rate')), findsOneWidget);
+    final inputLabelRect = tester.getRect(
+      find.byKey(const Key('converter-input-label')),
     );
-    await tester.tap(find.text('Cancel'));
+    final inputRect = tester.getRect(
+      find.byKey(const Key('converter-expression')),
+    );
+    expect(inputRect.top - inputLabelRect.bottom, greaterThanOrEqualTo(8));
+
+    final compareButtonRect = tester.getRect(
+      find.byKey(const Key('compare-payment-button')),
+    );
+    final dccButtonRect = tester.getRect(find.byKey(const Key('dcc-button')));
+    expect(compareButtonRect.height, dccButtonRect.height);
+
+    final refreshButton = find.byKey(const Key('refresh-market-rate'));
+    expect(refreshButton, findsOneWidget);
+    final requestsBeforeRefresh = rateRequests.count;
+    await tester.tap(refreshButton);
+    await tester.pump();
+    expect(rateRequests.count, requestsBeforeRefresh + 1);
+    expect(tester.widget<CupertinoButton>(refreshButton).onPressed, isNull);
+    await tester.tap(refreshButton, warnIfMissed: false);
+    await tester.pump(const Duration(milliseconds: 999));
+    expect(rateRequests.count, requestsBeforeRefresh + 1);
+    expect(tester.widget<CupertinoButton>(refreshButton).onPressed, isNull);
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(tester.widget<CupertinoButton>(refreshButton).onPressed, isNotNull);
+
+    await tester.tap(find.byKey(const Key('adjust-rate')));
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('rate-selection-sheet')), findsOneWidget);
+    expect(find.text('API reference rate'), findsWidgets);
+    expect(find.text('Manual rate'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('manual-rate-field')), '0.05');
+    await tester.pump();
+    expect(find.byKey(const Key('manual-rate-comparison')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('save-manual-rate')));
+    await tester.pumpAndSettle();
+    expect(find.text('Manual rate'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('adjust-rate')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('use-market-rate')));
+    await tester.pumpAndSettle();
+    expect(find.text('API reference rate'), findsOneWidget);
 
     await tester.tap(find.text('Trips'));
     await tester.pumpAndSettle();

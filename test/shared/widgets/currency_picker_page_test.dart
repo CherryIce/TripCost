@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/currencies/data/currency_directory_repository.dart';
@@ -7,6 +8,7 @@ import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/rates/data/frankfurter_api_client.dart';
 import 'package:trip_cost/core/rates/data/frankfurter_dtos.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart' as db;
+import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
 void main() {
@@ -30,6 +32,13 @@ void main() {
           ),
         ],
         child: CupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => CupertinoPageScaffold(
               child: Center(
@@ -53,6 +62,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('currency-option-AUD')), findsOneWidget);
+    expect(find.byKey(const Key('currency-common-option-AUD')), findsOneWidget);
+    expect(find.byKey(const Key('currency-section-common')), findsOneWidget);
+    expect(find.byKey(const Key('currency-section-all')), findsOneWidget);
+    expect(find.byKey(const Key('currency-index-A')), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.star_fill), findsNothing);
+    expect(find.byIcon(CupertinoIcons.star), findsNothing);
     expect(find.byKey(const Key('currency-option-CNY')), findsNothing);
 
     await tester.tap(find.byKey(const Key('currency-option-AUD')));
@@ -76,6 +91,13 @@ void main() {
           ),
         ],
         child: CupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => CupertinoPageScaffold(
               child: Center(
@@ -126,6 +148,13 @@ void main() {
           ),
         ],
         child: CupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Column(
             children: <Widget>[
               Expanded(
@@ -167,6 +196,73 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('fake-tab-bar')), findsOneWidget);
   });
+
+  testWidgets('groups all currencies by code and filters without favorites', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currencyDirectoryRepositoryProvider.overrideWithValue(
+            CurrencyDirectoryRepository(
+              database: database,
+              gateway: const _GroupedDirectoryGateway(),
+            ),
+          ),
+        ],
+        child: CupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => CupertinoPageScaffold(
+              child: Center(
+                child: CupertinoButton(
+                  onPressed: () => showCurrencyPickerPage(
+                    context: context,
+                    title: 'Currency',
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('currency-section-A')), findsOneWidget);
+    expect(find.byKey(const Key('currency-section-B')), findsOneWidget);
+    expect(find.byKey(const Key('currency-section-U')), findsOneWidget);
+    expect(find.byKey(const Key('currency-index-B')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('currency-common-option-USD'))).dx,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const Key('currency-common-option-AUD')))
+            .dx,
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('currency-search-field')),
+      'BBD',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('currency-option-BBD')), findsOneWidget);
+    expect(find.byKey(const Key('currency-section-common')), findsNothing);
+    expect(find.byKey(const Key('currency-section-all')), findsNothing);
+    expect(find.byKey(const Key('currency-index-B')), findsNothing);
+    expect(find.byIcon(CupertinoIcons.star), findsNothing);
+  });
 }
 
 final class _AudDirectoryGateway implements FrankfurterRatesGateway {
@@ -183,6 +279,39 @@ final class _AudDirectoryGateway implements FrankfurterRatesGateway {
         startDate: null,
         endDate: null,
       ),
+    ];
+  }
+
+  @override
+  Future<FrankfurterRateDto> getRate({
+    required String baseCurrencyCode,
+    required String quoteCurrencyCode,
+    DateTime? date,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<List<FrankfurterRateDto>> getRates({
+    required String baseCurrencyCode,
+    required Iterable<String> quoteCurrencyCodes,
+    DateTime? date,
+  }) => throw UnimplementedError();
+}
+
+final class _GroupedDirectoryGateway implements FrankfurterRatesGateway {
+  const _GroupedDirectoryGateway();
+
+  @override
+  Future<List<FrankfurterCurrencyDto>> getCurrencies() async {
+    return <FrankfurterCurrencyDto>[
+      for (final code in <String>['USD', 'BBD', 'AUD'])
+        FrankfurterCurrencyDto(
+          code: code,
+          name: code,
+          numericCode: null,
+          symbol: null,
+          startDate: null,
+          endDate: null,
+        ),
     ];
   }
 

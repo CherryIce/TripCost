@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
-import 'package:trip_cost/core/currencies/application/currency_directory_controller.dart';
+import 'package:trip_cost/core/destinations/country_directory.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/export/expense_export_service.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
@@ -18,6 +19,7 @@ import 'package:trip_cost/features/payment_method/application/payment_methods_co
 import 'package:trip_cost/features/settings/application/settings_data_service.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/country_picker_page.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 import 'package:uuid/uuid.dart';
 
@@ -299,14 +301,16 @@ class TripEditorLoaderPage extends ConsumerWidget {
 
 class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   final _name = TextEditingController();
-  final _destinations = TextEditingController();
   final _budget = TextEditingController();
   final _participants = TextEditingController(text: '1');
+  final CountryDirectory _countryDirectory = CountryDirectory();
+  final Set<String> _destinationCodes = <String>{};
   late final String _recordId;
   late DateTime _startDate;
   late DateTime _endDate;
   Currency _homeCurrency = CurrencyCatalog().resolve('CNY');
   final Set<Currency> _localCurrencies = <Currency>{};
+  bool _localCurrenciesManuallyEdited = false;
   String? _defaultPaymentMethodId;
   bool _offlinePack = false;
   bool _invalid = false;
@@ -322,22 +326,20 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
     _endDate = initial?.endDate ?? _startDate.add(const Duration(days: 6));
     if (initial != null) {
       _name.text = initial.name;
-      _destinations.text = initial.destinationCodes.join(', ');
+      _destinationCodes.addAll(initial.destinationCodes);
       _budget.text = initial.totalBudget?.amount.toString() ?? '';
       _participants.text = initial.participantCount.toString();
       _homeCurrency = initial.homeCurrency;
       _localCurrencies.addAll(initial.localCurrencies);
+      _localCurrenciesManuallyEdited = true;
       _defaultPaymentMethodId = initial.defaultPaymentMethodId;
       _offlinePack = initial.offlinePackUpdatedAt != null;
-    } else {
-      _localCurrencies.add(CurrencyCatalog().resolve('JPY'));
     }
   }
 
   @override
   void dispose() {
     _name.dispose();
-    _destinations.dispose();
     _budget.dispose();
     _participants.dispose();
     super.dispose();
@@ -372,11 +374,10 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
           padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
             _Field(label: l10n.tripName, controller: _name),
-            _Field(
+            _Choice(
               label: l10n.tripDestinations,
-              controller: _destinations,
-              placeholder: l10n.tripDestinationsHint,
-              onChanged: _recommendLocalCurrencies,
+              value: _destinationDisplayValue(context),
+              onPressed: _pickDestinations,
             ),
             _Choice(
               label: l10n.tripStartDate,
@@ -395,13 +396,10 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
             ),
             _Choice(
               label: l10n.tripLocalCurrencies,
-              value:
-                  (_localCurrencies.toList()..sort(
-                        (left, right) => left.code.compareTo(right.code),
-                      ))
-                      .map((currency) => currency.code)
-                      .join(' / '),
-              onPressed: _pickLocalCurrencies,
+              value: _localCurrencyDisplayValue(l10n),
+              onPressed: _destinationCodes.isEmpty && _localCurrencies.isEmpty
+                  ? null
+                  : _pickLocalCurrencies,
             ),
             _Field(
               label: l10n.tripBudget,
@@ -503,6 +501,65 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
     }
   }
 
+  Future<void> _pickDestinations() async {
+    final selected = await showCountryMultiPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).tripDestinations,
+      doneLabel: AppLocalizations.of(context).commonDone,
+      selectedCodes: _destinationCodes.toList(growable: false),
+      minimumSelection: 1,
+    );
+    if (selected == null || !mounted) return;
+
+    final selectedCodes = selected.toSet();
+    final changed = !setEquals(_destinationCodes, selectedCodes);
+    final recommended = _countryDirectory.recommendedCurrencies(selectedCodes);
+    final manuallyEdited = _localCurrenciesManuallyEdited;
+    setState(() {
+      _destinationCodes
+        ..clear()
+        ..addAll(selectedCodes);
+      if (changed && !manuallyEdited) {
+        _replaceLocalCurrencies(recommended);
+      }
+    });
+    if (!changed ||
+        !manuallyEdited ||
+        recommended.isEmpty ||
+        _sameCurrencyCodes(_localCurrencies, recommended)) {
+      return;
+    }
+
+    final codes = recommended.map((currency) => currency.code).join(' / ');
+    final shouldUpdate = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return CupertinoAlertDialog(
+          title: Text(l10n.tripCurrencyRecommendationTitle),
+          content: Text(l10n.tripCurrencyRecommendationMessage(codes)),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.tripCurrencyRecommendationKeep),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.tripCurrencyRecommendationUpdate),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldUpdate == true && mounted) {
+      setState(() {
+        _replaceLocalCurrencies(recommended);
+        _localCurrenciesManuallyEdited = false;
+      });
+    }
+  }
+
   Future<void> _pickLocalCurrencies() async {
     final selected = await showCurrencyMultiPickerPage(
       context: context,
@@ -516,26 +573,50 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
         _localCurrencies
           ..clear()
           ..addAll(selected);
+        _localCurrenciesManuallyEdited = true;
       });
     }
   }
 
-  void _recommendLocalCurrencies(String value) {
-    final destinationCodes = value
-        .split(',')
-        .map((item) => item.trim().toUpperCase())
-        .where((item) => item.isNotEmpty)
-        .toSet();
-    final recommended = ref
-        .read(currencyDirectoryProvider)
-        .currencies
-        .where(
-          (currency) => currency.countryCodes.any(destinationCodes.contains),
-        );
-    if (recommended.isNotEmpty) {
-      setState(() => _localCurrencies.addAll(recommended));
+  String _destinationDisplayValue(BuildContext context) {
+    if (_destinationCodes.isEmpty) {
+      return AppLocalizations.of(context).tripDestinationsEmpty;
     }
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final names = <String>[
+      for (final code in _destinationCodes)
+        _countryDirectory.displayNameForCode(code, languageCode),
+    ]..sort();
+    return names.join(' / ');
   }
+
+  String _localCurrencyDisplayValue(AppLocalizations l10n) {
+    if (_localCurrencies.isEmpty) {
+      return _destinationCodes.isEmpty
+          ? l10n.tripLocalCurrenciesPending
+          : l10n.tripLocalCurrenciesMissing;
+    }
+    final currencies =
+        (_localCurrencies.toList()
+              ..sort((left, right) => left.code.compareTo(right.code)))
+            .map((currency) => currency.code)
+            .join(' / ');
+    return _localCurrenciesManuallyEdited
+        ? currencies
+        : l10n.tripLocalCurrenciesRecommended(currencies);
+  }
+
+  void _replaceLocalCurrencies(Iterable<Currency> currencies) {
+    _localCurrencies
+      ..clear()
+      ..addAll(currencies);
+  }
+
+  bool _sameCurrencyCodes(Iterable<Currency> left, Iterable<Currency> right) =>
+      setEquals(
+        left.map((currency) => currency.code).toSet(),
+        right.map((currency) => currency.code).toSet(),
+      );
 
   Future<void> _pickPaymentMethod(List<PaymentMethodModel> methods) async {
     final selected = await _choose<String?>(<String?, String>{
@@ -581,15 +662,12 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
           updatedAt: now,
         ),
         name: _name.text.trim(),
-        destinationCodes: _destinations.text
-            .split(',')
-            .map((value) => value.trim().toUpperCase())
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false),
+        destinationCodes: _destinationCodes.toList()..sort(),
         startDate: _startDate,
         endDate: _endDate,
         homeCurrency: _homeCurrency,
-        localCurrencies: _localCurrencies.toList(growable: false),
+        localCurrencies: _localCurrencies.toList()
+          ..sort((left, right) => left.code.compareTo(right.code)),
         totalBudget: budgetText.isEmpty
             ? null
             : Money.parse(budgetText, _homeCurrency),
@@ -943,13 +1021,11 @@ class _Field extends StatelessWidget {
     required this.controller,
     this.numeric = false,
     this.placeholder,
-    this.onChanged,
   });
   final String label;
   final TextEditingController controller;
   final bool numeric;
   final String? placeholder;
-  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -967,7 +1043,6 @@ class _Field extends StatelessWidget {
                 ? const TextInputType.numberWithOptions(decimal: true)
                 : TextInputType.text,
             padding: const EdgeInsets.all(12),
-            onChanged: onChanged,
           ),
         ],
       ),
@@ -983,7 +1058,7 @@ class _Choice extends StatelessWidget {
   });
   final String label;
   final String value;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -993,10 +1068,16 @@ class _Choice extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(child: Text(label)),
-          Text(
-            value,
-            style: TextStyle(
-              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
             ),
           ),
           const Icon(CupertinoIcons.chevron_forward, size: 14),

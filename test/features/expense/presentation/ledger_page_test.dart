@@ -1,12 +1,21 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
+import 'package:trip_cost/core/infrastructure/app_providers.dart';
+import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/storage/files/receipt_storage.dart';
+import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/features/expense/presentation/ledger_page.dart';
 import 'package:trip_cost/features/scanner/application/scanner_gateways.dart';
+import 'package:trip_cost/l10n/app_localizations.dart';
 
+import '../../../helpers/isolated_test_database.dart';
+import '../../../helpers/m4_fakes.dart';
 import '../../../helpers/m5_fixtures.dart';
 
 void main() {
@@ -82,6 +91,64 @@ void main() {
 
     expect(refunded.toString(), '100');
     expect(originalRefundableAmount(original).toString(), '100');
+  });
+
+  testWidgets('standalone editor loads persisted currency defaults', (
+    tester,
+  ) async {
+    final database = createIsolatedTestDatabase();
+    final catalog = CurrencyCatalog();
+    final settings = MemorySettingsRepository(
+      UserSettingsModel(
+        metadata: SyncRecordMetadata(
+          recordId: DriftSettingsRepository.settingsRecordId,
+          syncVersion: 2,
+          updatedAt: DateTime.utc(2026, 8, 19, 3),
+        ),
+        defaultCurrency: catalog.resolve('CNY'),
+        lastTransactionCurrency: catalog.resolve('USD'),
+        favoriteCurrencies: const <Currency>[],
+        languageMode: AppLanguageMode.simplifiedChinese,
+        refreshInterval: const Duration(hours: 6),
+        wifiOnlyRefresh: false,
+        syncEnabled: false,
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          settingsRepositoryProvider.overrideWithValue(settings),
+        ],
+        child: CupertinoApp(
+          locale: const Locale('zh'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const ExpenseEditorPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('expense-transaction-currency')),
+        matching: find.text('USD'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('expense-home-currency')),
+        matching: find.text('CNY'),
+      ),
+      findsOneWidget,
+    );
   });
 }
 

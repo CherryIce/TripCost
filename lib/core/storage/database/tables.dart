@@ -224,6 +224,13 @@ class UserSettingsRecords extends Table with SyncableColumns {
   TextColumn get defaultCurrency =>
       text().references(Currencies, #code, onDelete: KeyAction.restrict)();
 
+  @ReferenceName('lastTransactionCurrencySettings')
+  TextColumn get lastTransactionCurrency => text().nullable().references(
+    Currencies,
+    #code,
+    onDelete: KeyAction.restrict,
+  )();
+
   TextColumn get favoriteCurrenciesJson => text()();
 
   TextColumn get languageMode => text()();

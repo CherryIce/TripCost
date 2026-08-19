@@ -115,6 +115,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(CupertinoTextField).first, '001');
+    await _selectJapanDestination(tester);
     final saveButton = tester.widget<CupertinoButton>(
       find.widgetWithText(CupertinoButton, 'Save'),
     );
@@ -145,6 +146,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(CupertinoTextField).first, '001');
+    await _selectJapanDestination(tester);
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(find.text('New trip'), findsOneWidget);
@@ -229,6 +231,20 @@ void main() {
     expect(find.text('Understand prices instantly'), findsOneWidget);
     expect(find.text('快速看懂当地价格'), findsNothing);
   });
+}
+
+Future<void> _selectJapanDestination(WidgetTester tester) async {
+  await tester.tap(find.text('Countries or regions'));
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.byKey(const Key('country-search-field')),
+    'Japan',
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('country-option-JP')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(CupertinoButton, 'Done'));
+  await tester.pumpAndSettle();
 }
 
 Widget _testApp(

@@ -30,6 +30,22 @@ final class DriftSettingsRepository
       return null;
     }
     final favoriteCodes = _decodeStringList(row.favoriteCurrenciesJson);
+    final defaultCurrency = _currencyCatalog.resolve(row.defaultCurrency);
+    final favoriteCurrencies = <money.Currency>[
+      for (final code in favoriteCodes) _currencyCatalog.resolve(code),
+    ];
+    final storedTransactionCurrency = row.lastTransactionCurrency == null
+        ? null
+        : _currencyCatalog.resolve(row.lastTransactionCurrency!);
+    final lastTransactionCurrency =
+        storedTransactionCurrency == null ||
+            storedTransactionCurrency == defaultCurrency
+        ? money.fallbackTransactionCurrency(
+            homeCurrency: defaultCurrency,
+            preferredCurrencies: favoriteCurrencies,
+            catalog: _currencyCatalog,
+          )
+        : storedTransactionCurrency;
     return UserSettingsModel(
       metadata: SyncRecordMetadata(
         recordId: row.id,
@@ -37,10 +53,9 @@ final class DriftSettingsRepository
         updatedAt: row.updatedAt.toUtc(),
         deletedAt: row.deletedAt?.toUtc(),
       ),
-      defaultCurrency: _currencyCatalog.resolve(row.defaultCurrency),
-      favoriteCurrencies: <money.Currency>[
-        for (final code in favoriteCodes) _currencyCatalog.resolve(code),
-      ],
+      defaultCurrency: defaultCurrency,
+      lastTransactionCurrency: lastTransactionCurrency,
+      favoriteCurrencies: favoriteCurrencies,
       languageMode: AppLanguageMode.values.byName(row.languageMode),
       refreshInterval: Duration(minutes: row.refreshIntervalMinutes),
       wifiOnlyRefresh: row.wifiOnlyRefresh,
@@ -53,12 +68,16 @@ final class DriftSettingsRepository
     await DatabaseBootstrapper(_database).seedCurrencyMetadata();
     await _ensureCurrencies(<money.Currency>{
       settings.defaultCurrency,
+      settings.lastTransactionCurrency,
       ...settings.favoriteCurrencies,
     });
     await _database.coreDao.upsertUserSettings(
       UserSettingsRecordsCompanion.insert(
         id: settings.metadata.recordId,
         defaultCurrency: settings.defaultCurrency.code,
+        lastTransactionCurrency: Value<String?>(
+          settings.lastTransactionCurrency.code,
+        ),
         favoriteCurrenciesJson: jsonEncode(<String>[
           for (final currency in settings.favoriteCurrencies) currency.code,
         ]),

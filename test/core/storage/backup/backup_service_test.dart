@@ -36,6 +36,7 @@ void main() {
         updatedAt: now.add(Duration(minutes: version)),
       ),
       defaultCurrency: catalog.resolve(currency),
+      lastTransactionCurrency: catalog.resolve('JPY'),
       favoriteCurrencies: <Currency>[catalog.resolve('JPY')],
       languageMode: AppLanguageMode.system,
       refreshInterval: const Duration(hours: 6),
@@ -65,6 +66,7 @@ void main() {
 
     final restored = await settingsRepository.load();
     expect(restored!.defaultCurrency.code, 'CNY');
+    expect(restored.lastTransactionCurrency.code, 'JPY');
     expect(restored.metadata.syncVersion, 1);
     expect(
       await database.coreDao.getSyncMetadata(

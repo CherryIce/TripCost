@@ -429,6 +429,7 @@ final class UserSettingsModel {
   UserSettingsModel({
     required this.metadata,
     required this.defaultCurrency,
+    required this.lastTransactionCurrency,
     required List<Currency> favoriteCurrencies,
     required this.languageMode,
     required this.refreshInterval,
@@ -442,6 +443,7 @@ final class UserSettingsModel {
 
   final SyncRecordMetadata metadata;
   final Currency defaultCurrency;
+  final Currency lastTransactionCurrency;
   final List<Currency> favoriteCurrencies;
   final AppLanguageMode languageMode;
   final Duration refreshInterval;
