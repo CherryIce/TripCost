@@ -61,6 +61,7 @@ void main() {
 
     final payload = jsonDecode(gateway.payload!) as Map<String, Object?>;
     expect(payload['version'], 1);
+    expect(payload['languageCode'], anyOf('en', 'zh'));
     expect((payload['rate']! as Map<String, Object?>)['isStale'], isTrue);
     expect((payload['trip']! as Map<String, Object?>)['name'], 'Tokyo');
     expect(gateway.clearCount, 0);
@@ -70,6 +71,31 @@ void main() {
     await WidgetSnapshotService(database, gateway: gateway).clear();
     expect(gateway.clearCount, 1);
   });
+
+  test(
+    'writes the explicitly selected app language into the snapshot',
+    () async {
+      await database.coreDao.upsertUserSettings(
+        UserSettingsRecordsCompanion.insert(
+          id: 'app',
+          updatedAt: now,
+          defaultCurrency: 'CNY',
+          favoriteCurrenciesJson: '[]',
+          languageMode: 'english',
+          refreshIntervalMinutes: 360,
+        ),
+      );
+
+      await WidgetSnapshotService(
+        database,
+        gateway: gateway,
+        clock: () => now,
+      ).refresh();
+
+      final payload = jsonDecode(gateway.payload!) as Map<String, Object?>;
+      expect(payload['languageCode'], 'en');
+    },
+  );
 
   test('summarizes the latest standalone expense without a trip', () async {
     await database.coreDao.upsertExpense(

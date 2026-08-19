@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:drift/drift.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/platform/generated/platform_apis.g.dart';
 import 'package:trip_cost/core/storage/data_reset_coordinator.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
+import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 
 abstract interface class WidgetSnapshotGateway {
   Future<void> write(String payloadJson);
@@ -52,6 +55,7 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
     final payload = <String, Object?>{
       'version': contractVersion,
       'generatedAtUtc': now.toIso8601String(),
+      'languageCode': await _languageCode(),
       'rate': await _rateSummary(now),
       'trip': await _tripSummary(),
     };
@@ -60,6 +64,25 @@ final class WidgetSnapshotService implements SharedSnapshotStore {
 
   @override
   Future<void> clear() => _gateway.clear();
+
+  Future<String> _languageCode() async {
+    try {
+      final mode =
+          (await DriftSettingsRepository(_database).load())?.languageMode ??
+          AppLanguageMode.system;
+      return switch (mode) {
+        AppLanguageMode.simplifiedChinese => 'zh',
+        AppLanguageMode.english => 'en',
+        AppLanguageMode.system => _supportedLanguageCode(
+          PlatformDispatcher.instance.locale.languageCode,
+        ),
+      };
+    } on Object {
+      return _supportedLanguageCode(
+        PlatformDispatcher.instance.locale.languageCode,
+      );
+    }
+  }
 
   Future<Map<String, Object?>?> _rateSummary(DateTime now) async {
     final row = await _database
@@ -182,3 +205,6 @@ DateTime _dateFromDb(Object? value) {
 }
 
 bool _boolFromDb(Object? value) => value == true || value == 1;
+
+String _supportedLanguageCode(String languageCode) =>
+    languageCode.toLowerCase() == 'zh' ? 'zh' : 'en';

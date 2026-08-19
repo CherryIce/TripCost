@@ -4,6 +4,7 @@ import WidgetKit
 struct WidgetSnapshotEnvelope: Decodable {
   let version: Int
   let generatedAtUtc: Date
+  let languageCode: String?
   let rate: RateSummary?
   let trip: TripSummary?
 
@@ -106,6 +107,9 @@ struct TripCostWidgetView: View {
   }
 
   private var accent: Color { Color(red: 0.09, green: 0.42, blue: 0.36) }
+  private var strings: WidgetStrings {
+    WidgetStrings(languageCode: entry.snapshot?.languageCode)
+  }
 
   @ViewBuilder
   private func spendingView(
@@ -139,7 +143,7 @@ struct TripCostWidgetView: View {
       if let budget = trip.budget, let progress = budgetProgress(spent: trip.spent, budget: budget) {
         VStack(spacing: 4) {
           HStack {
-            Text("widget_budget")
+            Text(verbatim: strings.value("widget_budget"))
             Spacer()
             Text("\(budget) \(trip.homeCurrency)")
           }
@@ -151,7 +155,7 @@ struct TripCostWidgetView: View {
       } else if let latestTitle = trip.latestExpenseTitle {
         HStack(spacing: 5) {
           Image(systemName: "clock.arrow.circlepath")
-          Text("widget_latest")
+          Text(verbatim: strings.value("widget_latest"))
           Text(latestTitle)
             .lineLimit(1)
             .layoutPriority(1)
@@ -199,7 +203,7 @@ struct TripCostWidgetView: View {
            let progress = budgetProgress(spent: trip.spent, budget: budget) {
           VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 3) {
-              Text("widget_budget")
+              Text(verbatim: strings.value("widget_budget"))
               Text("· \(budget) \(trip.homeCurrency)")
             }
             .font(.caption2)
@@ -211,15 +215,20 @@ struct TripCostWidgetView: View {
         }
         Spacer(minLength: 0)
         if let rate {
-          HStack(spacing: 5) {
-            Image(systemName: "arrow.left.arrow.right")
-            Text("1 \(rate.baseCurrency) = \(rate.rate) \(rate.quoteCurrency)")
-              .lineLimit(1)
-            if rate.isStale {
-              Image(systemName: "exclamationmark.clock")
-                .foregroundColor(.orange)
-                .accessibilityLabel(Text("widget_stale"))
+          VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+              Text("1 \(rate.baseCurrency)")
+              if rate.isStale {
+                Image(systemName: "exclamationmark.clock")
+                  .foregroundColor(.orange)
+                  .accessibilityLabel(Text(verbatim: strings.value("widget_stale")))
+              }
             }
+            Text("≈ \(rate.rate) \(rate.quoteCurrency)")
+              .font(.caption.monospacedDigit().weight(.medium))
+              .lineLimit(1)
+              .minimumScaleFactor(0.8)
+              .foregroundColor(.primary)
           }
           .font(.caption2)
           .foregroundColor(.secondary)
@@ -241,7 +250,7 @@ struct TripCostWidgetView: View {
       VStack(alignment: .leading, spacing: 0) {
         Group {
           if trip.isUnassigned == true {
-            Text("widget_recent_spending")
+            Text(verbatim: strings.value("widget_recent_spending"))
           } else {
             Text(trip.name)
           }
@@ -271,7 +280,7 @@ struct TripCostWidgetView: View {
       VStack(alignment: .leading, spacing: 1) {
         Group {
           if trip.isUnassigned == true {
-            Text("widget_recent_spending")
+            Text(verbatim: strings.value("widget_recent_spending"))
           } else {
             Text(trip.name)
           }
@@ -290,9 +299,9 @@ struct TripCostWidgetView: View {
   private func spentLabel(_ trip: WidgetSnapshotEnvelope.TripSummary) -> some View {
     Group {
       if trip.isUnassigned == true {
-        Text("widget_total_spent")
+        Text(verbatim: strings.value("widget_total_spent"))
       } else {
-        Text("widget_trip_spent")
+        Text(verbatim: strings.value("widget_trip_spent"))
       }
     }
     .font(.caption)
@@ -301,26 +310,29 @@ struct TripCostWidgetView: View {
 
   private func rateView(_ rate: WidgetSnapshotEnvelope.RateSummary) -> some View {
     VStack(alignment: .leading, spacing: 0) {
-      HStack {
+      HStack(spacing: 7) {
         Image(systemName: "arrow.left.arrow.right")
           .font(.system(size: 13, weight: .semibold))
           .foregroundColor(accent)
           .frame(width: 28, height: 28)
           .background(accent.opacity(0.12), in: Circle())
         Text("\(rate.baseCurrency) / \(rate.quoteCurrency)")
-          .font(.headline)
+          .font(.system(size: family == .systemSmall ? 15 : 17, weight: .semibold))
           .lineLimit(1)
-        Spacer()
+          .minimumScaleFactor(0.75)
+          .allowsTightening(true)
+          .layoutPriority(1)
+        Spacer(minLength: 0)
       }
       Spacer(minLength: 6)
-      Text("\(rate.convertedAmount) \(rate.quoteCurrency)")
-        .font(.system(size: 27, weight: .bold, design: .rounded))
+      Text("1 \(rate.baseCurrency)")
+        .font(.subheadline.weight(.semibold))
+        .foregroundColor(.secondary)
+      Text("≈ \(rate.rate) \(rate.quoteCurrency)")
+        .font(.system(size: 22, weight: .bold, design: .rounded))
         .monospacedDigit()
         .lineLimit(1)
         .minimumScaleFactor(0.65)
-      Text("1 \(rate.baseCurrency)")
-        .font(.caption)
-        .foregroundColor(.secondary)
       Spacer(minLength: 6)
       Text(rate.rateDate)
         .font(.caption2)
@@ -333,14 +345,16 @@ struct TripCostWidgetView: View {
       Image(systemName: "airplane.circle.fill")
         .font(.title)
         .foregroundColor(accent)
-      Text("widget_empty").font(.headline)
-      Text("widget_open_app").font(.caption).foregroundColor(.secondary)
+      Text(verbatim: strings.value("widget_empty")).font(.headline)
+      Text(verbatim: strings.value("widget_open_app"))
+        .font(.caption)
+        .foregroundColor(.secondary)
       Spacer(minLength: 0)
     }
   }
 
   private func expenseCountText(_ count: Int) -> String {
-    String(format: NSLocalizedString("widget_expense_count", comment: ""), count)
+    String(format: strings.value("widget_expense_count"), count)
   }
 
   private func budgetProgress(spent: String, budget: String) -> Double? {
@@ -349,6 +363,29 @@ struct TripCostWidgetView: View {
           budgetValue > 0
     else { return nil }
     return min(max(spentValue / budgetValue, 0), 1)
+  }
+}
+
+private struct WidgetStrings {
+  private let bundle: Bundle
+
+  init(languageCode: String?) {
+    let resourceName: String? = switch languageCode?.lowercased() {
+    case "zh", "zh-hans": "zh-Hans"
+    case "en": "en"
+    default: nil
+    }
+    if let resourceName,
+       let path = Bundle.main.path(forResource: resourceName, ofType: "lproj"),
+       let localizedBundle = Bundle(path: path) {
+      bundle = localizedBundle
+    } else {
+      bundle = .main
+    }
+  }
+
+  func value(_ key: String) -> String {
+    NSLocalizedString(key, bundle: bundle, comment: "")
   }
 }
 
