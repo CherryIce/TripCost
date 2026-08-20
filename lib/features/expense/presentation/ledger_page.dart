@@ -49,6 +49,11 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
   LedgerViewMode _mode = LedgerViewMode.timeline;
   LedgerPeriod _period = LedgerPeriod.thisMonth;
   LedgerFilter _filter = const LedgerFilter();
+  List<ExpenseModel>? _cachedExpenses;
+  LedgerPeriod? _cachedPeriod;
+  LedgerFilter? _cachedFilter;
+  int? _cachedMonth;
+  _LedgerDerivedData? _cachedDerivedData;
 
   @override
   Widget build(BuildContext context) {
@@ -84,24 +89,13 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
             ),
           ),
           data: (all) {
-            final periodItems = all
-                .where(
-                  (expense) =>
-                      ledgerPeriodMatches(_period, expense, DateTime.now()),
-                )
-                .toList(growable: false);
-            final items = periodItems.where(_filter.matches).toList()
-              ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
-            final summaryCurrency =
-                items.firstOrNull?.referenceAmount.currency ??
-                periodItems.firstOrNull?.referenceAmount.currency ??
-                all.firstOrNull?.referenceAmount.currency ??
-                CurrencyCatalog().resolve('CNY');
+            final derived = _derivedDataFor(all);
+            final items = derived.items;
             return Column(
               children: <Widget>[
                 _LedgerOverview(
                   items: items,
-                  currency: summaryCurrency,
+                  currency: derived.summaryCurrency,
                   period: _period,
                   mode: _mode,
                   onChoosePeriod: _choosePeriod,
@@ -112,7 +106,7 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
                       ? Center(child: Text(l10n.ledgerEmpty))
                       : switch (_mode) {
                           LedgerViewMode.timeline => _Timeline(
-                            items: items,
+                            entries: derived.timelineEntries,
                             trips: trips,
                           ),
                           LedgerViewMode.calendar => _Calendar(items: items),
@@ -125,6 +119,41 @@ class _LedgerPageState extends ConsumerState<LedgerPage> {
         ),
       ),
     );
+  }
+
+  _LedgerDerivedData _derivedDataFor(List<ExpenseModel> all) {
+    final now = DateTime.now();
+    final month = now.year * 12 + now.month;
+    final cached = _cachedDerivedData;
+    if (cached != null &&
+        identical(_cachedExpenses, all) &&
+        _cachedPeriod == _period &&
+        identical(_cachedFilter, _filter) &&
+        _cachedMonth == month) {
+      return cached;
+    }
+
+    final periodItems = all
+        .where((expense) => ledgerPeriodMatches(_period, expense, now))
+        .toList(growable: false);
+    final sortedItems = periodItems.where(_filter.matches).toList()
+      ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    final items = List<ExpenseModel>.unmodifiable(sortedItems);
+    final derived = _LedgerDerivedData(
+      items: items,
+      summaryCurrency:
+          items.firstOrNull?.referenceAmount.currency ??
+          periodItems.firstOrNull?.referenceAmount.currency ??
+          all.firstOrNull?.referenceAmount.currency ??
+          CurrencyCatalog().resolve('CNY'),
+      timelineEntries: _buildTimelineEntries(items),
+    );
+    _cachedExpenses = all;
+    _cachedPeriod = _period;
+    _cachedFilter = _filter;
+    _cachedMonth = month;
+    _cachedDerivedData = derived;
+    return derived;
   }
 
   Future<void> _choosePeriod() async {
@@ -3346,8 +3375,7 @@ class _ExpenseEditorTextRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           flex: 6,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Stack(
             children: <Widget>[
               CupertinoTextField(
                 key: fieldKey,
@@ -3362,9 +3390,11 @@ class _ExpenseEditorTextRow extends StatelessWidget {
                     : TextInputType.text,
                 textInputAction: textInputAction,
                 onSubmitted: onSubmitted,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
+                padding: EdgeInsets.fromLTRB(
+                  10,
+                  8,
+                  10,
+                  confirmationLabel == null ? 8 : 24,
                 ),
                 decoration: BoxDecoration(
                   color: CupertinoColors.tertiarySystemFill.resolveFrom(
@@ -3373,17 +3403,23 @@ class _ExpenseEditorTextRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              if (confirmationLabel case final label?) ...<Widget>[
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: CupertinoColors.systemOrange.resolveFrom(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+              if (confirmationLabel case final confirmation?)
+                PositionedDirectional(
+                  end: 10,
+                  bottom: 5,
+                  child: IgnorePointer(
+                    child: Text(
+                      confirmation,
+                      style: TextStyle(
+                        color: CupertinoColors.systemOrange.resolveFrom(
+                          context,
+                        ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -4133,35 +4169,80 @@ class ExpenseDetailPage extends ConsumerWidget {
 }
 
 class _Timeline extends StatelessWidget {
-  const _Timeline({required this.items, required this.trips});
-  final List<ExpenseModel> items;
+  const _Timeline({required this.entries, required this.trips});
+  final List<_TimelineEntry> entries;
   final List<TripModel> trips;
 
   @override
   Widget build(BuildContext context) {
-    final groups = <DateTime, List<ExpenseModel>>{};
-    for (final item in items) {
-      final local = item.occurredAt.toLocal();
-      final day = DateTime(local.year, local.month, local.day);
-      groups.putIfAbsent(day, () => <ExpenseModel>[]).add(item);
-    }
     final tripNames = <String, String>{
       for (final trip in trips) trip.metadata.recordId: trip.name,
     };
-    return ListView(
+    return ListView.builder(
+      key: const Key('ledger-timeline-list'),
       padding: const EdgeInsets.only(bottom: 16),
-      children: <Widget>[
-        for (final group in groups.entries) ...[
-          _TimelineDayHeader(day: group.key, items: group.value),
-          for (final item in group.value)
-            _ExpenseTile(
-              expense: item,
-              tripName: item.tripId == null ? null : tripNames[item.tripId],
-            ),
-        ],
-      ],
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        return switch (entries[index]) {
+          _TimelineDayEntry(:final day, :final items) => _TimelineDayHeader(
+            day: day,
+            items: items,
+          ),
+          _TimelineExpenseEntry(:final expense) => _ExpenseTile(
+            expense: expense,
+            tripName: expense.tripId == null ? null : tripNames[expense.tripId],
+          ),
+        };
+      },
     );
   }
+}
+
+final class _LedgerDerivedData {
+  const _LedgerDerivedData({
+    required this.items,
+    required this.summaryCurrency,
+    required this.timelineEntries,
+  });
+
+  final List<ExpenseModel> items;
+  final Currency summaryCurrency;
+  final List<_TimelineEntry> timelineEntries;
+}
+
+sealed class _TimelineEntry {
+  const _TimelineEntry();
+}
+
+final class _TimelineDayEntry extends _TimelineEntry {
+  const _TimelineDayEntry({required this.day, required this.items});
+
+  final DateTime day;
+  final List<ExpenseModel> items;
+}
+
+final class _TimelineExpenseEntry extends _TimelineEntry {
+  const _TimelineExpenseEntry(this.expense);
+
+  final ExpenseModel expense;
+}
+
+List<_TimelineEntry> _buildTimelineEntries(List<ExpenseModel> items) {
+  final groups = <DateTime, List<ExpenseModel>>{};
+  for (final item in items) {
+    final local = item.occurredAt.toLocal();
+    final day = DateTime(local.year, local.month, local.day);
+    groups.putIfAbsent(day, () => <ExpenseModel>[]).add(item);
+  }
+  return List<_TimelineEntry>.unmodifiable(<_TimelineEntry>[
+    for (final group in groups.entries) ...<_TimelineEntry>[
+      _TimelineDayEntry(
+        day: group.key,
+        items: List<ExpenseModel>.unmodifiable(group.value),
+      ),
+      for (final item in group.value) _TimelineExpenseEntry(item),
+    ],
+  ]);
 }
 
 class _TimelineDayHeader extends StatelessWidget {

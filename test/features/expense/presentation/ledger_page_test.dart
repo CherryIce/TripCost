@@ -392,6 +392,13 @@ void main() {
 
     expect(find.text('已从票据填入 4 项，请核对'), findsOneWidget);
     expect(find.text('待确认'), findsOneWidget);
+    final titleFieldRect = tester.getRect(_field('expense-title-field'));
+    final confirmationRect = tester.getRect(find.text('待确认'));
+    expect(
+      titleFieldRect.contains(confirmationRect.center),
+      isTrue,
+      reason: '待确认应显示在商户或项目输入框内',
+    );
     expect(
       tester
           .widget<CupertinoTextField>(_field('expense-title-field'))
@@ -562,6 +569,10 @@ void main() {
     expect(find.byKey(const Key('ledger-summary-total')), findsOneWidget);
     expect(find.byIcon(Icons.restaurant_rounded), findsOneWidget);
     expect(find.byIcon(Icons.bed_rounded), findsOneWidget);
+    final timeline = tester.widget<ListView>(
+      find.byKey(const Key('ledger-timeline-list')),
+    );
+    expect(timeline.childrenDelegate, isA<SliverChildBuilderDelegate>());
 
     await tester.tap(find.byIcon(CupertinoIcons.slider_horizontal_3));
     await tester.pumpAndSettle();

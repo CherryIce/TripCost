@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/app/app.dart';
 import 'package:trip_cost/app/locale_controller.dart';
+import 'package:trip_cost/core/destinations/country_directory.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
@@ -53,6 +54,7 @@ final class _ProductionAppBootstrapState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(Future<void>(CountryDirectory.prewarm));
       if (mounted) {
         unawaited(ref.read(localDataChangeCoordinatorProvider).notify());
       }

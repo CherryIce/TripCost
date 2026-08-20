@@ -21,6 +21,19 @@ void main() {
     );
   });
 
+  test('reuses the pre-sorted default directory across instances', () {
+    CountryDirectory.prewarm();
+
+    final first = CountryDirectory().search('', 'zh');
+    final second = CountryDirectory().search('', 'zh');
+
+    expect(identical(first, second), isTrue);
+    expect(
+      first.map((country) => country.codeShort),
+      containsAll(<String>['CN', 'JP', 'US']),
+    );
+  });
+
   test('recommends, deduplicates, and fully describes local currencies', () {
     expect(
       directory
