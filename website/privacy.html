@@ -45,7 +45,7 @@
           <a href="index.html#features" data-language-link data-zh="功能" data-en="Features">功能</a>
           <a href="index.html#privacy" data-language-link data-zh="隐私优先" data-en="Privacy">隐私优先</a>
           <a href="privacy.html" data-language-link aria-current="page" data-zh="隐私政策" data-en="Privacy policy">隐私政策</a>
-          <a href="mailto:djl13333995679@163.com" data-zh="联系" data-en="Contact">联系</a>
+          <a href="mailto:djl13333995679@163.com" data-contact-trigger data-zh="联系" data-en="Contact">联系</a>
           <div class="language-switch" role="group" aria-label="语言 / Language">
             <button type="button" data-lang-choice="zh" aria-pressed="true">中</button>
             <span aria-hidden="true"></span>
@@ -232,7 +232,7 @@
                 <p>如果你对本政策、TripCost 的数据处理方式或隐私控制有疑问，请通过以下方式联系。我们会在合理期限内回复。</p>
                 <div class="policy-contact">
                   <div><strong>TripCost 独立开发者</strong><span>隐私与支持联系邮箱</span></div>
-                  <a href="mailto:djl13333995679@163.com">djl13333995679@163.com</a>
+                  <a href="mailto:djl13333995679@163.com" data-contact-trigger>djl13333995679@163.com</a>
                 </div>
               </section>
             </article>
@@ -376,7 +376,7 @@
                 <p>If you have questions about this policy, TripCost's data handling, or privacy controls, contact us below. We will respond within a reasonable time.</p>
                 <div class="policy-contact">
                   <div><strong>Independent TripCost developer</strong><span>Privacy and support email</span></div>
-                  <a href="mailto:djl13333995679@163.com">djl13333995679@163.com</a>
+                  <a href="mailto:djl13333995679@163.com" data-contact-trigger>djl13333995679@163.com</a>
                 </div>
               </section>
             </article>
@@ -384,6 +384,41 @@
         </div>
       </div>
     </main>
+
+    <div class="contact-modal" data-contact-modal hidden>
+      <div class="contact-modal-backdrop" data-contact-close aria-hidden="true"></div>
+      <section
+        class="contact-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-dialog-title"
+        tabindex="-1"
+        data-contact-panel
+      >
+        <button class="contact-modal-close" type="button" data-contact-close>
+          <span aria-hidden="true">×</span>
+          <span class="sr-only" data-zh="关闭联系方式" data-en="Close contact details">关闭联系方式</span>
+        </button>
+        <div class="contact-modal-mark" aria-hidden="true"><i></i></div>
+        <span class="section-kicker" data-zh="联系我们" data-en="Contact us">联系我们</span>
+        <h2 id="contact-dialog-title" data-zh="需要帮助？给我们发邮件。" data-en="Need help? Send us an email.">需要帮助？给我们发邮件。</h2>
+        <p data-zh="你可以复制下面的邮箱地址；如果浏览器支持，也可以直接打开邮件客户端。" data-en="Copy the address below, or open your email app directly if your browser supports it.">你可以复制下面的邮箱地址；如果浏览器支持，也可以直接打开邮件客户端。</p>
+        <div class="contact-email-box">
+          <span data-zh="联系邮箱" data-en="Email address">联系邮箱</span>
+          <code data-contact-email>djl13333995679@163.com</code>
+        </div>
+        <div class="contact-modal-actions">
+          <button class="button contact-copy-button" type="button" data-copy-email>
+            <span data-copy-label data-zh="复制邮箱" data-en="Copy email">复制邮箱</span>
+          </button>
+          <a class="button contact-send-button" href="mailto:djl13333995679@163.com">
+            <span data-zh="发送邮件" data-en="Send email">发送邮件</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <p class="contact-copy-status" role="status" aria-live="polite" data-copy-status></p>
+      </section>
+    </div>
 
     <footer class="site-footer">
       <div class="shell footer-grid">
@@ -395,7 +430,7 @@
           <a href="index.html" data-language-link data-zh="官网" data-en="Website">官网</a>
           <a href="https://frankfurter.dev/" rel="noopener noreferrer" data-zh="汇率来源" data-en="Rate provider">汇率来源</a>
           <a href="https://support.apple.com/guide/icloud/mm62d92d6b3e/icloud" rel="noopener noreferrer" data-zh="iCloud 数据说明" data-en="iCloud data guide">iCloud 数据说明</a>
-          <a href="mailto:djl13333995679@163.com" data-zh="联系我们" data-en="Contact">联系我们</a>
+          <a href="mailto:djl13333995679@163.com" data-contact-trigger data-zh="联系我们" data-en="Contact">联系我们</a>
         </div>
         <div class="footer-meta">
           <p>© <span data-current-year>2026</span> TripCost</p>

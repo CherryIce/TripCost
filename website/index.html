@@ -310,6 +310,41 @@
       </section>
     </main>
 
+    <div class="contact-modal" data-contact-modal hidden>
+      <div class="contact-modal-backdrop" data-contact-close aria-hidden="true"></div>
+      <section
+        class="contact-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-dialog-title"
+        tabindex="-1"
+        data-contact-panel
+      >
+        <button class="contact-modal-close" type="button" data-contact-close>
+          <span aria-hidden="true">×</span>
+          <span class="sr-only" data-zh="关闭联系方式" data-en="Close contact details">关闭联系方式</span>
+        </button>
+        <div class="contact-modal-mark" aria-hidden="true"><i></i></div>
+        <span class="section-kicker" data-zh="联系我们" data-en="Contact us">联系我们</span>
+        <h2 id="contact-dialog-title" data-zh="需要帮助？给我们发邮件。" data-en="Need help? Send us an email.">需要帮助？给我们发邮件。</h2>
+        <p data-zh="你可以复制下面的邮箱地址；如果浏览器支持，也可以直接打开邮件客户端。" data-en="Copy the address below, or open your email app directly if your browser supports it.">你可以复制下面的邮箱地址；如果浏览器支持，也可以直接打开邮件客户端。</p>
+        <div class="contact-email-box">
+          <span data-zh="联系邮箱" data-en="Email address">联系邮箱</span>
+          <code data-contact-email>djl13333995679@163.com</code>
+        </div>
+        <div class="contact-modal-actions">
+          <button class="button contact-copy-button" type="button" data-copy-email>
+            <span data-copy-label data-zh="复制邮箱" data-en="Copy email">复制邮箱</span>
+          </button>
+          <a class="button contact-send-button" href="mailto:djl13333995679@163.com">
+            <span data-zh="发送邮件" data-en="Send email">发送邮件</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <p class="contact-copy-status" role="status" aria-live="polite" data-copy-status></p>
+      </section>
+    </div>
+
     <footer class="site-footer">
       <div class="shell footer-grid">
         <div class="footer-brand">
@@ -320,7 +355,7 @@
           <a href="#features" data-zh="功能" data-en="Features">功能</a>
           <a href="#privacy" data-zh="隐私优先" data-en="Privacy">隐私优先</a>
           <a href="privacy.html" data-language-link data-zh="隐私政策" data-en="Privacy policy">隐私政策</a>
-          <a href="mailto:djl13333995679@163.com" data-zh="联系我们" data-en="Contact">联系我们</a>
+          <a href="mailto:djl13333995679@163.com" data-contact-trigger data-zh="联系我们" data-en="Contact">联系我们</a>
         </div>
         <div class="footer-meta">
           <p>© <span data-current-year>2026</span> TripCost</p>
