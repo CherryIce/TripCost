@@ -15,6 +15,9 @@ import 'package:trip_cost/core/money/money_formatter.dart';
 import 'package:trip_cost/core/rates/domain/exchange_rate_repository.dart';
 import 'package:trip_cost/features/converter/application/converter_controller.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
+import 'package:trip_cost/features/onboarding/presentation/quick_setup_page.dart';
+import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
+import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
@@ -29,6 +32,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   final _expressionController = TextEditingController(text: '12800');
   Timer? _rateRefreshCooldownTimer;
   var _rateRefreshCoolingDown = false;
+  var _setupPromptDismissed = false;
 
   @override
   void dispose() {
@@ -46,6 +50,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         (ref.watch(expensesControllerProvider).value ?? const [])
             .take(3)
             .toList();
+    final trips = ref.watch(tripsControllerProvider);
+    final paymentMethods = ref.watch(paymentMethodsControllerProvider);
+    final setupDataReady = trips.hasValue && paymentMethods.hasValue;
+    final setupCompletedCount =
+        1 +
+        ((trips.value?.isNotEmpty ?? false) ? 1 : 0) +
+        ((paymentMethods.value?.isNotEmpty ?? false) ? 1 : 0);
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(localizations.homeTitle),
@@ -70,7 +81,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     .updateExpression,
                 onSelectTransactionCurrency: () => _selectCurrency(
                   selected: state.transactionCurrency,
-                  excluded: state.homeCurrency,
                   title: localizations.currencyLocal,
                   onSelected: ref
                       .read(converterControllerProvider.notifier)
@@ -78,7 +88,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 onSelectHomeCurrency: () => _selectCurrency(
                   selected: state.homeCurrency,
-                  excluded: state.transactionCurrency,
                   title: localizations.currencyHome,
                   onSelected: ref
                       .read(converterControllerProvider.notifier)
@@ -137,6 +146,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
+              if (setupDataReady &&
+                  setupCompletedCount < 3 &&
+                  !_setupPromptDismissed) ...<Widget>[
+                const SizedBox(height: AppSpacing.large),
+                _QuickSetupPromptCard(
+                  progress: localizations.onboardingSetupProgress(
+                    setupCompletedCount,
+                    3,
+                  ),
+                  onContinue: () => _openQuickSetup(state),
+                  onDismiss: () => setState(() => _setupPromptDismissed = true),
+                ),
+              ],
               const SizedBox(height: AppSpacing.large),
               Text(
                 localizations.converterRecentTitle,
@@ -186,7 +208,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Future<void> _selectCurrency({
     required Currency selected,
-    required Currency excluded,
     required String title,
     required Future<void> Function(Currency) onSelected,
   }) async {
@@ -194,12 +215,29 @@ class _HomePageState extends ConsumerState<HomePage> {
       context: context,
       title: title,
       selected: selected,
-      excluded: excluded,
     );
     if (result?.currency case final currency?) {
       if (!mounted) return;
       await onSelected(currency);
     }
+  }
+
+  Future<void> _openQuickSetup(ConverterState state) async {
+    await Navigator.of(context, rootNavigator: true).push<void>(
+      CupertinoPageRoute<void>(
+        builder: (pageContext) => QuickSetupPage(
+          initialCurrency: state.homeCurrency,
+          onFinish: (currency) async {
+            if (currency != state.homeCurrency) {
+              await ref
+                  .read(converterControllerProvider.notifier)
+                  .changeHomeCurrency(currency);
+            }
+            if (pageContext.mounted) Navigator.of(pageContext).pop();
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _refreshMarketRate() async {
@@ -213,6 +251,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _showRateSheet(ConverterState state) async {
+    if (state.transactionCurrency == state.homeCurrency) return;
     final notifier = ref.read(converterControllerProvider.notifier);
     final result = await showCupertinoModalPopup<_RateSheetResult>(
       context: context,
@@ -858,20 +897,21 @@ class _ActiveRateSummary extends StatelessWidget {
               semanticLabel: localizations.converterRefresh,
             ),
           ),
-        CupertinoButton(
-          key: const Key('adjust-rate'),
-          minimumSize: Size.zero,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          onPressed: onAdjustRate,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(localizations.converterAdjustRate),
-              const SizedBox(width: 2),
-              const Icon(CupertinoIcons.chevron_forward, size: 14),
-            ],
+        if (resolution?.availability != RateAvailability.identity)
+          CupertinoButton(
+            key: const Key('adjust-rate'),
+            minimumSize: Size.zero,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            onPressed: onAdjustRate,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(localizations.converterAdjustRate),
+                const SizedBox(width: 2),
+                const Icon(CupertinoIcons.chevron_forward, size: 14),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -941,6 +981,66 @@ String _comparisonMessage(
   return difference.isNegative
       ? localizations.converterRateDifferenceLower(displayed)
       : localizations.converterRateDifferenceHigher(displayed);
+}
+
+class _QuickSetupPromptCard extends StatelessWidget {
+  const _QuickSetupPromptCard({
+    required this.progress,
+    required this.onContinue,
+    required this.onDismiss,
+  });
+
+  final String progress;
+  final VoidCallback onContinue;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _Surface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  l10n.onboardingSetupTitle,
+                  style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+                ),
+              ),
+              CupertinoButton(
+                key: const Key('quick-setup-prompt-dismiss'),
+                padding: EdgeInsets.zero,
+                onPressed: onDismiss,
+                child: Icon(
+                  CupertinoIcons.xmark_circle_fill,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                  semanticLabel: l10n.onboardingSetupDismiss,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            progress,
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.medium),
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoButton(
+              key: const Key('quick-setup-prompt-continue'),
+              color: CupertinoColors.secondarySystemFill.resolveFrom(context),
+              onPressed: onContinue,
+              child: Text(l10n.onboardingSetupContinue),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Surface extends StatelessWidget {

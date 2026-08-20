@@ -9,9 +9,9 @@ import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/currency.dart';
 import 'package:trip_cost/core/storage/settings/drift_settings_repository.dart';
 import 'package:trip_cost/features/onboarding/application/default_currency_recommender.dart';
+import 'package:trip_cost/features/onboarding/presentation/quick_setup_page.dart';
 import 'package:trip_cost/features/startup/application/startup_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
-import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -26,6 +26,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pageController = PageController();
   int _currentPage = 0;
   bool _isFinishing = false;
+  bool _showQuickSetup = false;
   Currency? _selectedCurrency;
 
   @override
@@ -44,6 +45,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showQuickSetup) {
+      return QuickSetupPage(
+        key: const Key('onboarding-quick-setup'),
+        initialCurrency: _selectedCurrency!,
+        onBack: () => setState(() => _showQuickSetup = false),
+        onCurrencyChanged: (currency) => _selectedCurrency = currency,
+        onFinish: (currency) {
+          _selectedCurrency = currency;
+          return _finish();
+        },
+      );
+    }
     final localizations = AppLocalizations.of(context);
     final pages = <_OnboardingContent>[
       _OnboardingContent(
@@ -85,59 +98,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
             ),
             _PageIndicator(currentPage: _currentPage, pageCount: _pageCount),
-            if (_currentPage == _pageCount - 1) ...<Widget>[
-              const SizedBox(height: AppSpacing.medium),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.large,
-                ),
-                child: CupertinoButton(
-                  key: const Key('onboarding-home-currency'),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  onPressed: _chooseHomeCurrency,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Text(localizations.onboardingHomeCurrency),
-                      const SizedBox(width: 8),
-                      Text(
-                        _selectedCurrency!.code,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(CupertinoIcons.chevron_down, size: 14),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.large,
-                ),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        onPressed: _isFinishing
-                            ? null
-                            : () => _finish(AppRoutes.tripCreate),
-                        child: Text(localizations.onboardingCreateTrip),
-                      ),
-                    ),
-                    Expanded(
-                      child: CupertinoButton(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        onPressed: _isFinishing
-                            ? null
-                            : () => _finish(AppRoutes.paymentMethods),
-                        child: Text(localizations.onboardingAddPayment),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             const SizedBox(height: AppSpacing.large),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.large),
@@ -147,7 +107,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   onPressed: _isFinishing ? null : _advance,
                   child: Text(
                     _currentPage == _pageCount - 1
-                        ? localizations.onboardingStart
+                        ? localizations.onboardingSetupStart
                         : localizations.onboardingNext,
                   ),
                 ),
@@ -162,7 +122,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   Future<void> _advance() async {
     if (_currentPage == _pageCount - 1) {
-      await _finish();
+      setState(() => _showQuickSetup = true);
       return;
     }
     await _pageController.nextPage(
@@ -171,7 +131,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
-  Future<void> _finish([String destination = AppRoutes.home]) async {
+  Future<void> _finish() async {
     if (_isFinishing) return;
     setState(() => _isFinishing = true);
     try {
@@ -187,14 +147,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             updatedAt: now,
           ),
           defaultCurrency: selected,
-          lastTransactionCurrency: previous?.lastTransactionCurrency == selected
-              ? fallbackTransactionCurrency(
-                  homeCurrency: selected,
-                  preferredCurrencies:
-                      previous?.favoriteCurrencies ?? const <Currency>[],
-                )
-              : previous?.lastTransactionCurrency ??
-                    fallbackTransactionCurrency(homeCurrency: selected),
+          lastTransactionCurrency:
+              previous?.lastTransactionCurrency ??
+              fallbackTransactionCurrency(),
           // Kept only to preserve compatibility with existing settings rows.
           favoriteCurrencies:
               previous?.favoriteCurrencies ?? const <Currency>[],
@@ -214,25 +169,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       // Local storage failure must not block entering the app.
     }
     if (!mounted) return;
-    final router = GoRouter.of(context);
-    router.go(AppRoutes.home);
-    if (destination != AppRoutes.home) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        router.push<void>(destination);
-      });
-    }
-  }
-
-  Future<void> _chooseHomeCurrency() async {
-    final result = await showCurrencyPickerPage(
-      context: context,
-      title: AppLocalizations.of(context).onboardingHomeCurrency,
-      selected: _selectedCurrency,
-    );
-    if (result?.currency case final selected?) {
-      if (!mounted) return;
-      setState(() => _selectedCurrency = selected);
-    }
+    GoRouter.of(context).go(AppRoutes.home);
   }
 }
 

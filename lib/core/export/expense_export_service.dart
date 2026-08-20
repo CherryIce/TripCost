@@ -143,6 +143,7 @@ final class ExpenseExportRow {
     required this.estimatedAmount,
     required this.actualAmount,
     required this.entryType,
+    required this.relatedExpenseId,
   });
 
   factory ExpenseExportRow.fromExpense(ExpenseModel expense) {
@@ -159,6 +160,7 @@ final class ExpenseExportRow {
       estimatedAmount: expense.estimatedFinalAmount.amount.toString(),
       actualAmount: expense.actualFinalAmount?.amount.toString(),
       entryType: expense.entryType.name,
+      relatedExpenseId: expense.relatedExpenseId,
     );
   }
 
@@ -174,6 +176,7 @@ final class ExpenseExportRow {
   final String estimatedAmount;
   final String? actualAmount;
   final String entryType;
+  final String? relatedExpenseId;
 
   List<String> toCells() => <String>[
     occurredAt.toUtc().toIso8601String(),
@@ -188,6 +191,7 @@ final class ExpenseExportRow {
     estimatedAmount,
     actualAmount ?? '',
     entryType,
+    relatedExpenseId ?? '',
   ];
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -203,6 +207,7 @@ final class ExpenseExportRow {
     'estimatedAmount': estimatedAmount,
     'actualAmount': actualAmount,
     'entryType': entryType,
+    'relatedExpenseId': relatedExpenseId,
   };
 }
 
@@ -256,6 +261,7 @@ final class ExpenseExportLabels {
     required this.estimated,
     required this.actual,
     required this.type,
+    required this.relatedExpense,
     required this.disclaimer,
   });
 
@@ -275,6 +281,7 @@ final class ExpenseExportLabels {
   final String estimated;
   final String actual;
   final String type;
+  final String relatedExpense;
   final String disclaimer;
 
   List<String> get csvHeaders => <String>[
@@ -290,6 +297,7 @@ final class ExpenseExportLabels {
     estimated,
     actual,
     type,
+    relatedExpense,
   ];
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -305,6 +313,7 @@ final class ExpenseExportLabels {
     'estimated': estimated,
     'actual': actual,
     'type': type,
+    'relatedExpense': relatedExpense,
   };
 
   static const ExpenseExportLabels _en = ExpenseExportLabels(
@@ -321,6 +330,7 @@ final class ExpenseExportLabels {
     estimated: 'Estimated amount',
     actual: 'Actual amount',
     type: 'Entry type',
+    relatedExpense: 'Related original ID',
     disclaimer:
         'Reference information only. Final posted amounts are determined by the merchant, payment provider, card network, and issuer.',
   );
@@ -339,6 +349,7 @@ final class ExpenseExportLabels {
     estimated: '预计金额',
     actual: '实际入账金额',
     type: '记录类型',
+    relatedExpense: '关联原交易 ID',
     disclaimer: '结果仅供参考。实际入账以商户、支付机构、卡组织和发卡行最终处理为准。',
   );
 }

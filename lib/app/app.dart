@@ -8,6 +8,7 @@ import 'package:trip_cost/app/router/app_router.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/app_keyboard_actions.dart';
 
 class TripCostApp extends ConsumerWidget {
   const TripCostApp({super.key});
@@ -31,7 +32,8 @@ class TripCostApp extends ConsumerWidget {
       localeResolutionCallback: (preferred, _) =>
           resolveSupportedAppLocale(preferred),
       theme: AppTheme.cupertino,
-      builder: (context, child) => _SyncCompletionBanner(child: child!),
+      builder: (context, child) =>
+          AppKeyboardDismissRegion(child: _SyncCompletionBanner(child: child!)),
     );
   }
 }

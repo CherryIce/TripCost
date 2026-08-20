@@ -57,6 +57,8 @@ void main() {
       expect(contents, contains('"105"'));
       expect(contents, contains('"-400","JPY"'));
       expect(contents, isNot(contains('"\'-400"')));
+      expect(contents, contains('"关联原交易 ID"'));
+      expect(contents, contains('"expense-1"'));
       expect(contents.contains('\n') && !contents.contains('\r\n'), isFalse);
     },
   );

@@ -40,6 +40,17 @@ final class DriftTripRepository
           deletedAt: Value<DateTime?>(trip.metadata.deletedAt),
           name: trip.name,
           destinationCodesJson: jsonEncode(trip.destinationCodes),
+          routeStopsJson: Value<String>(
+            jsonEncode(<Map<String, Object?>>[
+              for (final stop in trip.stops)
+                <String, Object?>{
+                  'countryCode': stop.countryCode,
+                  'startDate': stop.startDate.toIso8601String(),
+                  'endDate': stop.endDate.toIso8601String(),
+                  'localCurrency': stop.localCurrency.code,
+                },
+            ]),
+          ),
           startDate: trip.startDate,
           endDate: trip.endDate,
           homeCurrency: trip.homeCurrency.code,
@@ -98,16 +109,19 @@ final class DriftTripRepository
       row.id,
     );
     final localCodes = _decodeStringList(row.localCurrenciesJson);
+    final localCurrencies = <money.Currency>[
+      for (final code in localCodes) _currencyCatalog.resolve(code),
+    ];
+    final stops = _decodeStops(row.routeStopsJson);
     return TripModel(
       metadata: _metadataFrom(row, metadataRow),
       name: row.name,
       destinationCodes: _decodeStringList(row.destinationCodesJson),
       startDate: row.startDate.toUtc(),
       endDate: row.endDate.toUtc(),
+      stops: stops,
       homeCurrency: _currencyCatalog.resolve(row.homeCurrency),
-      localCurrencies: <money.Currency>[
-        for (final code in localCodes) _currencyCatalog.resolve(code),
-      ],
+      localCurrencies: localCurrencies,
       totalBudget: row.totalBudget == null
           ? null
           : Money.parse(
@@ -120,6 +134,25 @@ final class DriftTripRepository
       status: TripStatus.values.byName(row.status),
       createdAt: row.createdAt.toUtc(),
     );
+  }
+
+  List<TripStopModel>? _decodeStops(String encoded) {
+    final value = jsonDecode(encoded);
+    if (value is! List<Object?> || value.isEmpty) return null;
+    return <TripStopModel>[
+      for (final item in value)
+        if (item case final Map<String, Object?> map)
+          TripStopModel(
+            countryCode: map['countryCode']! as String,
+            startDate: DateTime.parse(map['startDate']! as String).toUtc(),
+            endDate: DateTime.parse(map['endDate']! as String).toUtc(),
+            localCurrency: _currencyCatalog.resolve(
+              map['localCurrency']! as String,
+            ),
+          )
+        else
+          throw const FormatException('Invalid trip route stop payload.'),
+    ];
   }
 
   SyncRecordMetadata _metadataFrom(Trip row, SyncMetadataEntry? metadata) {

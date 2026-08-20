@@ -253,6 +253,7 @@ final class TripModel {
     required List<String> destinationCodes,
     required DateTime startDate,
     required DateTime endDate,
+    List<TripStopModel>? stops,
     required this.homeCurrency,
     required List<Currency> localCurrencies,
     required this.totalBudget,
@@ -263,6 +264,15 @@ final class TripModel {
     DateTime? offlinePackUpdatedAt,
   }) : destinationCodes = List<String>.unmodifiable(destinationCodes),
        localCurrencies = List<Currency>.unmodifiable(localCurrencies),
+       stops = List<TripStopModel>.unmodifiable(
+         stops ??
+             _legacyTripStops(
+               destinationCodes: destinationCodes,
+               startDate: startDate,
+               endDate: endDate,
+               localCurrencies: localCurrencies,
+             ),
+       ),
        startDate = requireUtc(startDate, 'startDate'),
        endDate = requireUtc(endDate, 'endDate'),
        createdAt = requireUtc(createdAt, 'createdAt'),
@@ -287,6 +297,13 @@ final class TripModel {
     if (participantCount < 1) {
       throw RangeError.range(participantCount, 1, null, 'participantCount');
     }
+    _validateTripStops(
+      stops: this.stops,
+      destinationCodes: this.destinationCodes,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      localCurrencies: this.localCurrencies,
+    );
   }
 
   final SyncRecordMetadata metadata;
@@ -294,6 +311,7 @@ final class TripModel {
   final List<String> destinationCodes;
   final DateTime startDate;
   final DateTime endDate;
+  final List<TripStopModel> stops;
   final Currency homeCurrency;
   final List<Currency> localCurrencies;
   final Money? totalBudget;
@@ -302,6 +320,112 @@ final class TripModel {
   final DateTime? offlinePackUpdatedAt;
   final TripStatus status;
   final DateTime createdAt;
+}
+
+final class TripStopModel {
+  TripStopModel({
+    required String countryCode,
+    required DateTime startDate,
+    required DateTime endDate,
+    required this.localCurrency,
+  }) : countryCode = countryCode.trim().toUpperCase(),
+       startDate = requireUtc(startDate, 'stop.startDate'),
+       endDate = requireUtc(endDate, 'stop.endDate') {
+    if (this.countryCode.isEmpty) {
+      throw const FormatException('Trip stop countryCode must not be empty.');
+    }
+    if (this.endDate.isBefore(this.startDate)) {
+      throw const FormatException(
+        'Trip stop endDate must not precede startDate.',
+      );
+    }
+  }
+
+  final String countryCode;
+  final DateTime startDate;
+  final DateTime endDate;
+  final Currency localCurrency;
+}
+
+List<TripStopModel> _legacyTripStops({
+  required List<String> destinationCodes,
+  required DateTime startDate,
+  required DateTime endDate,
+  required List<Currency> localCurrencies,
+}) {
+  if (destinationCodes.isEmpty || localCurrencies.isEmpty) {
+    return const <TripStopModel>[];
+  }
+  final totalDays = endDate.difference(startDate).inDays + 1;
+  if (totalDays < destinationCodes.length) {
+    return const <TripStopModel>[];
+  }
+  return <TripStopModel>[
+    for (var index = 0; index < destinationCodes.length; index += 1)
+      TripStopModel(
+        countryCode: destinationCodes[index],
+        startDate: startDate.add(
+          Duration(days: totalDays * index ~/ destinationCodes.length),
+        ),
+        endDate: startDate.add(
+          Duration(
+            days: (totalDays * (index + 1) ~/ destinationCodes.length) - 1,
+          ),
+        ),
+        localCurrency:
+            localCurrencies[index < localCurrencies.length
+                ? index
+                : localCurrencies.length - 1],
+      ),
+  ];
+}
+
+void _validateTripStops({
+  required List<TripStopModel> stops,
+  required List<String> destinationCodes,
+  required DateTime startDate,
+  required DateTime endDate,
+  required List<Currency> localCurrencies,
+}) {
+  if (stops.isEmpty) return;
+  final normalizedCodes = <String>[
+    for (final code in destinationCodes) code.trim().toUpperCase(),
+  ];
+  final routeCodes = <String>[for (final stop in stops) stop.countryCode];
+  final codesMatch =
+      normalizedCodes.length == routeCodes.length &&
+      List<bool>.generate(
+        normalizedCodes.length,
+        (index) => normalizedCodes[index] == routeCodes[index],
+      ).every((matches) => matches);
+  if (!codesMatch) {
+    throw const FormatException(
+      'Trip stops must match destinationCodes in route order.',
+    );
+  }
+  if (stops.first.startDate != startDate || stops.last.endDate != endDate) {
+    throw const FormatException('Trip stops must span the whole trip.');
+  }
+  final currencies = <String>{for (final value in localCurrencies) value.code};
+  for (var index = 0; index < stops.length; index += 1) {
+    final stop = stops[index];
+    if (!currencies.contains(stop.localCurrency.code)) {
+      throw const FormatException(
+        'Trip stop currency must be included in localCurrencies.',
+      );
+    }
+    if (stop.startDate.isBefore(startDate) || stop.endDate.isAfter(endDate)) {
+      throw const FormatException('Trip stop dates must stay inside the trip.');
+    }
+    if (index > 0) {
+      final expected = stops[index - 1].endDate.add(const Duration(days: 1));
+      if (stop.startDate != expected) {
+        throw const FormatException(
+          'Trip stops must be contiguous and non-overlapping.',
+        );
+      }
+    }
+  }
 }
 
 final class ExpenseModel {

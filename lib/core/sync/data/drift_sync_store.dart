@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/domain/repositories.dart';
+import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/storage/database/app_database.dart';
 import 'package:trip_cost/core/sync/domain/sync_models.dart';
 import 'package:uuid/uuid.dart';
@@ -13,7 +14,7 @@ final class DriftSyncStore implements CacheRepositoryObserver {
       _uuid = uuid ?? const Uuid();
 
   static const String runtimeId = 'cloudkit-private';
-  static const int recordSchemaVersion = 1;
+  static const int recordSchemaVersion = 2;
 
   final AppDatabase _database;
   final DateTime Function() _clock;
@@ -233,10 +234,16 @@ final class DriftSyncStore implements CacheRepositoryObserver {
       );
     await _database.transaction(() async {
       for (final record in ordered) {
-        if (record.schemaVersion != recordSchemaVersion) {
+        if (record.schemaVersion < 1 ||
+            record.schemaVersion > recordSchemaVersion) {
           throw const SyncFailure('unsupported-record-schema');
         }
         await _applyRecord(record, now, locallyPushedKeys);
+      }
+      if (ordered.any(
+        (record) => record.entityType == SyncEntityType.expense,
+      )) {
+        await _validateExpenseAdjustments();
       }
       final id = await deviceId();
       final current = await _database.coreDao.getSyncRuntime(runtimeId);
@@ -303,6 +310,7 @@ final class DriftSyncStore implements CacheRepositoryObserver {
     final changeId = _uuid.v4();
     await _database.transaction(() async {
       await _upsertRaw(_config(SyncEntityType.expense), merged);
+      await _validateExpenseAdjustments();
       await _database.coreDao.upsertSyncMetadata(
         SyncMetadataEntriesCompanion.insert(
           entityType: SyncEntityType.expense.name,
@@ -319,6 +327,41 @@ final class DriftSyncStore implements CacheRepositoryObserver {
       );
       await _database.coreDao.resolveSyncConflict(conflict.id, now);
     });
+  }
+
+  Future<void> _validateExpenseAdjustments() async {
+    final rows = await _database.coreDao.activeExpenses();
+    final byId = <String, Expense>{for (final row in rows) row.id: row};
+    final refundedByOriginal = <String, DecimalValue>{};
+    for (final row in rows) {
+      if (row.entryType != ExpenseEntryType.refund.name &&
+          row.entryType != ExpenseEntryType.partialRefund.name) {
+        continue;
+      }
+      final originalId = row.relatedExpenseId;
+      final original = originalId == null ? null : byId[originalId];
+      final value = row.actualFinalAmount ?? row.estimatedFinalAmount;
+      if (original == null ||
+          original.entryType != ExpenseEntryType.purchase.name ||
+          original.status != ExpenseStatus.confirmed.name ||
+          original.actualFinalAmount == null ||
+          original.homeCurrency != row.homeCurrency ||
+          DecimalValue.parse(value).compareTo(DecimalValue.zero) >= 0) {
+        throw const SyncFailure('invalid-expense-adjustment');
+      }
+      refundedByOriginal.update(
+        originalId!,
+        (current) => current + DecimalValue.parse(value).abs(),
+        ifAbsent: () => DecimalValue.parse(value).abs(),
+      );
+    }
+    for (final entry in refundedByOriginal.entries) {
+      final original = byId[entry.key]!;
+      final actual = DecimalValue.parse(original.actualFinalAmount!).abs();
+      if (entry.value.compareTo(actual) > 0) {
+        throw const SyncFailure('invalid-expense-adjustment');
+      }
+    }
   }
 
   Future<void> _applyRecord(

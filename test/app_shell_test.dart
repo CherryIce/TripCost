@@ -155,7 +155,7 @@ void main() {
 
     await tester.tap(find.byIcon(CupertinoIcons.viewfinder));
     await tester.pumpAndSettle();
-    expect(find.text('Scan a price'), findsWidgets);
+    expect(find.text('Scan'), findsWidgets);
   });
 }
 

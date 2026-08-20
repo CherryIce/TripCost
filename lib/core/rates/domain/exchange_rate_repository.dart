@@ -93,6 +93,23 @@ final class ExchangeRateRepository implements CacheRepositoryObserver {
     bool allowNetwork = true,
   }) async {
     final now = _clock().toUtc();
+    if (baseCurrency == quoteCurrency) {
+      final snapshot = _snapshot(
+        baseCurrency: baseCurrency,
+        quoteCurrency: quoteCurrency,
+        rate: DecimalValue.parse('1'),
+        sourceType: RateSourceType.market,
+        sourceName: 'Identity',
+        sourceTimestamp: _dateOnly(date ?? now),
+        fetchedAt: now,
+        isCached: false,
+      );
+      return RateResolution(
+        availability: RateAvailability.identity,
+        snapshot: snapshot,
+      );
+    }
+
     if (manualRate != null) {
       await clearManualRate(
         baseCurrency: baseCurrency,
@@ -124,23 +141,6 @@ final class ExchangeRateRepository implements CacheRepositoryObserver {
       return RateResolution(
         availability: RateAvailability.manual,
         snapshot: storedManual,
-      );
-    }
-
-    if (baseCurrency == quoteCurrency) {
-      final snapshot = _snapshot(
-        baseCurrency: baseCurrency,
-        quoteCurrency: quoteCurrency,
-        rate: DecimalValue.parse('1'),
-        sourceType: RateSourceType.market,
-        sourceName: 'Identity',
-        sourceTimestamp: _dateOnly(date ?? now),
-        fetchedAt: now,
-        isCached: false,
-      );
-      return RateResolution(
-        availability: RateAvailability.identity,
-        snapshot: snapshot,
       );
     }
 

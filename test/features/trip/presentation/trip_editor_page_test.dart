@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trip_cost/core/currencies/data/currency_directory_repository.dart';
+import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/rates/data/frankfurter_api_client.dart';
 import 'package:trip_cost/core/rates/data/frankfurter_dtos.dart';
@@ -12,104 +12,50 @@ import 'package:trip_cost/l10n/app_localizations.dart';
 
 import '../../../helpers/isolated_test_database.dart';
 import '../../../helpers/m4_fakes.dart';
+import '../../../helpers/m5_fixtures.dart';
 
 void main() {
-  testWidgets('choice values wrap and stay aligned to the trailing edge', (
+  testWidgets('shows the multi-country route planner structure', (
     tester,
   ) async {
     await _pumpEditor(tester);
 
-    final destinationLabel = find.text('国家或地区');
-    final destinationButton = find.ancestor(
-      of: destinationLabel,
-      matching: find.byType(CupertinoButton),
-    );
-    final destinationChevron = find.descendant(
-      of: destinationButton,
-      matching: find.byIcon(CupertinoIcons.chevron_forward),
-    );
-    final destinationValue = find.descendant(
-      of: destinationButton,
-      matching: find.text('请选择'),
-    );
-
-    final buttonRect = tester.getRect(destinationButton);
-    final chevronRect = tester.getRect(destinationChevron);
-    final valueRect = tester.getRect(destinationValue);
-    final valueParagraph = tester.renderObject<RenderParagraph>(
-      destinationValue,
-    );
-
-    expect(chevronRect.right, closeTo(buttonRect.right, 0.01));
-    expect(valueRect.right, closeTo(chevronRect.left, 0.01));
-    expect(valueParagraph.textAlign, TextAlign.end);
-    expect(valueParagraph.softWrap, isTrue);
-    expect(valueParagraph.maxLines, 2);
+    expect(find.text('规划多国路线'), findsOneWidget);
+    expect(find.text('目的地与停留'), findsOneWidget);
+    expect(find.text('至少添加一个目的地。'), findsOneWidget);
+    expect(find.text('整段行程'), findsOneWidget);
+    expect(find.text('整趟预算'), findsOneWidget);
+    expect(find.text('更多设置'), findsOneWidget);
+    expect(find.byKey(const Key('trip-editor-submit-button')), findsOneWidget);
   });
 
-  testWidgets(
-    'new trip starts empty and recomputes currencies from destinations',
-    (tester) async {
-      await _pumpEditor(tester);
-
-      expect(find.text('选择目的地后推荐'), findsOneWidget);
-      expect(find.textContaining('JPY'), findsNothing);
-
-      await tester.tap(find.text('国家或地区'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('country-search-field')),
-        '日本',
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('country-option-JP')));
-      await tester.pumpAndSettle();
-      await _tapDone(tester);
-      await tester.pumpAndSettle();
-
-      expect(find.text('日本'), findsOneWidget);
-      expect(find.text('JPY · 已推荐'), findsOneWidget);
-
-      await tester.tap(find.text('国家或地区'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('country-search-field')),
-        '韩国',
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('country-option-KR')));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('country-search-field')),
-        '日本',
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('country-option-JP')));
-      await tester.pumpAndSettle();
-      await _tapDone(tester);
-      await tester.pumpAndSettle();
-
-      expect(find.text('韩国'), findsOneWidget);
-      expect(find.text('KRW · 已推荐'), findsOneWidget);
-      expect(find.textContaining('JPY'), findsNothing);
-    },
-  );
-
-  testWidgets('manual currency survives a destination change when kept', (
+  testWidgets('adds destinations in route order with recommended currencies', (
     tester,
   ) async {
     await _pumpEditor(tester);
 
-    await tester.tap(find.text('国家或地区'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('country-search-field')), '韩国');
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('country-option-KR')));
-    await tester.pumpAndSettle();
-    await _tapDone(tester);
-    await tester.pumpAndSettle();
+    await _addDestination(tester, query: '日本', code: 'JP');
+    await _addDestination(tester, query: '韩国', code: 'KR');
 
-    await tester.tap(find.text('当地货币'));
+    expect(find.byKey(const Key('trip-stop-list')), findsOneWidget);
+    expect(find.text('日本'), findsOneWidget);
+    expect(find.text('韩国'), findsOneWidget);
+    expect(find.textContaining('JPY'), findsWidgets);
+    expect(find.textContaining('KRW'), findsWidgets);
+    final japanTop = tester.getTopLeft(find.text('日本')).dy;
+    final koreaTop = tester.getTopLeft(find.text('韩国')).dy;
+    expect(japanTop, lessThan(koreaTop));
+  });
+
+  testWidgets('a stop can override its recommended local currency', (
+    tester,
+  ) async {
+    await _pumpEditor(tester);
+    await _addDestination(tester, query: '韩国', code: 'KR');
+
+    await tester.tap(find.text('韩国'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('修改当地货币'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('currency-search-field')),
@@ -118,42 +64,59 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('currency-option-USD')));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('currency-search-field')),
-      'KRW',
+
+    expect(find.text('韩国'), findsOneWidget);
+    expect(find.textContaining('USD'), findsWidgets);
+  });
+
+  testWidgets('whole trip range uses one calendar range page', (tester) async {
+    await _pumpEditor(tester, initial: fixtureTrip());
+
+    await tester.tap(find.text('整段行程'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('trip-date-range-picker-page')),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('currency-option-KRW')));
-    await tester.pumpAndSettle();
-    await _tapDone(tester);
-    await tester.pumpAndSettle();
-    expect(find.text('USD'), findsOneWidget);
+    expect(
+      find.byKey(const Key('trip-date-range-start-field')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('trip-date-range-end-field')), findsOneWidget);
+    expect(find.byKey(const Key('trip-calendar-month-2026-8')), findsOneWidget);
 
-    await tester.tap(find.text('国家或地区'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('country-search-field')), '日本');
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('country-option-JP')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('country-search-field')), '韩国');
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('country-option-KR')));
-    await tester.pumpAndSettle();
-    await _tapDone(tester);
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trip-range-day-2026-08-18')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<CupertinoButton>(
+            find.byKey(const Key('trip-date-range-done')),
+          )
+          .onPressed,
+      isNull,
+    );
 
-    expect(find.text('更新当地货币？'), findsOneWidget);
-    expect(find.textContaining('JPY'), findsOneWidget);
-    await tester.tap(find.text('保留当前'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trip-range-day-2026-08-23')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<CupertinoButton>(
+            find.byKey(const Key('trip-date-range-done')),
+          )
+          .onPressed,
+      isNotNull,
+    );
 
-    expect(find.text('日本'), findsOneWidget);
-    expect(find.text('USD'), findsOneWidget);
-    expect(find.textContaining('JPY'), findsNothing);
+    await tester.tap(find.byKey(const Key('trip-date-range-done')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('trip-date-range-picker-page')), findsNothing);
+    expect(find.textContaining('8月18日'), findsWidgets);
+    expect(find.textContaining('8月23日'), findsWidgets);
   });
 }
 
-Future<void> _pumpEditor(WidgetTester tester) async {
+Future<void> _pumpEditor(WidgetTester tester, {TripModel? initial}) async {
   final database = createIsolatedTestDatabase();
   await tester.pumpWidget(
     ProviderScope(
@@ -169,15 +132,15 @@ Future<void> _pumpEditor(WidgetTester tester) async {
           ),
         ),
       ],
-      child: const CupertinoApp(
-        locale: Locale('zh'),
-        localizationsDelegates: [
+      child: CupertinoApp(
+        locale: const Locale('zh'),
+        localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: TripEditorPage(),
+        home: TripEditorPage(initial: initial),
       ),
     ),
   );
@@ -186,6 +149,21 @@ Future<void> _pumpEditor(WidgetTester tester) async {
 
 Future<void> _tapDone(WidgetTester tester) async {
   await tester.tap(find.widgetWithText(CupertinoButton, '完成'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _addDestination(
+  WidgetTester tester, {
+  required String query,
+  required String code,
+}) async {
+  await tester.tap(find.text('添加下一站'));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const Key('country-search-field')), query);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('country-option-$code')));
+  await tester.pumpAndSettle();
+  await _tapDone(tester);
   await tester.pumpAndSettle();
 }
 

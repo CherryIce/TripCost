@@ -2594,6 +2594,18 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _routeStopsJsonMeta = const VerificationMeta(
+    'routeStopsJson',
+  );
+  @override
+  late final GeneratedColumn<String> routeStopsJson = GeneratedColumn<String>(
+    'route_stops_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
   static const VerificationMeta _startDateMeta = const VerificationMeta(
     'startDate',
   );
@@ -2717,6 +2729,7 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     deletedAt,
     name,
     destinationCodesJson,
+    routeStopsJson,
     startDate,
     endDate,
     homeCurrency,
@@ -2786,6 +2799,15 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
       );
     } else if (isInserting) {
       context.missing(_destinationCodesJsonMeta);
+    }
+    if (data.containsKey('route_stops_json')) {
+      context.handle(
+        _routeStopsJsonMeta,
+        routeStopsJson.isAcceptableOrUnknown(
+          data['route_stops_json']!,
+          _routeStopsJsonMeta,
+        ),
+      );
     }
     if (data.containsKey('start_date')) {
       context.handle(
@@ -2910,6 +2932,10 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.string,
         data['${effectivePrefix}destination_codes_json'],
       )!,
+      routeStopsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}route_stops_json'],
+      )!,
       startDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}start_date'],
@@ -2966,6 +2992,7 @@ class Trip extends DataClass implements Insertable<Trip> {
   final DateTime? deletedAt;
   final String name;
   final String destinationCodesJson;
+  final String routeStopsJson;
   final DateTime startDate;
   final DateTime endDate;
   final String homeCurrency;
@@ -2983,6 +3010,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     this.deletedAt,
     required this.name,
     required this.destinationCodesJson,
+    required this.routeStopsJson,
     required this.startDate,
     required this.endDate,
     required this.homeCurrency,
@@ -3005,6 +3033,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     }
     map['name'] = Variable<String>(name);
     map['destination_codes_json'] = Variable<String>(destinationCodesJson);
+    map['route_stops_json'] = Variable<String>(routeStopsJson);
     map['start_date'] = Variable<DateTime>(startDate);
     map['end_date'] = Variable<DateTime>(endDate);
     map['home_currency'] = Variable<String>(homeCurrency);
@@ -3036,6 +3065,7 @@ class Trip extends DataClass implements Insertable<Trip> {
           : Value(deletedAt),
       name: Value(name),
       destinationCodesJson: Value(destinationCodesJson),
+      routeStopsJson: Value(routeStopsJson),
       startDate: Value(startDate),
       endDate: Value(endDate),
       homeCurrency: Value(homeCurrency),
@@ -3069,6 +3099,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       destinationCodesJson: serializer.fromJson<String>(
         json['destinationCodesJson'],
       ),
+      routeStopsJson: serializer.fromJson<String>(json['routeStopsJson']),
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       homeCurrency: serializer.fromJson<String>(json['homeCurrency']),
@@ -3097,6 +3128,7 @@ class Trip extends DataClass implements Insertable<Trip> {
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'name': serializer.toJson<String>(name),
       'destinationCodesJson': serializer.toJson<String>(destinationCodesJson),
+      'routeStopsJson': serializer.toJson<String>(routeStopsJson),
       'startDate': serializer.toJson<DateTime>(startDate),
       'endDate': serializer.toJson<DateTime>(endDate),
       'homeCurrency': serializer.toJson<String>(homeCurrency),
@@ -3121,6 +3153,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     Value<DateTime?> deletedAt = const Value.absent(),
     String? name,
     String? destinationCodesJson,
+    String? routeStopsJson,
     DateTime? startDate,
     DateTime? endDate,
     String? homeCurrency,
@@ -3138,6 +3171,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     name: name ?? this.name,
     destinationCodesJson: destinationCodesJson ?? this.destinationCodesJson,
+    routeStopsJson: routeStopsJson ?? this.routeStopsJson,
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
     homeCurrency: homeCurrency ?? this.homeCurrency,
@@ -3165,6 +3199,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       destinationCodesJson: data.destinationCodesJson.present
           ? data.destinationCodesJson.value
           : this.destinationCodesJson,
+      routeStopsJson: data.routeStopsJson.present
+          ? data.routeStopsJson.value
+          : this.routeStopsJson,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
       homeCurrency: data.homeCurrency.present
@@ -3199,6 +3236,7 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('deletedAt: $deletedAt, ')
           ..write('name: $name, ')
           ..write('destinationCodesJson: $destinationCodesJson, ')
+          ..write('routeStopsJson: $routeStopsJson, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('homeCurrency: $homeCurrency, ')
@@ -3221,6 +3259,7 @@ class Trip extends DataClass implements Insertable<Trip> {
     deletedAt,
     name,
     destinationCodesJson,
+    routeStopsJson,
     startDate,
     endDate,
     homeCurrency,
@@ -3242,6 +3281,7 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.deletedAt == this.deletedAt &&
           other.name == this.name &&
           other.destinationCodesJson == this.destinationCodesJson &&
+          other.routeStopsJson == this.routeStopsJson &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.homeCurrency == this.homeCurrency &&
@@ -3261,6 +3301,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<DateTime?> deletedAt;
   final Value<String> name;
   final Value<String> destinationCodesJson;
+  final Value<String> routeStopsJson;
   final Value<DateTime> startDate;
   final Value<DateTime> endDate;
   final Value<String> homeCurrency;
@@ -3279,6 +3320,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.deletedAt = const Value.absent(),
     this.name = const Value.absent(),
     this.destinationCodesJson = const Value.absent(),
+    this.routeStopsJson = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.homeCurrency = const Value.absent(),
@@ -3298,6 +3340,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     this.deletedAt = const Value.absent(),
     required String name,
     required String destinationCodesJson,
+    this.routeStopsJson = const Value.absent(),
     required DateTime startDate,
     required DateTime endDate,
     required String homeCurrency,
@@ -3326,6 +3369,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Expression<DateTime>? deletedAt,
     Expression<String>? name,
     Expression<String>? destinationCodesJson,
+    Expression<String>? routeStopsJson,
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<String>? homeCurrency,
@@ -3346,6 +3390,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       if (name != null) 'name': name,
       if (destinationCodesJson != null)
         'destination_codes_json': destinationCodesJson,
+      if (routeStopsJson != null) 'route_stops_json': routeStopsJson,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (homeCurrency != null) 'home_currency': homeCurrency,
@@ -3370,6 +3415,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<DateTime?>? deletedAt,
     Value<String>? name,
     Value<String>? destinationCodesJson,
+    Value<String>? routeStopsJson,
     Value<DateTime>? startDate,
     Value<DateTime>? endDate,
     Value<String>? homeCurrency,
@@ -3389,6 +3435,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       deletedAt: deletedAt ?? this.deletedAt,
       name: name ?? this.name,
       destinationCodesJson: destinationCodesJson ?? this.destinationCodesJson,
+      routeStopsJson: routeStopsJson ?? this.routeStopsJson,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       homeCurrency: homeCurrency ?? this.homeCurrency,
@@ -3426,6 +3473,9 @@ class TripsCompanion extends UpdateCompanion<Trip> {
       map['destination_codes_json'] = Variable<String>(
         destinationCodesJson.value,
       );
+    }
+    if (routeStopsJson.present) {
+      map['route_stops_json'] = Variable<String>(routeStopsJson.value);
     }
     if (startDate.present) {
       map['start_date'] = Variable<DateTime>(startDate.value);
@@ -3478,6 +3528,7 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('deletedAt: $deletedAt, ')
           ..write('name: $name, ')
           ..write('destinationCodesJson: $destinationCodesJson, ')
+          ..write('routeStopsJson: $routeStopsJson, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('homeCurrency: $homeCurrency, ')
@@ -11201,6 +11252,7 @@ typedef $$TripsTableCreateCompanionBuilder =
       Value<DateTime?> deletedAt,
       required String name,
       required String destinationCodesJson,
+      Value<String> routeStopsJson,
       required DateTime startDate,
       required DateTime endDate,
       required String homeCurrency,
@@ -11221,6 +11273,7 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<String> name,
       Value<String> destinationCodesJson,
+      Value<String> routeStopsJson,
       Value<DateTime> startDate,
       Value<DateTime> endDate,
       Value<String> homeCurrency,
@@ -11336,6 +11389,11 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<String> get destinationCodesJson => $composableBuilder(
     column: $table.destinationCodesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get routeStopsJson => $composableBuilder(
+    column: $table.routeStopsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -11490,6 +11548,11 @@ class $$TripsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get routeStopsJson => $composableBuilder(
+    column: $table.routeStopsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get startDate => $composableBuilder(
     column: $table.startDate,
     builder: (column) => ColumnOrderings(column),
@@ -11605,6 +11668,11 @@ class $$TripsTableAnnotationComposer
 
   GeneratedColumn<String> get destinationCodesJson => $composableBuilder(
     column: $table.destinationCodesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get routeStopsJson => $composableBuilder(
+    column: $table.routeStopsJson,
     builder: (column) => column,
   );
 
@@ -11750,6 +11818,7 @@ class $$TripsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> destinationCodesJson = const Value.absent(),
+                Value<String> routeStopsJson = const Value.absent(),
                 Value<DateTime> startDate = const Value.absent(),
                 Value<DateTime> endDate = const Value.absent(),
                 Value<String> homeCurrency = const Value.absent(),
@@ -11768,6 +11837,7 @@ class $$TripsTableTableManager
                 deletedAt: deletedAt,
                 name: name,
                 destinationCodesJson: destinationCodesJson,
+                routeStopsJson: routeStopsJson,
                 startDate: startDate,
                 endDate: endDate,
                 homeCurrency: homeCurrency,
@@ -11788,6 +11858,7 @@ class $$TripsTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 required String name,
                 required String destinationCodesJson,
+                Value<String> routeStopsJson = const Value.absent(),
                 required DateTime startDate,
                 required DateTime endDate,
                 required String homeCurrency,
@@ -11806,6 +11877,7 @@ class $$TripsTableTableManager
                 deletedAt: deletedAt,
                 name: name,
                 destinationCodesJson: destinationCodesJson,
+                routeStopsJson: routeStopsJson,
                 startDate: startDate,
                 endDate: endDate,
                 homeCurrency: homeCurrency,

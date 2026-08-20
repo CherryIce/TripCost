@@ -7,6 +7,7 @@ import 'package:trip_cost/core/money/decimal_value.dart';
 import 'package:trip_cost/core/payments/domain/payment_method_templates.dart';
 import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
+import 'package:trip_cost/shared/widgets/app_toast.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 import 'package:uuid/uuid.dart';
 
@@ -224,7 +225,6 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
     TransactionType.purchase,
   };
   PaymentTemplateId _template = PaymentTemplateId.custom;
-  bool _invalid = false;
 
   @override
   void initState() {
@@ -272,6 +272,9 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground.resolveFrom(
+        context,
+      ),
       navigationBar: CupertinoNavigationBar(
         middle: Text(localizations.paymentAddTitle),
         trailing: CupertinoButton(
@@ -283,72 +286,96 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
       child: SafeArea(
         bottom: false,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: AppInsets.secondaryPageScrollPadding(context),
           children: <Widget>[
-            _ChoiceRow(
-              label: localizations.paymentTemplate,
-              value: _templateLabel(localizations, _template),
-              onPressed: _chooseTemplate,
-            ),
-            _LabeledField(
-              label: localizations.paymentEditName,
-              controller: _name,
-            ),
-            _ChoiceRow(
-              label: localizations.paymentType,
-              value: _typeLabel(localizations, _type),
-              onPressed: _chooseType,
-            ),
-            _ChoiceRow(
-              label: localizations.paymentNetwork,
-              value: _networkLabel(localizations, _network),
-              onPressed: _chooseNetwork,
-            ),
-            _ChoiceRow(
-              label: localizations.paymentBillingCurrency,
-              value: _billingCurrency.code,
-              onPressed: _chooseCurrency,
-            ),
-            _ChoiceRow(
-              label: localizations.paymentTransactionScope,
-              value: _transactionScopeLabel(localizations, _transactionTypes),
-              onPressed: _chooseTransactionScope,
-            ),
-            for (final entry in <(String, TextEditingController)>[
-              (localizations.paymentForeignFee, _foreignFee),
-              (localizations.paymentCrossBorderFee, _crossBorderFee),
-              (localizations.paymentRateMarkup, _rateMarkup),
-              (localizations.paymentFixedFee, _fixedFee),
-              (localizations.paymentCashback, _cashback),
-              (localizations.paymentMinimumFee, _minimumFee),
-              (localizations.paymentMaximumFee, _maximumFee),
-              (localizations.paymentCashRate, _cashRate),
-            ])
-              _LabeledField(
-                label: entry.$1,
-                controller: entry.$2,
-                numeric: true,
-              ),
-            _LabeledField(
-              label: localizations.paymentNotes,
-              controller: _notes,
-              maxLines: 3,
-            ),
-            if (_invalid)
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.small),
-                child: Text(
-                  localizations.paymentInvalidForm,
-                  style: const TextStyle(color: CupertinoColors.systemRed),
+            _PaymentEditorSection(
+              key: const Key('payment-editor-template-section'),
+              title: localizations.paymentEditorQuickStart,
+              children: <Widget>[
+                _PaymentTemplateRow(
+                  label: localizations.paymentTemplate,
+                  value: _templateLabel(localizations, _template),
+                  hint: localizations.paymentEditorTemplateHint,
+                  onPressed: _chooseTemplate,
                 ),
-              ),
-            const SizedBox(height: AppSpacing.medium),
-            Text(
-              localizations.paymentMethodsSubtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
-              ),
+              ],
+            ),
+            _PaymentEditorSection(
+              key: const Key('payment-editor-basics-section'),
+              title: localizations.paymentEditorBasics,
+              children: <Widget>[
+                _EditorTextRow(
+                  fieldKey: const Key('payment-name-field'),
+                  label: localizations.paymentEditName,
+                  controller: _name,
+                ),
+                _EditorChoiceRow(
+                  label: localizations.paymentType,
+                  value: _typeLabel(localizations, _type),
+                  onPressed: _chooseType,
+                ),
+                _EditorChoiceRow(
+                  label: localizations.paymentNetwork,
+                  value: _networkLabel(localizations, _network),
+                  onPressed: _chooseNetwork,
+                ),
+                _EditorChoiceRow(
+                  label: localizations.paymentBillingCurrency,
+                  value: _billingCurrency.code,
+                  onPressed: _chooseCurrency,
+                ),
+                _EditorChoiceRow(
+                  label: localizations.paymentTransactionScope,
+                  value: _transactionScopeLabel(
+                    localizations,
+                    _transactionTypes,
+                  ),
+                  onPressed: _chooseTransactionScope,
+                ),
+              ],
+            ),
+            _PaymentEditorSection(
+              key: const Key('payment-editor-fees-section'),
+              title: localizations.paymentEditorFees,
+              children: <Widget>[
+                for (final entry in <(String, TextEditingController)>[
+                  (localizations.paymentForeignFee, _foreignFee),
+                  (localizations.paymentCrossBorderFee, _crossBorderFee),
+                  (localizations.paymentRateMarkup, _rateMarkup),
+                  (localizations.paymentFixedFee, _fixedFee),
+                  (localizations.paymentCashback, _cashback),
+                ])
+                  _EditorTextRow(
+                    label: entry.$1,
+                    controller: entry.$2,
+                    numeric: true,
+                  ),
+              ],
+            ),
+            _PaymentEditorSection(
+              key: const Key('payment-editor-optional-section'),
+              title: localizations.paymentEditorOptional,
+              children: <Widget>[
+                for (final entry in <(String, TextEditingController)>[
+                  (localizations.paymentMinimumFee, _minimumFee),
+                  (localizations.paymentMaximumFee, _maximumFee),
+                  (localizations.paymentCashRate, _cashRate),
+                ])
+                  _EditorTextRow(
+                    label: entry.$1,
+                    controller: entry.$2,
+                    numeric: true,
+                  ),
+                _EditorNotesRow(
+                  label: localizations.paymentNotes,
+                  controller: _notes,
+                ),
+              ],
+            ),
+            _PaymentEditorNotice(
+              policy: localizations.paymentPolicyNotice,
+              privacy: localizations.paymentMethodsSubtitle,
             ),
           ],
         ),
@@ -474,9 +501,16 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
         lastVerifiedAt: widget.initial?.lastVerifiedAt,
         createdAt: widget.initial?.createdAt ?? now,
       );
+      AppToast.dismiss();
       Navigator.of(context).pop(method);
     } on FormatException {
-      setState(() => _invalid = true);
+      FocusManager.instance.primaryFocus?.unfocus();
+      AppToast.show(
+        context,
+        AppLocalizations.of(context).paymentInvalidForm,
+        key: const Key('payment-validation-toast'),
+        style: AppToastStyle.error,
+      );
     }
   }
 
@@ -490,44 +524,214 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
   }
 }
 
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({
+class _PaymentEditorSection extends StatelessWidget {
+  const _PaymentEditorSection({
+    required this.title,
+    required this.children,
+    super.key,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 22),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+              context,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: CupertinoColors.separator.resolveFrom(context),
+              width: 0.25,
+            ),
+          ),
+          child: Column(
+            children: <Widget>[
+              for (var index = 0; index < children.length; index += 1) ...[
+                if (index > 0)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 16),
+                    child: Container(
+                      height: 0.5,
+                      color: CupertinoColors.separator.resolveFrom(context),
+                    ),
+                  ),
+                children[index],
+              ],
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PaymentTemplateRow extends StatelessWidget {
+  const _PaymentTemplateRow({
+    required this.label,
+    required this.value,
+    required this.hint,
+    required this.onPressed,
+  });
+
+  final String label;
+  final String value;
+  final String hint;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => CupertinoButton(
+    padding: const EdgeInsets.all(16),
+    onPressed: onPressed,
+    child: Row(
+      children: <Widget>[
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: CupertinoTheme.of(
+              context,
+            ).primaryColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Icon(
+              CupertinoIcons.wand_stars,
+              size: 22,
+              color: CupertinoTheme.of(context).primaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                label,
+                style: TextStyle(
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: CupertinoColors.label.resolveFrom(context),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                hint,
+                style: TextStyle(
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Icon(CupertinoIcons.chevron_forward, size: 16),
+      ],
+    ),
+  );
+}
+
+class _EditorTextRow extends StatelessWidget {
+  const _EditorTextRow({
     required this.label,
     required this.controller,
     this.numeric = false,
-    this.maxLines = 1,
+    this.fieldKey,
   });
 
   final String label;
   final TextEditingController controller;
   final bool numeric;
-  final int maxLines;
+  final Key? fieldKey;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.medium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label),
-          const SizedBox(height: 6),
-          CupertinoTextField(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+    child: Row(
+      children: <Widget>[
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 15))),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: numeric ? 104 : 184,
+          child: CupertinoTextField(
+            key: fieldKey,
             controller: controller,
-            maxLines: maxLines,
+            textAlign: TextAlign.end,
             keyboardType: numeric
                 ? const TextInputType.numberWithOptions(decimal: true)
                 : TextInputType.text,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
 
-class _ChoiceRow extends StatelessWidget {
-  const _ChoiceRow({
+class _EditorNotesRow extends StatelessWidget {
+  const _EditorNotesRow({required this.label, required this.controller});
+
+  final String label;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(label, style: const TextStyle(fontSize: 15)),
+        const SizedBox(height: 8),
+        CupertinoTextField(
+          controller: controller,
+          minLines: 3,
+          maxLines: 5,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _EditorChoiceRow extends StatelessWidget {
+  const _EditorChoiceRow({
     required this.label,
     required this.value,
     required this.onPressed,
@@ -538,25 +742,81 @@ class _ChoiceRow extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      onPressed: onPressed,
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(label)),
-          Text(
-            value,
+  Widget build(BuildContext context) => CupertinoButton(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    onPressed: onPressed,
+    child: Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            label,
             style: TextStyle(
-              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              color: CupertinoColors.label.resolveFrom(context),
+              fontSize: 15,
             ),
           ),
-          const SizedBox(width: 4),
-          const Icon(CupertinoIcons.chevron_forward, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontSize: 15,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Icon(
+          CupertinoIcons.chevron_forward,
+          size: 15,
+          color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PaymentEditorNotice extends StatelessWidget {
+  const _PaymentEditorNotice({required this.policy, required this.privacy});
+
+  final String policy;
+  final String privacy;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+        context,
+      ),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            CupertinoIcons.shield,
+            size: 20,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$policy\n$privacy',
+              style: TextStyle(
+                height: 1.35,
+                fontSize: 12,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _PaymentSurface extends StatelessWidget {

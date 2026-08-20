@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/core/domain/repositories.dart';
+import 'package:trip_cost/core/expenses/domain/expense_adjustment.dart';
 import 'package:trip_cost/core/expenses/domain/expense_calibration.dart';
 import 'package:trip_cost/core/infrastructure/app_providers.dart';
 import 'package:trip_cost/core/money/decimal_value.dart';
@@ -56,59 +57,104 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
     await ref.read(localDataChangeCoordinatorProvider).notify();
   }
 
+  Future<void> saveConfirmed(ExpenseModel expense) async {
+    if (expense.status != ExpenseStatus.confirmed ||
+        expense.entryType != ExpenseEntryType.purchase ||
+        expense.actualFinalAmount == null ||
+        expense.actualFinalAmount!.amount.compareTo(DecimalValue.zero) <= 0) {
+      throw const FormatException(
+        'A confirmed expense requires an actual amount.',
+      );
+    }
+    await _saveConfirmedExpense(expense);
+    await _reload();
+    await ref.read(localDataChangeCoordinatorProvider).notify();
+  }
+
   Future<void> recordActual(ExpenseModel expense, Money actual) async {
+    final repository = ref.read(expenseRepositoryProvider);
+    final current = await repository.findById(expense.metadata.recordId);
+    if (current == null ||
+        current.entryType != ExpenseEntryType.purchase ||
+        actual.currency != current.referenceAmount.currency ||
+        actual.amount.compareTo(DecimalValue.zero) <= 0) {
+      throw const FormatException('The actual amount correction is invalid.');
+    }
+    final expenses = await repository.listActive();
+    final summary = ExpenseAdjustmentSummary.from(
+      original: current,
+      expenses: expenses,
+    );
+    if (summary.refundedAmount.compareTo(actual.amount.abs()) > 0) {
+      throw const FormatException(
+        'The actual amount cannot be lower than the refunded amount.',
+      );
+    }
     final now = DateTime.now().toUtc();
     final updated = _copyExpense(
-      expense,
+      current,
       metadata: SyncRecordMetadata(
-        recordId: expense.metadata.recordId,
-        syncVersion: expense.metadata.syncVersion + 1,
+        recordId: current.metadata.recordId,
+        syncVersion: current.metadata.syncVersion + 1,
         updatedAt: now,
       ),
       actualFinalAmount: actual,
       status: ExpenseStatus.confirmed,
     );
-    final paymentMethodId = expense.paymentMethodId;
-    if (paymentMethodId == null) {
-      await ref.read(expenseRepositoryProvider).save(updated);
-    } else {
-      final markup = const ExpenseCalibrationCalculator()
-          .effectiveMarkupPercent(
-            referenceAmount: expense.referenceAmount,
-            actualFinalAmount: actual,
-          );
-      final calibration = FeeCalibrationModel(
-        metadata: SyncRecordMetadata(
-          recordId: '${expense.metadata.recordId}:calibration',
-          syncVersion: expense.metadata.syncVersion + 1,
-          updatedAt: now,
-        ),
-        paymentMethodId: paymentMethodId,
-        expenseId: expense.metadata.recordId,
-        referenceAmount: expense.referenceAmount,
-        actualFinalAmount: actual,
-        effectiveMarkupPercent: markup,
-        calculatedAt: now,
-      );
-      await ref
-          .read(expenseRepositoryProvider)
-          .saveWithCalibration(updated, calibration);
-    }
+    await _saveConfirmedExpense(updated);
     await _reload();
     await ref.read(localDataChangeCoordinatorProvider).notify();
   }
 
+  Future<void> _saveConfirmedExpense(ExpenseModel expense) async {
+    final actual = expense.actualFinalAmount!;
+    final paymentMethodId = expense.paymentMethodId;
+    if (paymentMethodId == null) {
+      await ref.read(expenseRepositoryProvider).save(expense);
+      return;
+    }
+    final markup = const ExpenseCalibrationCalculator().effectiveMarkupPercent(
+      referenceAmount: expense.referenceAmount,
+      actualFinalAmount: actual,
+    );
+    final calibration = FeeCalibrationModel(
+      metadata: SyncRecordMetadata(
+        recordId: '${expense.metadata.recordId}:calibration',
+        syncVersion: expense.metadata.syncVersion,
+        updatedAt: expense.metadata.updatedAt,
+      ),
+      paymentMethodId: paymentMethodId,
+      expenseId: expense.metadata.recordId,
+      referenceAmount: expense.referenceAmount,
+      actualFinalAmount: actual,
+      effectiveMarkupPercent: markup,
+      calculatedAt: expense.metadata.updatedAt,
+    );
+    await ref
+        .read(expenseRepositoryProvider)
+        .saveWithCalibration(expense, calibration);
+  }
+
   Future<void> voidExpense(ExpenseModel expense) async {
-    if (_refundedAmount(expense).compareTo(DecimalValue.zero) > 0) {
-      throw const FormatException('An expense with refunds cannot be voided.');
+    final repository = ref.read(expenseRepositoryProvider);
+    final current = await repository.findById(expense.metadata.recordId);
+    if (current == null) {
+      throw const FormatException('The expense no longer exists.');
+    }
+    final summary = ExpenseAdjustmentSummary.from(
+      original: current,
+      expenses: await repository.listActive(),
+    );
+    if (!summary.canVoid) {
+      throw const FormatException('Only a pending expense can be voided.');
     }
     final now = DateTime.now().toUtc();
     await save(
       _copyExpense(
-        expense,
+        current,
         metadata: SyncRecordMetadata(
-          recordId: expense.metadata.recordId,
-          syncVersion: expense.metadata.syncVersion + 1,
+          recordId: current.metadata.recordId,
+          syncVersion: current.metadata.syncVersion + 1,
           updatedAt: now,
         ),
         budgetIncluded: false,
@@ -122,9 +168,20 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
     required Money homeAmount,
     required bool partial,
   }) async {
-    final originalHome =
-        original.actualFinalAmount ?? original.estimatedFinalAmount;
-    final remaining = remainingRefundAmount(original);
+    final repository = ref.read(expenseRepositoryProvider);
+    final current = await repository.findById(original.metadata.recordId);
+    if (current == null) {
+      throw const FormatException('The original expense no longer exists.');
+    }
+    final summary = ExpenseAdjustmentSummary.from(
+      original: current,
+      expenses: await repository.listActive(),
+    );
+    final originalHome = current.actualFinalAmount;
+    final remaining = summary.remainingAmount;
+    if (!summary.canRefund || originalHome == null || remaining == null) {
+      throw const FormatException('Only a posted expense can be refunded.');
+    }
     final requested = partial ? homeAmount.amount.abs() : remaining;
     if (homeAmount.currency != originalHome.currency ||
         requested.compareTo(DecimalValue.zero) <= 0 ||
@@ -134,54 +191,79 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
       );
     }
     final now = DateTime.now().toUtc();
-    final negativeHome = Money(
-      amount: -requested,
-      currency: homeAmount.currency,
-    );
-    final refundShare = requested.divide(originalHome.amount.abs());
-    final negativeTransaction = Money(
-      amount: -(original.transactionAmount.amount.abs() * refundShare),
-      currency: original.transactionAmount.currency,
-    );
-    final negativeReference = Money(
-      amount: negativeTransaction.amount * original.rateSnapshot.rate,
-      currency: original.referenceAmount.currency,
-    );
-    final zeroHome = Money(
-      amount: DecimalValue.zero,
-      currency: original.referenceAmount.currency,
-    );
+    final resultingRefunded = summary.refundedAmount + requested;
+    final entryType =
+        resultingRefunded.compareTo(originalHome.amount.abs()) == 0
+        ? ExpenseEntryType.refund
+        : ExpenseEntryType.partialRefund;
     await save(
-      ExpenseModel(
+      _refundExpense(
+        original: current,
         metadata: SyncRecordMetadata(
           recordId: const Uuid().v4(),
           syncVersion: 1,
           updatedAt: now,
         ),
-        tripId: original.tripId,
-        title: original.title,
-        category: original.category,
-        transactionAmount: negativeTransaction,
-        referenceAmount: negativeReference,
-        estimatedFinalAmount: negativeHome,
-        actualFinalAmount: negativeHome,
-        paymentMethodId: original.paymentMethodId,
-        paymentRuleSnapshot: original.paymentRuleSnapshot,
-        rateSnapshot: original.rateSnapshot,
-        taxAmount: zeroHome,
-        tipAmount: zeroHome,
-        discountAmount: zeroHome,
-        participantCount: original.participantCount,
+        requested: requested,
+        entryType: entryType,
         occurredAt: now,
-        receiptLocalPath: null,
-        notes: original.notes,
-        budgetIncluded: original.budgetIncluded,
-        status: ExpenseStatus.confirmed,
-        entryType: partial
-            ? ExpenseEntryType.partialRefund
-            : ExpenseEntryType.refund,
-        relatedExpenseId: original.metadata.recordId,
         createdAt: now,
+      ),
+    );
+  }
+
+  Future<void> correctRefund({
+    required ExpenseModel refund,
+    required Money homeAmount,
+  }) async {
+    final repository = ref.read(expenseRepositoryProvider);
+    final current = await repository.findById(refund.metadata.recordId);
+    if (current == null ||
+        (current.entryType != ExpenseEntryType.refund &&
+            current.entryType != ExpenseEntryType.partialRefund) ||
+        current.relatedExpenseId == null) {
+      throw const FormatException('The refund correction is invalid.');
+    }
+    final original = await repository.findById(current.relatedExpenseId!);
+    if (original == null ||
+        original.entryType != ExpenseEntryType.purchase ||
+        original.status != ExpenseStatus.confirmed ||
+        original.actualFinalAmount == null ||
+        homeAmount.currency != original.referenceAmount.currency ||
+        homeAmount.amount.compareTo(DecimalValue.zero) <= 0) {
+      throw const FormatException('The original expense is invalid.');
+    }
+    final all = await repository.listActive();
+    final withoutCurrent = all.where(
+      (item) => item.metadata.recordId != current.metadata.recordId,
+    );
+    final summary = ExpenseAdjustmentSummary.from(
+      original: original,
+      expenses: withoutCurrent,
+    );
+    final requested = homeAmount.amount.abs();
+    final posted = original.actualFinalAmount!.amount.abs();
+    final resultingRefunded = summary.refundedAmount + requested;
+    if (resultingRefunded.compareTo(posted) > 0) {
+      throw const FormatException(
+        'The refunded amount cannot exceed the original expense.',
+      );
+    }
+    final now = DateTime.now().toUtc();
+    await save(
+      _refundExpense(
+        original: original,
+        metadata: SyncRecordMetadata(
+          recordId: current.metadata.recordId,
+          syncVersion: current.metadata.syncVersion + 1,
+          updatedAt: now,
+        ),
+        requested: requested,
+        entryType: resultingRefunded.compareTo(posted) == 0
+            ? ExpenseEntryType.refund
+            : ExpenseEntryType.partialRefund,
+        occurredAt: current.occurredAt,
+        createdAt: current.createdAt,
       ),
     );
   }
@@ -232,11 +314,11 @@ final class ExpensesController extends AsyncNotifier<List<ExpenseModel>> {
   }
 
   DecimalValue remainingRefundAmount(ExpenseModel original) {
-    return originalRefundableAmount(original) - _refundedAmount(original);
-  }
-
-  DecimalValue _refundedAmount(ExpenseModel original) {
-    return refundedAmountFor(original, state.value ?? const <ExpenseModel>[]);
+    final summary = ExpenseAdjustmentSummary.from(
+      original: original,
+      expenses: state.value ?? const <ExpenseModel>[],
+    );
+    return summary.remainingAmount ?? DecimalValue.zero;
   }
 
   Future<void> _reload() async {
@@ -263,20 +345,62 @@ DecimalValue originalRefundableAmount(ExpenseModel original) {
 DecimalValue refundedAmountFor(
   ExpenseModel original,
   Iterable<ExpenseModel> expenses,
-) {
-  var total = DecimalValue.zero;
-  for (final expense in expenses) {
-    if (expense.relatedExpenseId != original.metadata.recordId ||
-        (expense.entryType != ExpenseEntryType.refund &&
-            expense.entryType != ExpenseEntryType.partialRefund)) {
-      continue;
-    }
-    final amount = expense.actualFinalAmount ?? expense.estimatedFinalAmount;
-    if (amount.currency == original.referenceAmount.currency) {
-      total += amount.amount.abs();
-    }
-  }
-  return total;
+) => ExpenseAdjustmentSummary.from(
+  original: original,
+  expenses: expenses,
+).refundedAmount;
+
+ExpenseModel _refundExpense({
+  required ExpenseModel original,
+  required SyncRecordMetadata metadata,
+  required DecimalValue requested,
+  required ExpenseEntryType entryType,
+  required DateTime occurredAt,
+  required DateTime createdAt,
+}) {
+  final originalHome = original.actualFinalAmount!;
+  final negativeHome = Money(
+    amount: -requested,
+    currency: originalHome.currency,
+  );
+  final refundShare = requested.divide(originalHome.amount.abs());
+  final negativeTransaction = Money(
+    amount: -(original.transactionAmount.amount.abs() * refundShare),
+    currency: original.transactionAmount.currency,
+  );
+  final negativeReference = Money(
+    amount: negativeTransaction.amount * original.rateSnapshot.rate,
+    currency: original.referenceAmount.currency,
+  );
+  final zeroHome = Money(
+    amount: DecimalValue.zero,
+    currency: original.referenceAmount.currency,
+  );
+  return ExpenseModel(
+    metadata: metadata,
+    tripId: original.tripId,
+    title: original.title,
+    category: original.category,
+    transactionAmount: negativeTransaction,
+    referenceAmount: negativeReference,
+    estimatedFinalAmount: negativeHome,
+    actualFinalAmount: negativeHome,
+    paymentMethodId: original.paymentMethodId,
+    paymentRuleSnapshot: original.paymentRuleSnapshot,
+    rateSnapshot: original.rateSnapshot,
+    taxAmount: zeroHome,
+    tipAmount: zeroHome,
+    discountAmount: zeroHome,
+    participantCount: original.participantCount,
+    occurredAt: occurredAt,
+    receiptLocalPath: null,
+    notes: original.notes,
+    budgetIncluded: original.budgetIncluded,
+    status: ExpenseStatus.confirmed,
+    entryType: entryType,
+    relatedExpenseId: original.metadata.recordId,
+    createdAt: createdAt,
+  );
 }
 
 ExpenseModel _copyExpense(

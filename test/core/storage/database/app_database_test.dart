@@ -14,6 +14,7 @@ import '../../../generated_migrations/schema_v2.dart' as v2;
 import '../../../generated_migrations/schema_v3.dart' as v3;
 import '../../../generated_migrations/schema_v4.dart' as v4;
 import '../../../generated_migrations/schema_v5.dart' as v5;
+import '../../../generated_migrations/schema_v6.dart' as v6;
 
 void main() {
   late AppDatabase database;
@@ -29,14 +30,14 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('schema v5 matches the exported migration baseline', () async {
+  test('schema v6 matches the exported migration baseline', () async {
     await database.close();
     final verifier = SchemaVerifier(GeneratedHelper());
-    final connection = await verifier.startAt(5);
+    final connection = await verifier.startAt(6);
     final schemaDatabase = AppDatabase(connection);
     addTearDown(schemaDatabase.close);
 
-    await verifier.migrateAndValidate(schemaDatabase, 5);
+    await verifier.migrateAndValidate(schemaDatabase, 6);
   });
 
   test('migrates v1 payment methods with a nullable cash rate', () async {
@@ -83,10 +84,10 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 5);
+    await verifier.migrateAndValidate(migrationDatabase, 6);
     await migrationDatabase.close();
 
-    final checkDatabase = v5.DatabaseAtV5(schema.newConnection());
+    final checkDatabase = v6.DatabaseAtV6(schema.newConnection());
     final row = await checkDatabase
         .customSelect(
           'SELECT id, cash_exchange_rate FROM payment_methods '
@@ -148,7 +149,7 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 5);
+    await verifier.migrateAndValidate(migrationDatabase, 6);
     final row = await migrationDatabase
         .customSelect(
           'SELECT entry_type, related_expense_id FROM expenses WHERE id = ?',
@@ -181,10 +182,10 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 5);
+    await verifier.migrateAndValidate(migrationDatabase, 6);
     await migrationDatabase.close();
 
-    final checkDatabase = v5.DatabaseAtV5(schema.newConnection());
+    final checkDatabase = v6.DatabaseAtV6(schema.newConnection());
     final metadata = await checkDatabase
         .customSelect(
           'SELECT record_id, device_id, change_id, '
@@ -242,10 +243,63 @@ void main() {
     await oldDatabase.close();
 
     final migrationDatabase = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(migrationDatabase, 5);
+    await verifier.migrateAndValidate(migrationDatabase, 6);
     final restored = await DriftSettingsRepository(migrationDatabase).load();
     expect(restored!.defaultCurrency.code, 'CNY');
     expect(restored.lastTransactionCurrency.code, 'USD');
+    await migrationDatabase.close();
+  });
+
+  test('migrates v5 trips with an empty route-stop payload', () async {
+    await database.close();
+    final verifier = SchemaVerifier(GeneratedHelper());
+    final schema = await verifier.schemaAt(5);
+    addTearDown(schema.close);
+    final oldDatabase = v5.DatabaseAtV5(schema.newConnection());
+    for (final currency in <String>['CNY', 'JPY']) {
+      await oldDatabase.customStatement(
+        'INSERT INTO currencies '
+        '(code, name, symbol, minor_units, updated_at) '
+        'VALUES (?, ?, ?, ?, ?)',
+        <Object?>[
+          currency,
+          currency,
+          currency,
+          2,
+          now.millisecondsSinceEpoch ~/ 1000,
+        ],
+      );
+    }
+    await oldDatabase.customStatement(
+      'INSERT INTO trips '
+      '(id, updated_at, name, destination_codes_json, start_date, end_date, '
+      'home_currency, local_currencies_json, participant_count, status, '
+      'created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      <Object?>[
+        'legacy-trip',
+        now.millisecondsSinceEpoch ~/ 1000,
+        'Tokyo',
+        '["JP"]',
+        now.millisecondsSinceEpoch ~/ 1000,
+        now.add(const Duration(days: 2)).millisecondsSinceEpoch ~/ 1000,
+        'CNY',
+        '["JPY"]',
+        1,
+        'active',
+        now.millisecondsSinceEpoch ~/ 1000,
+      ],
+    );
+    await oldDatabase.close();
+
+    final migrationDatabase = AppDatabase(schema.newConnection());
+    await verifier.migrateAndValidate(migrationDatabase, 6);
+    final row = await migrationDatabase
+        .customSelect(
+          'SELECT route_stops_json FROM trips WHERE id = ?',
+          variables: <Variable<Object>>[Variable<String>('legacy-trip')],
+        )
+        .getSingle();
+    expect(row.data['route_stops_json'], '[]');
     await migrationDatabase.close();
   });
 

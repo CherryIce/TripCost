@@ -10,7 +10,55 @@ import '../../../helpers/isolated_test_database.dart';
 import '../../../helpers/m4_fakes.dart';
 
 void main() {
-  testWidgets('currency setting actions share the same trailing alignment', (
+  testWidgets('secondary categories cover the persistent bottom navigation', (
+    tester,
+  ) async {
+    final database = createIsolatedTestDatabase();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          settingsRepositoryProvider.overrideWithValue(
+            MemorySettingsRepository(),
+          ),
+        ],
+        child: CupertinoApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Column(
+            children: <Widget>[
+              Expanded(
+                child: Navigator(
+                  onGenerateRoute: (_) => CupertinoPageRoute<void>(
+                    builder: (_) => const SettingsPage(),
+                  ),
+                ),
+              ),
+              const Text('persistent-bottom-navigation'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('persistent-bottom-navigation'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings-category-currency-rates')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('currency-rates-settings-list')),
+      findsOneWidget,
+    );
+    expect(find.text('persistent-bottom-navigation'), findsNothing);
+  });
+
+  testWidgets('currency details move to a secondary page and stay aligned', (
     tester,
   ) async {
     final database = createIsolatedTestDatabase();
@@ -35,6 +83,20 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
+    expect(find.text('货币与汇率'), findsOneWidget);
+    expect(find.text('默认本位币'), findsNothing);
+    expect(find.text('仅在 Wi-Fi 下刷新汇率'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('settings-category-currency-rates')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('currency-rates-settings-list')),
+      findsOneWidget,
+    );
+    expect(find.text('默认本位币'), findsOneWidget);
+    expect(find.text('仅在 Wi-Fi 下刷新汇率'), findsOneWidget);
 
     double trailingChevronX(String value) {
       final button = find.ancestor(
@@ -82,17 +144,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Currency and rates'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(RegExp('Default home currency')),
-      findsWidgets,
-    );
-
     await tester.scrollUntilVisible(
-      find.text('Export expenses as CSV'),
+      find.byKey(const Key('settings-category-data')),
       240,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.drag(
+      find.byKey(const Key('settings-category-list')),
+      const Offset(0, -120),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel(RegExp('Data, backup, and export')),
+      findsWidgets,
+    );
+    expect(find.text('Export expenses as CSV'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('settings-category-data')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('data-settings-list')), findsOneWidget);
     expect(find.bySemanticsLabel('Export expenses as CSV'), findsWidgets);
     expect(tester.takeException(), isNull);
     semantics.dispose();
@@ -127,6 +198,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Favorite currencies'), findsNothing);
+    await tester.tap(find.byKey(const Key('settings-category-currency-rates')));
+    await tester.pumpAndSettle();
+
     final defaultCurrency = find.text('Default home currency');
     await tester.ensureVisible(defaultCurrency);
     await tester.tap(defaultCurrency);

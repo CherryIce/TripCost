@@ -185,14 +185,32 @@ abstract class AppLocalizations {
   /// No description provided for @scanTitle.
   ///
   /// In en, this message translates to:
-  /// **'Scan a price'**
+  /// **'Scan'**
   String get scanTitle;
+
+  /// No description provided for @scanPurposeCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get scanPurposeCompare;
+
+  /// No description provided for @scanPurposeRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get scanPurposeRecord;
 
   /// No description provided for @scanSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose a camera photo or an image, then confirm every detected price before comparing payment methods.'**
+  /// **'Photograph a price tag or bill, then confirm the price before comparing payment methods.'**
   String get scanSubtitle;
+
+  /// No description provided for @scanRecordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a receipt or bill to prefill an expense.'**
+  String get scanRecordSubtitle;
 
   /// No description provided for @scanCamera.
   ///
@@ -218,11 +236,23 @@ abstract class AppLocalizations {
   /// **'Recognizing text on this device…'**
   String get scanRecognizing;
 
+  /// No description provided for @scanPreparingExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognizing and preparing the expense…'**
+  String get scanPreparingExpense;
+
   /// No description provided for @scanDetectedPrices.
   ///
   /// In en, this message translates to:
   /// **'Detected prices'**
   String get scanDetectedPrices;
+
+  /// No description provided for @scanDetectedPriceCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 price detected} other{{count} prices detected}}'**
+  String scanDetectedPriceCount(int count);
 
   /// No description provided for @scanSelectHint.
   ///
@@ -242,11 +272,77 @@ abstract class AppLocalizations {
   /// **'Enter an amount manually'**
   String get scanManualEntry;
 
+  /// No description provided for @scanManualEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue even without an image'**
+  String get scanManualEntryHint;
+
+  /// No description provided for @scanRecordManualEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an expense manually'**
+  String get scanRecordManualEntry;
+
+  /// No description provided for @scanRecordManualEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue without scanning'**
+  String get scanRecordManualEntryHint;
+
+  /// No description provided for @scanCameraAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a photo'**
+  String get scanCameraAction;
+
+  /// No description provided for @scanRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Retake'**
+  String get scanRetake;
+
+  /// No description provided for @scanPhotoLibraryAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Photos'**
+  String get scanPhotoLibraryAction;
+
+  /// No description provided for @scanManualSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount'**
+  String get scanManualSheetTitle;
+
+  /// No description provided for @scanManualSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the listed price directly'**
+  String get scanManualSheetSubtitle;
+
+  /// No description provided for @scanEditSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm price'**
+  String get scanEditSheetTitle;
+
+  /// No description provided for @scanEditSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the recognized result'**
+  String get scanEditSheetSubtitle;
+
   /// No description provided for @scanAmount.
   ///
   /// In en, this message translates to:
   /// **'Amount'**
   String get scanAmount;
+
+  /// No description provided for @scanTransactionCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction currency'**
+  String get scanTransactionCurrency;
 
   /// No description provided for @scanChooseCurrency.
   ///
@@ -259,6 +355,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid amount and choose a currency.'**
   String get scanInvalidEdit;
+
+  /// No description provided for @scanReviewBeforeContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the amount and currency before continuing.'**
+  String get scanReviewBeforeContinue;
+
+  /// No description provided for @scanSaveAndUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and use'**
+  String get scanSaveAndUse;
 
   /// No description provided for @scanCurrencyRequired.
   ///
@@ -427,6 +535,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add expenses to a trip and see how much of your travel budget remains.'**
   String get onboardingBudgetSubtitle;
+
+  /// No description provided for @onboardingSetupStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start setup'**
+  String get onboardingSetupStart;
+
+  /// No description provided for @onboardingSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick setup'**
+  String get onboardingSetupTitle;
+
+  /// No description provided for @onboardingSetupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Takes about a minute. You can add a trip and payment methods later.'**
+  String get onboardingSetupSubtitle;
+
+  /// No description provided for @onboardingSetupProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} complete'**
+  String onboardingSetupProgress(int completed, int total);
+
+  /// No description provided for @onboardingSetupEnterHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter home'**
+  String get onboardingSetupEnterHome;
+
+  /// No description provided for @onboardingSetupContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue setup'**
+  String get onboardingSetupContinue;
+
+  /// No description provided for @onboardingSetupDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get onboardingSetupDismiss;
+
+  /// No description provided for @onboardingSetupTripNotCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not created'**
+  String get onboardingSetupTripNotCreated;
+
+  /// No description provided for @onboardingSetupTripCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} trips created'**
+  String onboardingSetupTripCount(int count);
+
+  /// No description provided for @onboardingSetupPaymentNotAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not added'**
+  String get onboardingSetupPaymentNotAdded;
+
+  /// No description provided for @onboardingSetupPaymentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} methods added'**
+  String onboardingSetupPaymentCount(int count);
+
+  /// No description provided for @onboardingSetupCurrencySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{code} · Selected'**
+  String onboardingSetupCurrencySelected(String code);
 
   /// No description provided for @converterInputLabel.
   ///
@@ -709,6 +889,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add payment method'**
   String get paymentAddTitle;
+
+  /// No description provided for @paymentEditorQuickStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick setup'**
+  String get paymentEditorQuickStart;
+
+  /// No description provided for @paymentEditorTemplateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with a common rule, then fine-tune it below'**
+  String get paymentEditorTemplateHint;
+
+  /// No description provided for @paymentEditorBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic details'**
+  String get paymentEditorBasics;
+
+  /// No description provided for @paymentEditorFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee rules'**
+  String get paymentEditorFees;
+
+  /// No description provided for @paymentEditorOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional details'**
+  String get paymentEditorOptional;
 
   /// No description provided for @paymentEditName.
   ///
@@ -1256,6 +1466,168 @@ abstract class AppLocalizations {
   /// **'Select'**
   String get tripDestinationsEmpty;
 
+  /// No description provided for @tripCurrentAndUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Current & upcoming'**
+  String get tripCurrentAndUpcoming;
+
+  /// No description provided for @tripHistoryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get tripHistoryTab;
+
+  /// No description provided for @tripRoutePlannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan a multi-country route'**
+  String get tripRoutePlannerTitle;
+
+  /// No description provided for @tripRoutePlannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add stops in order. Budget and insights cover the whole trip.'**
+  String get tripRoutePlannerSubtitle;
+
+  /// No description provided for @tripStopsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Destinations & stays'**
+  String get tripStopsTitle;
+
+  /// No description provided for @tripAddNextStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Add next stop'**
+  String get tripAddNextStop;
+
+  /// No description provided for @tripWholeRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole trip'**
+  String get tripWholeRange;
+
+  /// No description provided for @tripDateRangePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date range'**
+  String get tripDateRangePickerTitle;
+
+  /// No description provided for @tripWholeBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole-trip budget'**
+  String get tripWholeBudget;
+
+  /// No description provided for @tripMoreSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'More settings'**
+  String get tripMoreSettings;
+
+  /// No description provided for @tripCurrentStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get tripCurrentStop;
+
+  /// No description provided for @tripNextStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tripNextStop;
+
+  /// No description provided for @tripDaysLater.
+  ///
+  /// In en, this message translates to:
+  /// **'In {count} days'**
+  String tripDaysLater(int count);
+
+  /// No description provided for @tripDayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String tripDayCount(int count);
+
+  /// No description provided for @tripStopDayProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}'**
+  String tripStopDayProgress(int day, int total);
+
+  /// No description provided for @tripBudgetUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% used'**
+  String tripBudgetUsed(String percent);
+
+  /// No description provided for @tripBudgetRemainingPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% remaining'**
+  String tripBudgetRemainingPercent(String percent);
+
+  /// No description provided for @tripDailyBudgetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on remaining days · updates automatically'**
+  String get tripDailyBudgetHint;
+
+  /// No description provided for @tripDailyBudgetApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'About {amount} / day'**
+  String tripDailyBudgetApprox(String amount);
+
+  /// No description provided for @tripViewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View trip'**
+  String get tripViewAction;
+
+  /// No description provided for @tripRecordAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expense'**
+  String get tripRecordAction;
+
+  /// No description provided for @tripRouteRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one destination.'**
+  String get tripRouteRequired;
+
+  /// No description provided for @tripAdjustStopEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust departure date'**
+  String get tripAdjustStopEnd;
+
+  /// No description provided for @tripChangeDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Change destination'**
+  String get tripChangeDestination;
+
+  /// No description provided for @tripChangeStopCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Change local currency'**
+  String get tripChangeStopCurrency;
+
+  /// No description provided for @tripRemoveStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this stop'**
+  String get tripRemoveStop;
+
+  /// No description provided for @tripOfflineMultiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Includes every local currency without requesting location.'**
+  String get tripOfflineMultiHint;
+
   /// No description provided for @countrySearchEmpty.
   ///
   /// In en, this message translates to:
@@ -1454,6 +1826,18 @@ abstract class AppLocalizations {
   /// **'Add expense'**
   String get expenseManualAdd;
 
+  /// No description provided for @expenseOcrPrefillBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled {count} items from the receipt. Please review them.'**
+  String expenseOcrPrefillBanner(int count);
+
+  /// No description provided for @expenseOcrNeedsConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get expenseOcrNeedsConfirmation;
+
   /// No description provided for @expenseSave.
   ///
   /// In en, this message translates to:
@@ -1466,11 +1850,53 @@ abstract class AppLocalizations {
   /// **'Recent expenses'**
   String get expenseRecent;
 
+  /// No description provided for @expenseEditorBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic information'**
+  String get expenseEditorBasics;
+
+  /// No description provided for @expenseEditorAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get expenseEditorAmount;
+
+  /// No description provided for @expenseEditorPaymentStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment and status'**
+  String get expenseEditorPaymentStatus;
+
+  /// No description provided for @expenseEditorTripCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip and category'**
+  String get expenseEditorTripCategory;
+
+  /// No description provided for @expenseEditorAdjustments.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjustments and travelers'**
+  String get expenseEditorAdjustments;
+
+  /// No description provided for @expenseEditorLiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates with the trip, currencies, and payment method'**
+  String get expenseEditorLiveHint;
+
   /// No description provided for @expenseTitle.
   ///
   /// In en, this message translates to:
   /// **'Merchant or item'**
   String get expenseTitle;
+
+  /// No description provided for @expenseTitlePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter merchant or item'**
+  String get expenseTitlePlaceholder;
 
   /// No description provided for @expenseTrip.
   ///
@@ -1487,8 +1913,14 @@ abstract class AppLocalizations {
   /// No description provided for @expenseTransactionAmount.
   ///
   /// In en, this message translates to:
-  /// **'Original amount'**
+  /// **'Transaction amount'**
   String get expenseTransactionAmount;
+
+  /// No description provided for @expenseTransactionAmountPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter transaction amount'**
+  String get expenseTransactionAmountPlaceholder;
 
   /// No description provided for @expenseReferenceAmount.
   ///
@@ -1544,6 +1976,30 @@ abstract class AppLocalizations {
   /// **'Receipt attachment (optional)'**
   String get expenseReceiptPath;
 
+  /// No description provided for @expenseReceiptSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Receipt attachment'**
+  String get expenseReceiptSection;
+
+  /// No description provided for @expenseReceiptReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get expenseReceiptReplace;
+
+  /// No description provided for @expenseReceiptAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get expenseReceiptAdd;
+
+  /// No description provided for @expenseReceiptRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove receipt'**
+  String get expenseReceiptRemove;
+
   /// No description provided for @expenseNotes.
   ///
   /// In en, this message translates to:
@@ -1562,10 +2018,22 @@ abstract class AppLocalizations {
   /// **'Status'**
   String get expenseStatus;
 
+  /// No description provided for @expenseAmountStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount status'**
+  String get expenseAmountStatus;
+
+  /// No description provided for @expensePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get expensePending;
+
   /// No description provided for @expenseConfirmed.
   ///
   /// In en, this message translates to:
-  /// **'Confirmed'**
+  /// **'Posted'**
   String get expenseConfirmed;
 
   /// No description provided for @expenseInvalid.
@@ -1573,6 +2041,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check the title, positive amounts, currencies and traveler count.'**
   String get expenseInvalid;
+
+  /// No description provided for @expenseMissingRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant name and transaction amount are still required.'**
+  String get expenseMissingRequired;
 
   /// No description provided for @expenseDuplicateTitle.
   ///
@@ -1628,6 +2102,12 @@ abstract class AppLocalizations {
   /// **'Record actual amount'**
   String get expenseRecordActual;
 
+  /// No description provided for @expenseEditActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit actual amount'**
+  String get expenseEditActual;
+
   /// No description provided for @expenseAdjust.
   ///
   /// In en, this message translates to:
@@ -1655,8 +2135,116 @@ abstract class AppLocalizations {
   /// No description provided for @expenseRefundInvalid.
   ///
   /// In en, this message translates to:
-  /// **'The refund must be greater than zero and cannot exceed the original posted or estimated amount.'**
+  /// **'The refund must be greater than zero and cannot exceed the original posted amount.'**
   String get expenseRefundInvalid;
+
+  /// No description provided for @expenseRefundStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund status'**
+  String get expenseRefundStatus;
+
+  /// No description provided for @expenseRefundNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No refund'**
+  String get expenseRefundNone;
+
+  /// No description provided for @expenseRefundPartialStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially refunded'**
+  String get expenseRefundPartialStatus;
+
+  /// No description provided for @expenseRefundFullStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully refunded'**
+  String get expenseRefundFullStatus;
+
+  /// No description provided for @expenseRefundInvalidStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid refund amount'**
+  String get expenseRefundInvalidStatus;
+
+  /// No description provided for @expenseRefundedTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total refunded'**
+  String get expenseRefundedTotal;
+
+  /// No description provided for @expenseNetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Net expense'**
+  String get expenseNetAmount;
+
+  /// No description provided for @expenseRefundRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund records'**
+  String get expenseRefundRecords;
+
+  /// No description provided for @expenseRelatedOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original expense'**
+  String get expenseRelatedOriginal;
+
+  /// No description provided for @expenseViewOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'View original expense'**
+  String get expenseViewOriginal;
+
+  /// No description provided for @expenseCorrectOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct original amount'**
+  String get expenseCorrectOriginal;
+
+  /// No description provided for @expenseCorrectRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct refund amount'**
+  String get expenseCorrectRefund;
+
+  /// No description provided for @expenseRecordRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Record refund'**
+  String get expenseRecordRefund;
+
+  /// No description provided for @expenseContinueRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue refund'**
+  String get expenseContinueRefund;
+
+  /// No description provided for @expenseVoidAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Void record'**
+  String get expenseVoidAction;
+
+  /// No description provided for @expenseVoidConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Only an expense that has not posted can be voided. Void this record?'**
+  String get expenseVoidConfirm;
+
+  /// No description provided for @expenseCorrectionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the original amount may change the refund status, but it will not change existing refund amounts.'**
+  String get expenseCorrectionWarning;
+
+  /// No description provided for @expenseAdjustmentInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be completed. Check the original amount and total refunded.'**
+  String get expenseAdjustmentInvalid;
 
   /// No description provided for @expenseManualRateSource.
   ///
@@ -1673,7 +2261,7 @@ abstract class AppLocalizations {
   /// No description provided for @ledgerTimeline.
   ///
   /// In en, this message translates to:
-  /// **'Timeline'**
+  /// **'Details'**
   String get ledgerTimeline;
 
   /// No description provided for @ledgerCalendar.
@@ -1699,6 +2287,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear'**
   String get ledgerClearFilters;
+
+  /// No description provided for @ledgerThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get ledgerThisMonth;
+
+  /// No description provided for @ledgerLastMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Last month'**
+  String get ledgerLastMonth;
+
+  /// No description provided for @ledgerAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get ledgerAllTime;
+
+  /// No description provided for @ledgerThisMonthSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'This month spending'**
+  String get ledgerThisMonthSpending;
+
+  /// No description provided for @ledgerLastMonthSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Last month spending'**
+  String get ledgerLastMonthSpending;
+
+  /// No description provided for @ledgerTotalSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Total spending'**
+  String get ledgerTotalSpending;
+
+  /// No description provided for @ledgerSummaryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} records · Calculated in {currencyCode}'**
+  String ledgerSummaryCount(int count, String currencyCode);
+
+  /// No description provided for @ledgerToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today · {date}'**
+  String ledgerToday(String date);
+
+  /// No description provided for @ledgerDayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} records'**
+  String ledgerDayCount(int count);
 
   /// No description provided for @ledgerEmpty.
   ///
@@ -1735,6 +2377,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last {count} days'**
   String ledgerRecentDays(int count);
+
+  /// No description provided for @ledgerRecentDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String ledgerRecentDaysShort(int count);
+
+  /// No description provided for @ledgerCustomDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get ledgerCustomDate;
+
+  /// No description provided for @ledgerDateRangePickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date range'**
+  String get ledgerDateRangePickerTitle;
+
+  /// No description provided for @ledgerStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get ledgerStartDate;
+
+  /// No description provided for @ledgerEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get ledgerEndDate;
+
+  /// No description provided for @ledgerViewRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'View {count} records'**
+  String ledgerViewRecords(int count);
+
+  /// No description provided for @ledgerSelectionSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get ledgerSelectionSeparator;
 
   /// No description provided for @calibrationNone.
   ///
@@ -1909,6 +2593,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings could not be loaded. Local data is unchanged.'**
   String get settingsLoadFailed;
+
+  /// No description provided for @settingsSectionCommon.
+  ///
+  /// In en, this message translates to:
+  /// **'Common'**
+  String get settingsSectionCommon;
+
+  /// No description provided for @settingsSectionDataDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Data and devices'**
+  String get settingsSectionDataDevices;
+
+  /// No description provided for @settingsSectionGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsSectionGeneral;
+
+  /// No description provided for @settingsPaymentMethodsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage cards, cash, and fees'**
+  String get settingsPaymentMethodsSummary;
+
+  /// No description provided for @settingsDataSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Export, backup, and cleanup'**
+  String get settingsDataSummary;
+
+  /// No description provided for @settingsPrivacySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Policies, permissions, and disclaimers'**
+  String get settingsPrivacySummary;
+
+  /// No description provided for @syncStatusEnabledShort.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get syncStatusEnabledShort;
+
+  /// No description provided for @syncStatusDisabledShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get syncStatusDisabledShort;
 
   /// No description provided for @rateSettingsTitle.
   ///

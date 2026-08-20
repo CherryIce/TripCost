@@ -10,6 +10,25 @@ import 'package:trip_cost/features/settings/application/general_settings_control
 import '../../../helpers/m4_fakes.dart';
 
 void main() {
+  test('defaults to CNY home currency and USD transaction currency', () async {
+    final container = ProviderContainer(
+      overrides: [
+        systemLocaleProvider.overrideWithValue(const Locale('en', 'US')),
+        settingsRepositoryProvider.overrideWithValue(
+          MemorySettingsRepository(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final settings = await container.read(
+      generalSettingsControllerProvider.future,
+    );
+
+    expect(settings.defaultCurrency.code, 'CNY');
+    expect(settings.lastTransactionCurrency.code, 'USD');
+  });
+
   test('persists currency, refresh, Wi-Fi, and language settings', () async {
     final catalog = CurrencyCatalog();
     final repository = MemorySettingsRepository(
@@ -44,6 +63,7 @@ void main() {
     await notifier.setLanguage(AppLanguageMode.simplifiedChinese);
 
     expect(repository.value?.defaultCurrency.code, 'USD');
+    expect(repository.value?.lastTransactionCurrency.code, 'JPY');
     expect(repository.value?.refreshInterval, const Duration(hours: 24));
     expect(repository.value?.wifiOnlyRefresh, isTrue);
     expect(repository.value?.languageMode, AppLanguageMode.simplifiedChinese);
@@ -54,4 +74,26 @@ void main() {
     );
     expect(container.read(localeControllerProvider), const Locale('zh', 'US'));
   });
+
+  test(
+    'keeps USD as the transaction currency when home changes to USD',
+    () async {
+      final repository = MemorySettingsRepository();
+      final container = ProviderContainer(
+        overrides: [
+          systemLocaleProvider.overrideWithValue(const Locale('en', 'US')),
+          settingsRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(generalSettingsControllerProvider.future);
+
+      await container
+          .read(generalSettingsControllerProvider.notifier)
+          .setDefaultCurrency(CurrencyCatalog().resolve('USD'));
+
+      expect(repository.value?.defaultCurrency.code, 'USD');
+      expect(repository.value?.lastTransactionCurrency.code, 'USD');
+    },
+  );
 }

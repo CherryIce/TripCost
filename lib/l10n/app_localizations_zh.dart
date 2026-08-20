@@ -51,10 +51,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsSubtitle => '管理货币、汇率、支付方式、同步与隐私。';
 
   @override
-  String get scanTitle => '扫描价格';
+  String get scanTitle => '扫描';
 
   @override
-  String get scanSubtitle => '拍照或选择图片后，请先确认识别出的价格，再比较支付方式。';
+  String get scanPurposeCompare => '比价';
+
+  @override
+  String get scanPurposeRecord => '记账';
+
+  @override
+  String get scanSubtitle => '拍下价签或账单，确认价格后再比较支付方式';
+
+  @override
+  String get scanRecordSubtitle => '扫描小票或账单，自动填写消费记录';
 
   @override
   String get scanCamera => '相机';
@@ -69,7 +78,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanRecognizing => '正在本机识别文字…';
 
   @override
+  String get scanPreparingExpense => '正在识别并整理消费信息…';
+
+  @override
   String get scanDetectedPrices => '识别出的价格';
+
+  @override
+  String scanDetectedPriceCount(int count) {
+    return '已识别 $count 个价格';
+  }
 
   @override
   String get scanSelectHint => '可选择一个价格，也可多选后求和。';
@@ -81,13 +98,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanManualEntry => '手动输入金额';
 
   @override
+  String get scanManualEntryHint => '没有图片也可以继续';
+
+  @override
+  String get scanRecordManualEntry => '直接手动记账';
+
+  @override
+  String get scanRecordManualEntryHint => '不扫描也可以继续';
+
+  @override
+  String get scanCameraAction => '拍照扫描';
+
+  @override
+  String get scanRetake => '重新拍照';
+
+  @override
+  String get scanPhotoLibraryAction => '从相册选择';
+
+  @override
+  String get scanManualSheetTitle => '手动输入金额';
+
+  @override
+  String get scanManualSheetSubtitle => '直接输入商品标价';
+
+  @override
+  String get scanEditSheetTitle => '确认价格';
+
+  @override
+  String get scanEditSheetSubtitle => '修改识别结果';
+
+  @override
   String get scanAmount => '金额';
+
+  @override
+  String get scanTransactionCurrency => '交易币种';
 
   @override
   String get scanChooseCurrency => '选择币种';
 
   @override
   String get scanInvalidEdit => '请输入有效金额并选择币种。';
+
+  @override
+  String get scanReviewBeforeContinue => '请核对金额与币种后再继续。';
+
+  @override
+  String get scanSaveAndUse => '保存并使用';
 
   @override
   String get scanCurrencyRequired => '请为每个已选价格确认币种。';
@@ -176,6 +232,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboardingBudgetSubtitle => '将消费加入行程，随时了解已用预算和剩余金额。';
+
+  @override
+  String get onboardingSetupStart => '开始设置';
+
+  @override
+  String get onboardingSetupTitle => '快速设置';
+
+  @override
+  String get onboardingSetupSubtitle => '约 1 分钟，行程和支付方式也可以稍后添加。';
+
+  @override
+  String onboardingSetupProgress(int completed, int total) {
+    return '已完成 $completed/$total';
+  }
+
+  @override
+  String get onboardingSetupEnterHome => '进入首页';
+
+  @override
+  String get onboardingSetupContinue => '继续完善设置';
+
+  @override
+  String get onboardingSetupDismiss => '暂时关闭';
+
+  @override
+  String get onboardingSetupTripNotCreated => '未创建';
+
+  @override
+  String onboardingSetupTripCount(int count) {
+    return '已创建 $count 个行程';
+  }
+
+  @override
+  String get onboardingSetupPaymentNotAdded => '未添加';
+
+  @override
+  String onboardingSetupPaymentCount(int count) {
+    return '已添加 $count 种';
+  }
+
+  @override
+  String onboardingSetupCurrencySelected(String code) {
+    return '$code · 已选择';
+  }
 
   @override
   String get converterInputLabel => '当地价格或算式';
@@ -333,6 +433,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paymentAddTitle => '添加支付方式';
+
+  @override
+  String get paymentEditorQuickStart => '快速设置';
+
+  @override
+  String get paymentEditorTemplateHint => '先套用常见规则，再按实际情况微调';
+
+  @override
+  String get paymentEditorBasics => '基本信息';
+
+  @override
+  String get paymentEditorFees => '费用规则';
+
+  @override
+  String get paymentEditorOptional => '可选信息';
 
   @override
   String get paymentEditName => '名称';
@@ -617,6 +732,99 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tripDestinationsEmpty => '请选择';
 
   @override
+  String get tripCurrentAndUpcoming => '当前与即将';
+
+  @override
+  String get tripHistoryTab => '历史';
+
+  @override
+  String get tripRoutePlannerTitle => '规划多国路线';
+
+  @override
+  String get tripRoutePlannerSubtitle => '按顺序添加停留地，预算与统计将汇总整趟行程。';
+
+  @override
+  String get tripStopsTitle => '目的地与停留';
+
+  @override
+  String get tripAddNextStop => '添加下一站';
+
+  @override
+  String get tripWholeRange => '整段行程';
+
+  @override
+  String get tripDateRangePickerTitle => '选择日期范围';
+
+  @override
+  String get tripWholeBudget => '整趟预算';
+
+  @override
+  String get tripMoreSettings => '更多设置';
+
+  @override
+  String get tripCurrentStop => '当前';
+
+  @override
+  String get tripNextStop => '下一站';
+
+  @override
+  String tripDaysLater(int count) {
+    return '$count天后';
+  }
+
+  @override
+  String tripDayCount(int count) {
+    return '$count天';
+  }
+
+  @override
+  String tripStopDayProgress(int day, int total) {
+    return '第$day天/$total天';
+  }
+
+  @override
+  String tripBudgetUsed(String percent) {
+    return '$percent% 已用';
+  }
+
+  @override
+  String tripBudgetRemainingPercent(String percent) {
+    return '$percent% 剩余';
+  }
+
+  @override
+  String get tripDailyBudgetHint => '基于剩余天数 · 动态更新';
+
+  @override
+  String tripDailyBudgetApprox(String amount) {
+    return '约 $amount / 天';
+  }
+
+  @override
+  String get tripViewAction => '查看行程';
+
+  @override
+  String get tripRecordAction => '记一笔';
+
+  @override
+  String get tripRouteRequired => '至少添加一个目的地。';
+
+  @override
+  String get tripAdjustStopEnd => '调整离开日期';
+
+  @override
+  String get tripChangeDestination => '修改目的地';
+
+  @override
+  String get tripChangeStopCurrency => '修改当地货币';
+
+  @override
+  String get tripRemoveStop => '移除此站';
+
+  @override
+  String get tripOfflineMultiHint => '包含全部当地货币，无需定位权限。';
+
+  @override
   String get countrySearchEmpty => '未找到国家或地区';
 
   @override
@@ -720,13 +928,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseManualAdd => '手动记账';
 
   @override
+  String expenseOcrPrefillBanner(int count) {
+    return '已从票据填入 $count 项，请核对';
+  }
+
+  @override
+  String get expenseOcrNeedsConfirmation => '待确认';
+
+  @override
   String get expenseSave => '保存消费';
 
   @override
   String get expenseRecent => '最近消费';
 
   @override
+  String get expenseEditorBasics => '基本信息';
+
+  @override
+  String get expenseEditorAmount => '金额';
+
+  @override
+  String get expenseEditorPaymentStatus => '支付与状态';
+
+  @override
+  String get expenseEditorTripCategory => '行程与分类';
+
+  @override
+  String get expenseEditorAdjustments => '附加费用与人数';
+
+  @override
+  String get expenseEditorLiveHint => '随行程、币种和支付方式实时更新';
+
+  @override
   String get expenseTitle => '商户或项目';
+
+  @override
+  String get expenseTitlePlaceholder => '请输入商户或项目';
 
   @override
   String get expenseTrip => '行程';
@@ -735,13 +972,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseCategory => '分类';
 
   @override
-  String get expenseTransactionAmount => '原币金额';
+  String get expenseTransactionAmount => '交易金额';
 
   @override
-  String get expenseReferenceAmount => '参考换算金额';
+  String get expenseTransactionAmountPlaceholder => '请输入交易金额';
 
   @override
-  String get expenseEstimatedAmount => '预计最终金额';
+  String get expenseReferenceAmount => '参考换算';
+
+  @override
+  String get expenseEstimatedAmount => '预计最终';
 
   @override
   String get expenseActualAmount => '实际入账金额';
@@ -765,6 +1005,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseReceiptPath => '票据附件（可选）';
 
   @override
+  String get expenseReceiptSection => '票据附件';
+
+  @override
+  String get expenseReceiptReplace => '更换';
+
+  @override
+  String get expenseReceiptAdd => '添加照片';
+
+  @override
+  String get expenseReceiptRemove => '移除票据';
+
+  @override
   String get expenseNotes => '备注';
 
   @override
@@ -774,10 +1026,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseStatus => '状态';
 
   @override
-  String get expenseConfirmed => '已确认';
+  String get expenseAmountStatus => '金额状态';
+
+  @override
+  String get expensePending => '待入账';
+
+  @override
+  String get expenseConfirmed => '已入账';
 
   @override
   String get expenseInvalid => '请检查名称、正数金额、币种和人数。';
+
+  @override
+  String get expenseMissingRequired => '还需填写商户名称和交易金额';
 
   @override
   String get expenseDuplicateTitle => '可能重复保存';
@@ -807,6 +1068,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseRecordActual => '补录实际入账';
 
   @override
+  String get expenseEditActual => '修改实际入账';
+
+  @override
   String get expenseAdjust => '退款或撤销';
 
   @override
@@ -819,7 +1083,61 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseVoid => '已撤销';
 
   @override
-  String get expenseRefundInvalid => '退款金额必须大于零，且不能超过原消费的实际或预计金额。';
+  String get expenseRefundInvalid => '退款金额必须大于零，且不能超过原消费的实际入账金额。';
+
+  @override
+  String get expenseRefundStatus => '退款状态';
+
+  @override
+  String get expenseRefundNone => '无退款';
+
+  @override
+  String get expenseRefundPartialStatus => '部分退款';
+
+  @override
+  String get expenseRefundFullStatus => '已全部退款';
+
+  @override
+  String get expenseRefundInvalidStatus => '退款金额异常';
+
+  @override
+  String get expenseRefundedTotal => '累计退款';
+
+  @override
+  String get expenseNetAmount => '净支出';
+
+  @override
+  String get expenseRefundRecords => '退款记录';
+
+  @override
+  String get expenseRelatedOriginal => '关联原交易';
+
+  @override
+  String get expenseViewOriginal => '查看原交易';
+
+  @override
+  String get expenseCorrectOriginal => '更正原交易金额';
+
+  @override
+  String get expenseCorrectRefund => '更正退款金额';
+
+  @override
+  String get expenseRecordRefund => '记录退款';
+
+  @override
+  String get expenseContinueRefund => '继续退款';
+
+  @override
+  String get expenseVoidAction => '撤销记录';
+
+  @override
+  String get expenseVoidConfirm => '仅未实际入账的记录可以撤销。确定撤销这条记录吗？';
+
+  @override
+  String get expenseCorrectionWarning => '修改原交易金额可能改变退款状态，但不会修改已有退款金额。';
+
+  @override
+  String get expenseAdjustmentInvalid => '操作无法完成，请检查原交易金额与累计退款。';
 
   @override
   String get expenseManualRateSource => '手动记账汇率';
@@ -828,19 +1146,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get expenseManualPaymentRule => '手动录入';
 
   @override
-  String get ledgerTimeline => '时间线';
+  String get ledgerTimeline => '明细';
 
   @override
   String get ledgerCalendar => '日历';
 
   @override
-  String get ledgerCategories => '分类统计';
+  String get ledgerCategories => '分类';
 
   @override
   String get ledgerFilters => '筛选';
 
   @override
   String get ledgerClearFilters => '清除';
+
+  @override
+  String get ledgerThisMonth => '本月';
+
+  @override
+  String get ledgerLastMonth => '上月';
+
+  @override
+  String get ledgerAllTime => '全部';
+
+  @override
+  String get ledgerThisMonthSpending => '本月支出';
+
+  @override
+  String get ledgerLastMonthSpending => '上月支出';
+
+  @override
+  String get ledgerTotalSpending => '累计支出';
+
+  @override
+  String ledgerSummaryCount(int count, String currencyCode) {
+    return '$count 笔 · 按本位币 $currencyCode 统计';
+  }
+
+  @override
+  String ledgerToday(String date) {
+    return '今天 · $date';
+  }
+
+  @override
+  String ledgerDayCount(int count) {
+    return '$count 笔';
+  }
 
   @override
   String get ledgerEmpty => '暂无符合条件的消费。';
@@ -863,6 +1214,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String ledgerRecentDays(int count) {
     return '最近 $count 天';
   }
+
+  @override
+  String ledgerRecentDaysShort(int count) {
+    return '$count天';
+  }
+
+  @override
+  String get ledgerCustomDate => '自定义';
+
+  @override
+  String get ledgerDateRangePickerTitle => '选择日期范围';
+
+  @override
+  String get ledgerStartDate => '开始日期';
+
+  @override
+  String get ledgerEndDate => '结束日期';
+
+  @override
+  String ledgerViewRecords(int count) {
+    return '查看 $count 笔记录';
+  }
+
+  @override
+  String get ledgerSelectionSeparator => '、';
 
   @override
   String get calibrationNone => '补录实际金额后，会在本地形成费用对比。';
@@ -960,6 +1336,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsLoadFailed => '无法载入设置，本地数据保持不变。';
+
+  @override
+  String get settingsSectionCommon => '常用';
+
+  @override
+  String get settingsSectionDataDevices => '数据与设备';
+
+  @override
+  String get settingsSectionGeneral => '通用';
+
+  @override
+  String get settingsPaymentMethodsSummary => '管理银行卡、现金与手续费';
+
+  @override
+  String get settingsDataSummary => '导出、备份与清理';
+
+  @override
+  String get settingsPrivacySummary => '政策、权限与免责声明';
+
+  @override
+  String get syncStatusEnabledShort => '已开启';
+
+  @override
+  String get syncStatusDisabledShort => '已关闭';
 
   @override
   String get rateSettingsTitle => '货币与汇率';

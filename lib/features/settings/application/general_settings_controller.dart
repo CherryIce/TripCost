@@ -49,13 +49,6 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
     final repository = ref.read(settingsRepositoryProvider);
     final previous = await repository.load() ?? state.value ?? _defaults();
     final nextDefaultCurrency = defaultCurrency ?? previous.defaultCurrency;
-    final nextTransactionCurrency =
-        previous.lastTransactionCurrency == nextDefaultCurrency
-        ? fallbackTransactionCurrency(
-            homeCurrency: nextDefaultCurrency,
-            preferredCurrencies: previous.favoriteCurrencies,
-          )
-        : previous.lastTransactionCurrency;
     final next = UserSettingsModel(
       metadata: SyncRecordMetadata(
         recordId: DriftSettingsRepository.settingsRecordId,
@@ -63,7 +56,7 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
         updatedAt: DateTime.now().toUtc(),
       ),
       defaultCurrency: nextDefaultCurrency,
-      lastTransactionCurrency: nextTransactionCurrency,
+      lastTransactionCurrency: previous.lastTransactionCurrency,
       // Retained only for backward-compatible decoding of older settings.
       favoriteCurrencies: previous.favoriteCurrencies,
       languageMode: languageMode ?? previous.languageMode,
@@ -90,7 +83,7 @@ final class GeneralSettingsController extends AsyncNotifier<UserSettingsModel> {
         updatedAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       ),
       defaultCurrency: catalog.resolve('CNY'),
-      lastTransactionCurrency: catalog.resolve('JPY'),
+      lastTransactionCurrency: catalog.resolve('USD'),
       favoriteCurrencies: const <Currency>[],
       languageMode: AppLanguageMode.system,
       refreshInterval: const Duration(hours: 6),

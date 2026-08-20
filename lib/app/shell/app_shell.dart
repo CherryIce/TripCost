@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
+import 'package:trip_cost/features/scanner/application/scan_flow.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 
 class AppShell extends StatelessWidget {
@@ -30,7 +31,16 @@ class AppShell extends StatelessWidget {
                 initialLocation: index == navigationShell.currentIndex,
               );
             },
-            onScanPressed: () => context.push(AppRoutes.scan),
+            onScanPressed: () => context.push(
+              AppRoutes.scan,
+              extra: ScanPageArguments(
+                initialPurpose:
+                    navigationShell.currentIndex == 1 ||
+                        navigationShell.currentIndex == 2
+                    ? ScanPurpose.record
+                    : ScanPurpose.compare,
+              ),
+            ),
           ),
         ],
       ),

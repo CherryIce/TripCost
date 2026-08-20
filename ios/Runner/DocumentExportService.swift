@@ -240,7 +240,12 @@ enum ExpensePdfRenderer {
         let estimated = "\(label(labels, "estimated")): \(string(row["estimatedAmount"])) \(string(row["homeCurrency"]))"
         let actualValue = string(row["actualAmount"], fallback: "—")
         let actual = "\(label(labels, "actual")): \(actualValue) \(string(row["homeCurrency"]))"
-        for line in [categoryAndType, original, home, rate, source, estimated, actual] {
+        var detailLines = [categoryAndType, original, home, rate, source, estimated, actual]
+        let relatedExpenseId = string(row["relatedExpenseId"])
+        if !relatedExpenseId.isEmpty {
+          detailLines.append("\(label(labels, "relatedExpense")): \(relatedExpenseId)")
+        }
+        for line in detailLines {
           drawFlowing(line, font: .systemFont(ofSize: 10.5))
         }
         ensureSpace(21)

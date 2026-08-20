@@ -55,47 +55,151 @@ void main() {
     expect(find.text('Skip'), findsOneWidget);
   });
 
-  testWidgets('three onboarding pages can be completed', (tester) async {
+  testWidgets('three onboarding pages continue to quick setup before home', (
+    tester,
+  ) async {
     final store = _FakeStartupStateStore();
 
     await tester.pumpWidget(_testApp(store));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    expect(find.text('Compare the cost to pay'), findsOneWidget);
+    await _openQuickSetup(tester);
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(find.text('Home currency'), findsOneWidget);
+    expect(find.text('Trips'), findsOneWidget);
+    expect(find.text('Payment methods'), findsOneWidget);
+    expect(store.isComplete, isFalse);
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    expect(find.text('Keep every trip on budget'), findsOneWidget);
-
-    await tester.tap(find.text('Start exploring'));
+    await tester.tap(find.text('Enter home'));
     await tester.pumpAndSettle();
     expect(store.isComplete, isTrue);
     expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Continue setup'), findsOneWidget);
   });
 
-  testWidgets('trip creation from onboarding can be cancelled back to home', (
+  testWidgets('quick setup header stays below the navigation bar', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_testApp(_FakeStartupStateStore()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create a trip'));
+    await _openQuickSetup(tester);
+
+    final navigationBarBottom = tester
+        .getBottomLeft(find.byType(CupertinoNavigationBar))
+        .dy;
+    final subtitleTop = tester
+        .getTopLeft(
+          find.text(
+            'Takes about a minute. You can add a trip and payment methods later.',
+          ),
+        )
+        .dy;
+
+    expect(subtitleTop, greaterThanOrEqualTo(navigationBarBottom));
+  });
+
+  testWidgets('trip creation can be cancelled back to quick setup', (
+    tester,
+  ) async {
+    final store = _FakeStartupStateStore();
+    await tester.pumpWidget(_testApp(store));
     await tester.pumpAndSettle();
 
-    expect(find.text('New trip'), findsOneWidget);
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-trip')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('trip-editor-redesigned-list')),
+      findsOneWidget,
+    );
+    expect(find.text('New trip'), findsWidgets);
     expect(find.text('Cancel'), findsOneWidget);
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('New trip'), findsNothing);
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(find.byKey(const Key('trip-editor-redesigned-list')), findsNothing);
+    expect(store.isComplete, isFalse);
+  });
+
+  testWidgets('payment setup can be cancelled back to quick setup', (
+    tester,
+  ) async {
+    final store = _FakeStartupStateStore();
+    await tester.pumpWidget(_testApp(store));
+    await tester.pumpAndSettle();
+
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-payment')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add payment method'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(store.isComplete, isFalse);
+  });
+
+  testWidgets('saved payment method returns to quick setup with progress', (
+    tester,
+  ) async {
+    final store = _FakeStartupStateStore();
+    await tester.pumpWidget(_testApp(store));
+    await tester.pumpAndSettle();
+
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-payment')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(CupertinoTextField).first,
+      'Travel Visa',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(find.text('1 methods added'), findsOneWidget);
+    expect(find.text('2 of 3 complete'), findsOneWidget);
+    expect(store.isComplete, isFalse);
+  });
+
+  testWidgets('home setup prompt reopens setup and can be dismissed', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 932));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_testApp(_FakeStartupStateStore()));
+    await tester.pumpAndSettle();
+
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-finish')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('quick-setup-prompt-continue')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('quick-setup-prompt-continue')),
+    );
+    await tester.tap(find.byKey(const Key('quick-setup-prompt-continue')));
+    await tester.pumpAndSettle();
+    expect(find.text('Quick setup'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(
+      find.byKey(const Key('quick-setup-prompt-dismiss')),
+    );
+    await tester.tap(find.byKey(const Key('quick-setup-prompt-dismiss')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('quick-setup-prompt-continue')), findsNothing);
   });
 
   testWidgets('rapid save taps create only one onboarding trip', (
@@ -107,17 +211,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create a trip'));
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-trip')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(CupertinoTextField).first, '001');
     await _selectJapanDestination(tester);
     final saveButton = tester.widget<CupertinoButton>(
-      find.widgetWithText(CupertinoButton, 'Save'),
+      find.byKey(const Key('trip-editor-submit-button')),
     );
     saveButton.onPressed!();
     saveButton.onPressed!();
@@ -125,8 +226,10 @@ void main() {
 
     expect(trips.values, hasLength(1));
     expect(trips.values.single.name, '001');
-    expect(find.text('New trip'), findsNothing);
-    expect(find.text('Home'), findsOneWidget);
+    expect(trips.values.single.homeCurrency.code, 'USD');
+    expect(find.byKey(const Key('trip-editor-redesigned-list')), findsNothing);
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(find.text('001'), findsOneWidget);
   });
 
   testWidgets('retry after a partial save reuses the same trip record', (
@@ -138,26 +241,45 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Next'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Create a trip'));
+    await _openQuickSetup(tester);
+    await tester.tap(find.byKey(const Key('quick-setup-trip')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(CupertinoTextField).first, '001');
     await _selectJapanDestination(tester);
-    await tester.tap(find.text('Save'));
+    tester
+        .widget<CupertinoButton>(
+          find.byKey(const Key('trip-editor-submit-button')),
+        )
+        .onPressed!();
     await tester.pumpAndSettle();
-    expect(find.text('New trip'), findsOneWidget);
+    expect(
+      find.byKey(const Key('trip-editor-redesigned-list')),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text('Save'));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('trip-editor-submit-button')),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const Key('trip-editor-redesigned-list')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    tester
+        .widget<CupertinoButton>(
+          find.byKey(const Key('trip-editor-submit-button')),
+        )
+        .onPressed!();
     await tester.pumpAndSettle();
 
     expect(trips.values, hasLength(1));
     expect(trips.values.single.name, '001');
-    expect(find.text('New trip'), findsNothing);
-    expect(find.text('Home'), findsOneWidget);
+    expect(find.byKey(const Key('trip-editor-redesigned-list')), findsNothing);
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(find.text('001'), findsOneWidget);
   });
 
   testWidgets('first launch follows a Chinese device locale', (tester) async {
@@ -180,12 +302,21 @@ void main() {
     await tester.tap(find.text('下一步'));
     await tester.pumpAndSettle();
     expect(find.text('持续掌握旅行预算'), findsOneWidget);
-    expect(find.text('建议本位币'), findsOneWidget);
-    expect(find.text('创建行程'), findsOneWidget);
-    expect(find.text('添加支付方式'), findsOneWidget);
-    expect(find.text('开始使用'), findsOneWidget);
+    expect(find.text('开始设置'), findsOneWidget);
+    expect(find.text('建议本位币'), findsNothing);
+    expect(find.text('创建行程'), findsNothing);
+    expect(find.text('添加支付方式'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('onboarding-home-currency')));
+    await tester.tap(find.text('开始设置'));
+    await tester.pumpAndSettle();
+    expect(find.text('快速设置'), findsOneWidget);
+    expect(find.text('本位币'), findsOneWidget);
+    expect(find.text('建议本位币'), findsNothing);
+    expect(find.text('行程'), findsOneWidget);
+    expect(find.text('支付方式'), findsOneWidget);
+    expect(find.text('进入首页'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quick-setup-currency')));
     await tester.pumpAndSettle();
     for (final currency in CurrencyCatalog.knownCurrencies) {
       expect(find.textContaining(currency.name), findsNothing);
@@ -233,8 +364,23 @@ void main() {
   });
 }
 
+Future<void> _openQuickSetup(WidgetTester tester) async {
+  await tester.tap(find.text('Next'));
+  await tester.pumpAndSettle();
+  expect(find.text('Compare the cost to pay'), findsOneWidget);
+
+  await tester.tap(find.text('Next'));
+  await tester.pumpAndSettle();
+  expect(find.text('Keep every trip on budget'), findsOneWidget);
+  expect(find.text('Start setup'), findsOneWidget);
+
+  await tester.tap(find.text('Start setup'));
+  await tester.pumpAndSettle();
+  expect(find.text('Quick setup'), findsOneWidget);
+}
+
 Future<void> _selectJapanDestination(WidgetTester tester) async {
-  await tester.tap(find.text('Countries or regions'));
+  await tester.tap(find.text('Add next stop'));
   await tester.pumpAndSettle();
   await tester.enterText(
     find.byKey(const Key('country-search-field')),

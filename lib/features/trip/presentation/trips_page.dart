@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,18 +15,27 @@ import 'package:trip_cost/core/money/money_formatter.dart';
 import 'package:trip_cost/core/trips/domain/trip_budget.dart';
 import 'package:trip_cost/features/expense/application/expenses_controller.dart';
 import 'package:trip_cost/features/payment_method/application/payment_methods_controller.dart';
+import 'package:trip_cost/features/scanner/application/scan_flow.dart';
 import 'package:trip_cost/features/settings/application/settings_data_service.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
+import 'package:trip_cost/features/trip/presentation/trip_date_range_picker_page.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:trip_cost/shared/widgets/country_picker_page.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
 import 'package:uuid/uuid.dart';
 
-class TripsPage extends ConsumerWidget {
+class TripsPage extends ConsumerStatefulWidget {
   const TripsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripsPage> createState() => _TripsPageState();
+}
+
+class _TripsPageState extends ConsumerState<TripsPage> {
+  bool _showHistory = false;
+
+  @override
+  Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     final trips = ref.watch(tripsControllerProvider);
     final expenses = ref.watch(expensesControllerProvider).value ?? const [];
@@ -60,17 +68,71 @@ class TripsPage extends ConsumerWidget {
               );
             }
             final now = DateTime.now().toUtc();
+            final current = items
+                .where(
+                  (trip) =>
+                      tripListSection(trip, now) == TripListSection.active,
+                )
+                .toList(growable: false);
+            final upcoming = items
+                .where(
+                  (trip) =>
+                      tripListSection(trip, now) == TripListSection.upcoming,
+                )
+                .toList(growable: false);
+            final history = items
+                .where(
+                  (trip) =>
+                      tripListSection(trip, now) == TripListSection.history,
+                )
+                .toList(growable: false);
             return ListView(
-              padding: const EdgeInsets.all(AppSpacing.medium),
+              key: const Key('trips-redesigned-list'),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.medium,
+                AppSpacing.small,
+                AppSpacing.medium,
+                AppInsets.scrollableBottomPadding(context),
+              ),
               children: <Widget>[
-                for (final section in TripListSection.values) ...<Widget>[
-                  if (items.any(
-                    (trip) => tripListSection(trip, now) == section,
-                  ))
-                    _SectionTitle(section: section),
-                  for (final trip in items.where(
-                    (trip) => tripListSection(trip, now) == section,
-                  )) ...<Widget>[
+                SizedBox(
+                  width: double.infinity,
+                  child: CupertinoSlidingSegmentedControl<bool>(
+                    key: const Key('trip-section-segmented-control'),
+                    groupValue: _showHistory,
+                    children: <bool, Widget>{
+                      false: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Text(localizations.tripCurrentAndUpcoming),
+                      ),
+                      true: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Text(localizations.tripHistoryTab),
+                      ),
+                    },
+                    onValueChanged: (value) {
+                      if (value != null) setState(() => _showHistory = value);
+                    },
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.medium),
+                if (_showHistory) ...<Widget>[
+                  if (history.isEmpty)
+                    _Surface(child: Text(localizations.tripHistory))
+                  else
+                    for (final trip in history) ...<Widget>[
+                      _CompactTripRow(
+                        trip: trip,
+                        onTap: () => context.push(
+                          AppRoutes.tripDetail(trip.metadata.recordId),
+                          extra: trip,
+                        ),
+                        onMore: () => _showActions(context, ref, trip),
+                      ),
+                      const SizedBox(height: AppSpacing.small),
+                    ],
+                ] else ...<Widget>[
+                  for (final trip in current) ...<Widget>[
                     _TripCard(
                       trip: trip,
                       summary: const TripBudgetCalculator().calculate(
@@ -78,15 +140,31 @@ class TripsPage extends ConsumerWidget {
                         expenses: expenses,
                         now: now,
                       ),
+                      now: now,
                       onTap: () => context.push(
                         AppRoutes.tripDetail(trip.metadata.recordId),
                         extra: trip,
                       ),
+                      onRecord: () =>
+                          context.push(AppRoutes.expenseCreate, extra: trip),
                       onMore: () => _showActions(context, ref, trip),
                     ),
-                    const SizedBox(height: AppSpacing.small),
+                    const SizedBox(height: AppSpacing.medium),
                   ],
-                  const SizedBox(height: AppSpacing.medium),
+                  if (upcoming.isNotEmpty) ...<Widget>[
+                    _SectionLabel(label: localizations.tripUpcoming),
+                    for (final trip in upcoming) ...<Widget>[
+                      _CompactTripRow(
+                        trip: trip,
+                        onTap: () => context.push(
+                          AppRoutes.tripDetail(trip.metadata.recordId),
+                          extra: trip,
+                        ),
+                        onMore: () => _showActions(context, ref, trip),
+                      ),
+                      const SizedBox(height: AppSpacing.small),
+                    ],
+                  ],
                 ],
               ],
             );
@@ -258,9 +336,10 @@ class TripsPage extends ConsumerWidget {
 }
 
 class TripEditorPage extends ConsumerStatefulWidget {
-  const TripEditorPage({this.initial, super.key});
+  const TripEditorPage({this.initial, this.defaultHomeCurrency, super.key});
 
   final TripModel? initial;
+  final Currency? defaultHomeCurrency;
 
   @override
   ConsumerState<TripEditorPage> createState() => _TripEditorPageState();
@@ -304,15 +383,14 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
   final _budget = TextEditingController();
   final _participants = TextEditingController(text: '1');
   final CountryDirectory _countryDirectory = CountryDirectory();
-  final Set<String> _destinationCodes = <String>{};
+  final List<TripStopModel> _stops = <TripStopModel>[];
   late final String _recordId;
   late DateTime _startDate;
   late DateTime _endDate;
-  Currency _homeCurrency = CurrencyCatalog().resolve('CNY');
-  final Set<Currency> _localCurrencies = <Currency>{};
-  bool _localCurrenciesManuallyEdited = false;
+  late Currency _homeCurrency;
   String? _defaultPaymentMethodId;
   bool _offlinePack = false;
+  bool _showMoreSettings = false;
   bool _invalid = false;
   bool _isSaving = false;
 
@@ -321,17 +399,18 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
     super.initState();
     final initial = widget.initial;
     _recordId = initial?.metadata.recordId ?? const Uuid().v4();
+    _homeCurrency =
+        initial?.homeCurrency ??
+        widget.defaultHomeCurrency ??
+        CurrencyCatalog().resolve('CNY');
     final today = localCalendarDate(DateTime.now());
     _startDate = initial?.startDate ?? today;
     _endDate = initial?.endDate ?? _startDate.add(const Duration(days: 6));
     if (initial != null) {
       _name.text = initial.name;
-      _destinationCodes.addAll(initial.destinationCodes);
+      _stops.addAll(initial.stops);
       _budget.text = initial.totalBudget?.amount.toString() ?? '';
       _participants.text = initial.participantCount.toString();
-      _homeCurrency = initial.homeCurrency;
-      _localCurrencies.addAll(initial.localCurrencies);
-      _localCurrenciesManuallyEdited = true;
       _defaultPaymentMethodId = initial.defaultPaymentMethodId;
       _offlinePack = initial.offlinePackUpdatedAt != null;
     }
@@ -350,104 +429,472 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
     final l10n = AppLocalizations.of(context);
     final methods =
         ref.watch(paymentMethodsControllerProvider).value ?? const [];
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final totalDays = _tripDays;
+    final budgetValue = _tryParseDecimal(_budget.text.trim());
+    final dailyBudget = budgetValue == null
+        ? null
+        : Money(
+            amount: budgetValue.divide(DecimalValue.parse('$totalDays')),
+            currency: _homeCurrency,
+          );
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        leading: widget.initial == null
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _isSaving ? null : _close,
-                child: Text(l10n.commonCancel),
-              )
-            : null,
-        middle: Text(widget.initial == null ? l10n.tripCreate : l10n.tripEdit),
-        trailing: CupertinoButton(
+        leading: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: _isSaving ? null : _save,
-          child: _isSaving
-              ? const CupertinoActivityIndicator(radius: 8)
-              : Text(l10n.commonSave),
+          onPressed: _isSaving ? null : _close,
+          child: Text(l10n.commonCancel),
         ),
+        middle: Text(widget.initial == null ? l10n.tripCreate : l10n.tripEdit),
       ),
       child: SafeArea(
         bottom: false,
         child: ListView(
-          padding: AppInsets.secondaryPageScrollPadding(context),
+          key: const Key('trip-editor-redesigned-list'),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.medium,
+            AppSpacing.medium,
+            AppSpacing.medium,
+            AppInsets.scrollableBottomPadding(context),
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: <Widget>[
-            _Field(label: l10n.tripName, controller: _name),
-            _Choice(
-              label: l10n.tripDestinations,
-              value: _destinationDisplayValue(context),
-              onPressed: _pickDestinations,
+            Text(
+              l10n.tripRoutePlannerTitle,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),
-            _Choice(
-              label: l10n.tripStartDate,
-              value: _formatDate(_startDate, context),
-              onPressed: () => _pickDate(true),
+            const SizedBox(height: 4),
+            Text(
+              l10n.tripRoutePlannerSubtitle,
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
             ),
-            _Choice(
-              label: l10n.tripEndDate,
-              value: _formatDate(_endDate, context),
-              onPressed: () => _pickDate(false),
+            const SizedBox(height: AppSpacing.medium),
+            _GroupedSurface(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+                    child: Text(
+                      l10n.tripStopsTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (_stops.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                      child: Text(
+                        l10n.tripRouteRequired,
+                        style: TextStyle(
+                          color: CupertinoColors.secondaryLabel.resolveFrom(
+                            context,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ReorderableList(
+                      key: const Key('trip-stop-list'),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _stops.length,
+                      onReorder: _reorderStop,
+                      itemBuilder: (context, index) {
+                        final stop = _stops[index];
+                        return _TripStopEditorRow(
+                          key: ValueKey(
+                            '${stop.countryCode}-${stop.startDate.toIso8601String()}',
+                          ),
+                          index: index,
+                          stop: stop,
+                          destination: _countryName(stop.countryCode, context),
+                          onPressed: () => _editStop(index),
+                        );
+                      },
+                    ),
+                  const _EditorDivider(),
+                  CupertinoButton(
+                    key: const Key('trip-add-stop-button'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    onPressed: _addStop,
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(CupertinoIcons.add_circled, size: 25),
+                        const SizedBox(width: 10),
+                        Text(l10n.tripAddNextStop),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _Choice(
-              label: l10n.currencyHome,
-              value: _homeCurrency.code,
-              onPressed: _pickHomeCurrency,
+            const SizedBox(height: AppSpacing.small),
+            _GroupedSurface(
+              child: _EditorValueRow(
+                label: l10n.tripWholeRange,
+                value:
+                    '${_formatShortDate(_startDate, context)} – ${_formatShortDate(_endDate, context)} · ${l10n.tripDayCount(totalDays)}',
+                onPressed: _pickWholeTripRange,
+              ),
             ),
-            _Choice(
-              label: l10n.tripLocalCurrencies,
-              value: _localCurrencyDisplayValue(l10n),
-              onPressed: _destinationCodes.isEmpty && _localCurrencies.isEmpty
-                  ? null
-                  : _pickLocalCurrencies,
+            const SizedBox(height: AppSpacing.small),
+            _GroupedSurface(
+              child: _EditorInputRow(
+                label: l10n.tripName,
+                controller: _name,
+                placeholder: _automaticTripName(context),
+                onChanged: (_) => setState(() {}),
+              ),
             ),
-            _Field(
-              label: l10n.tripBudget,
-              controller: _budget,
-              numeric: true,
-              placeholder: l10n.tripBudgetOptional,
+            const SizedBox(height: AppSpacing.small),
+            _GroupedSurface(
+              child: Column(
+                children: <Widget>[
+                  _EditorInputRow(
+                    icon: CupertinoIcons.money_dollar_circle,
+                    label: l10n.tripWholeBudget,
+                    controller: _budget,
+                    numeric: true,
+                    placeholder: '${_homeCurrency.code} 0',
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const _EditorDivider(indent: 48),
+                  _EditorInputRow(
+                    icon: CupertinoIcons.person,
+                    label: l10n.tripParticipants,
+                    controller: _participants,
+                    numeric: true,
+                  ),
+                  const _EditorDivider(indent: 48),
+                  _EditorActionRow(
+                    icon: CupertinoIcons.chart_bar_alt_fill,
+                    label: dailyBudget == null
+                        ? l10n.tripDailyBudgetHint
+                        : l10n.tripDailyBudgetApprox(
+                            const MoneyFormatter().format(
+                              dailyBudget,
+                              locale: locale,
+                              includeCode: false,
+                            ),
+                          ),
+                    subtitle: dailyBudget == null
+                        ? null
+                        : l10n.tripDailyBudgetHint,
+                  ),
+                ],
+              ),
             ),
-            _Field(
-              label: l10n.tripParticipants,
-              controller: _participants,
-              numeric: true,
-            ),
-            _Choice(
-              label: l10n.tripDefaultPayment,
-              value:
-                  methods
-                      .where(
-                        (item) =>
-                            item.metadata.recordId == _defaultPaymentMethodId,
-                      )
-                      .firstOrNull
-                      ?.name ??
-                  l10n.commonNone,
-              onPressed: () => _pickPaymentMethod(methods),
-            ),
-            CupertinoListTile(
-              padding: EdgeInsets.zero,
-              title: Text(l10n.tripOfflinePack),
-              subtitle: Text(l10n.tripOfflinePackHint),
-              trailing: CupertinoSwitch(
-                value: _offlinePack,
-                onChanged: (value) => setState(() => _offlinePack = value),
+            const SizedBox(height: AppSpacing.small),
+            _GroupedSurface(
+              child: Column(
+                children: <Widget>[
+                  _EditorValueRow(
+                    icon: CupertinoIcons.slider_horizontal_3,
+                    label: l10n.tripMoreSettings,
+                    value: _settingsSummary(methods, l10n),
+                    expanded: _showMoreSettings,
+                    onPressed: () =>
+                        setState(() => _showMoreSettings = !_showMoreSettings),
+                  ),
+                  if (_showMoreSettings) ...<Widget>[
+                    const _EditorDivider(indent: 48),
+                    _EditorValueRow(
+                      label: l10n.currencyHome,
+                      value: _homeCurrency.code,
+                      onPressed: _pickHomeCurrency,
+                    ),
+                    const _EditorDivider(indent: 16),
+                    _EditorValueRow(
+                      label: l10n.tripDefaultPayment,
+                      value: _paymentMethodName(methods, l10n),
+                      onPressed: () => _pickPaymentMethod(methods),
+                    ),
+                    const _EditorDivider(indent: 16),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(l10n.tripOfflinePack),
+                                const SizedBox(height: 3),
+                                Text(
+                                  l10n.tripOfflineMultiHint,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: CupertinoColors.secondaryLabel
+                                        .resolveFrom(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CupertinoSwitch(
+                            value: _offlinePack,
+                            onChanged: (value) =>
+                                setState(() => _offlinePack = value),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             if (_invalid)
-              Text(
-                l10n.tripInvalid,
-                style: const TextStyle(color: CupertinoColors.systemRed),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.small),
+                child: Text(
+                  _stops.isEmpty ? l10n.tripRouteRequired : l10n.tripInvalid,
+                  style: const TextStyle(color: CupertinoColors.systemRed),
+                ),
               ),
+            const SizedBox(height: AppSpacing.medium),
+            CupertinoButton.filled(
+              key: const Key('trip-editor-submit-button'),
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const CupertinoActivityIndicator(radius: 8)
+                  : Text(
+                      widget.initial == null
+                          ? l10n.tripCreate
+                          : l10n.commonSave,
+                    ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _pickDate(bool start) async {
-    var selected = start ? _startDate : _endDate;
-    await showCupertinoModalPopup<void>(
+  int get _tripDays => _endDate.difference(_startDate).inDays + 1;
+
+  List<Currency> get _routeCurrencies {
+    final byCode = <String, Currency>{};
+    for (final stop in _stops) {
+      byCode.putIfAbsent(stop.localCurrency.code, () => stop.localCurrency);
+    }
+    return byCode.values.toList(growable: false);
+  }
+
+  String _countryName(String code, BuildContext context) => _countryDirectory
+      .displayNameForCode(code, Localizations.localeOf(context).languageCode);
+
+  String _automaticTripName(BuildContext context) {
+    if (_stops.isEmpty) return AppLocalizations.of(context).tripName;
+    final route = _stops
+        .map((stop) => _countryName(stop.countryCode, context))
+        .join(' · ');
+    return '$route${AppLocalizations.of(context).tripDayCount(_tripDays)}';
+  }
+
+  Future<void> _addStop() async {
+    final selected = await showCountryMultiPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).tripAddNextStop,
+      doneLabel: AppLocalizations.of(context).commonDone,
+      selectedCodes: const <String>[],
+      minimumSelection: 1,
+      maximumSelection: 1,
+    );
+    if (selected == null || selected.isEmpty || !mounted) return;
+    final code = selected.single;
+    final recommended = _countryDirectory.recommendedCurrencies(<String>[code]);
+    setState(() {
+      _stops.add(
+        TripStopModel(
+          countryCode: code,
+          startDate: _startDate,
+          endDate: _endDate,
+          localCurrency: recommended.firstOrNull ?? _homeCurrency,
+        ),
+      );
+      if (_stops.length > _tripDays) {
+        _endDate = _startDate.add(Duration(days: _stops.length - 1));
+      }
+      _rebalanceStops();
+      _invalid = false;
+    });
+  }
+
+  void _reorderStop(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final stop = _stops.removeAt(oldIndex);
+      _stops.insert(newIndex, stop);
+      _rebalanceStops();
+    });
+  }
+
+  void _rebalanceStops() {
+    if (_stops.isEmpty) return;
+    final totalDays = _tripDays;
+    final countries = <TripStopModel>[..._stops];
+    _stops
+      ..clear()
+      ..addAll(<TripStopModel>[
+        for (var index = 0; index < countries.length; index += 1)
+          TripStopModel(
+            countryCode: countries[index].countryCode,
+            startDate: _startDate.add(
+              Duration(days: totalDays * index ~/ countries.length),
+            ),
+            endDate: _startDate.add(
+              Duration(days: (totalDays * (index + 1) ~/ countries.length) - 1),
+            ),
+            localCurrency: countries[index].localCurrency,
+          ),
+      ]);
+  }
+
+  Future<void> _editStop(int index) async {
+    final l10n = AppLocalizations.of(context);
+    final action = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(_countryName(_stops[index].countryCode, context)),
+        actions: <Widget>[
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop('destination'),
+            child: Text(l10n.tripChangeDestination),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context).pop('currency'),
+            child: Text(l10n.tripChangeStopCurrency),
+          ),
+          if (index < _stops.length - 1)
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(context).pop('date'),
+              child: Text(l10n.tripAdjustStopEnd),
+            ),
+          if (_stops.length > 1)
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop('remove'),
+              child: Text(l10n.tripRemoveStop),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+      ),
+    );
+    if (action == null || !mounted) return;
+    switch (action) {
+      case 'destination':
+        await _changeStopDestination(index);
+      case 'currency':
+        await _changeStopCurrency(index);
+      case 'date':
+        await _changeStopBoundary(index);
+      case 'remove':
+        setState(() {
+          _stops.removeAt(index);
+          _rebalanceStops();
+        });
+    }
+  }
+
+  Future<void> _changeStopDestination(int index) async {
+    final selected = await showCountryMultiPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).tripChangeDestination,
+      doneLabel: AppLocalizations.of(context).commonDone,
+      selectedCodes: <String>[_stops[index].countryCode],
+      minimumSelection: 1,
+      maximumSelection: 1,
+    );
+    if (selected == null || selected.isEmpty || !mounted) return;
+    final previous = _stops[index];
+    final recommended = _countryDirectory.recommendedCurrencies(selected);
+    setState(() {
+      _stops[index] = TripStopModel(
+        countryCode: selected.single,
+        startDate: previous.startDate,
+        endDate: previous.endDate,
+        localCurrency: recommended.firstOrNull ?? previous.localCurrency,
+      );
+    });
+  }
+
+  Future<void> _changeStopCurrency(int index) async {
+    final previous = _stops[index];
+    final result = await showCurrencyPickerPage(
+      context: context,
+      title: AppLocalizations.of(context).tripChangeStopCurrency,
+      selected: previous.localCurrency,
+    );
+    if (result?.currency case final selected?) {
+      if (!mounted) return;
+      setState(() {
+        _stops[index] = TripStopModel(
+          countryCode: previous.countryCode,
+          startDate: previous.startDate,
+          endDate: previous.endDate,
+          localCurrency: selected,
+        );
+      });
+    }
+  }
+
+  Future<void> _changeStopBoundary(int index) async {
+    final stop = _stops[index];
+    final next = _stops[index + 1];
+    final selected = await _pickDateValue(
+      initial: stop.endDate,
+      minimum: stop.startDate,
+      maximum: next.endDate.subtract(const Duration(days: 1)),
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _stops[index] = TripStopModel(
+        countryCode: stop.countryCode,
+        startDate: stop.startDate,
+        endDate: selected,
+        localCurrency: stop.localCurrency,
+      );
+      _stops[index + 1] = TripStopModel(
+        countryCode: next.countryCode,
+        startDate: selected.add(const Duration(days: 1)),
+        endDate: next.endDate,
+        localCurrency: next.localCurrency,
+      );
+    });
+  }
+
+  Future<void> _pickWholeTripRange() async {
+    final range = await showTripDateRangePickerPage(
+      context: context,
+      initialStart: _startDate,
+      initialEnd: _endDate,
+    );
+    if (range == null || !mounted) return;
+    setState(() {
+      _startDate = range.start;
+      _endDate = range.end;
+      if (_stops.length > _tripDays) {
+        _endDate = _startDate.add(Duration(days: _stops.length - 1));
+      }
+      _rebalanceStops();
+    });
+  }
+
+  Future<DateTime?> _pickDateValue({
+    required DateTime initial,
+    DateTime? minimum,
+    DateTime? maximum,
+  }) async {
+    var selected = initial;
+    final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
       builder: (context) => Container(
         height: 330,
@@ -459,14 +906,16 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: CupertinoButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(context).pop(true),
                   child: Text(AppLocalizations.of(context).commonDone),
                 ),
               ),
               Expanded(
                 child: CupertinoDatePicker(
                   mode: CupertinoDatePickerMode.date,
-                  initialDateTime: selected,
+                  initialDateTime: initial,
+                  minimumDate: minimum,
+                  maximumDate: maximum,
                   onDateTimeChanged: (value) => selected = DateTime.utc(
                     value.year,
                     value.month,
@@ -479,14 +928,7 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
         ),
       ),
     );
-    setState(() {
-      if (start) {
-        _startDate = selected;
-        if (_endDate.isBefore(selected)) _endDate = selected;
-      } else {
-        _endDate = selected;
-      }
-    });
+    return confirmed == true ? selected : null;
   }
 
   Future<void> _pickHomeCurrency() async {
@@ -501,129 +943,36 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
     }
   }
 
-  Future<void> _pickDestinations() async {
-    final selected = await showCountryMultiPickerPage(
-      context: context,
-      title: AppLocalizations.of(context).tripDestinations,
-      doneLabel: AppLocalizations.of(context).commonDone,
-      selectedCodes: _destinationCodes.toList(growable: false),
-      minimumSelection: 1,
-    );
-    if (selected == null || !mounted) return;
-
-    final selectedCodes = selected.toSet();
-    final changed = !setEquals(_destinationCodes, selectedCodes);
-    final recommended = _countryDirectory.recommendedCurrencies(selectedCodes);
-    final manuallyEdited = _localCurrenciesManuallyEdited;
-    setState(() {
-      _destinationCodes
-        ..clear()
-        ..addAll(selectedCodes);
-      if (changed && !manuallyEdited) {
-        _replaceLocalCurrencies(recommended);
-      }
-    });
-    if (!changed ||
-        !manuallyEdited ||
-        recommended.isEmpty ||
-        _sameCurrencyCodes(_localCurrencies, recommended)) {
-      return;
-    }
-
-    final codes = recommended.map((currency) => currency.code).join(' / ');
-    final shouldUpdate = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) {
-        final l10n = AppLocalizations.of(context);
-        return CupertinoAlertDialog(
-          title: Text(l10n.tripCurrencyRecommendationTitle),
-          content: Text(l10n.tripCurrencyRecommendationMessage(codes)),
-          actions: <Widget>[
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.tripCurrencyRecommendationKeep),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.tripCurrencyRecommendationUpdate),
-            ),
-          ],
-        );
-      },
-    );
-    if (shouldUpdate == true && mounted) {
-      setState(() {
-        _replaceLocalCurrencies(recommended);
-        _localCurrenciesManuallyEdited = false;
-      });
-    }
-  }
-
-  Future<void> _pickLocalCurrencies() async {
-    final selected = await showCurrencyMultiPickerPage(
-      context: context,
-      title: AppLocalizations.of(context).tripLocalCurrencies,
-      doneLabel: AppLocalizations.of(context).commonDone,
-      selected: _localCurrencies.toList(growable: false),
-      minimumSelection: 1,
-    );
-    if (selected != null && mounted) {
-      setState(() {
-        _localCurrencies
-          ..clear()
-          ..addAll(selected);
-        _localCurrenciesManuallyEdited = true;
-      });
-    }
-  }
-
-  String _destinationDisplayValue(BuildContext context) {
-    if (_destinationCodes.isEmpty) {
-      return AppLocalizations.of(context).tripDestinationsEmpty;
-    }
-    final languageCode = Localizations.localeOf(context).languageCode;
-    final names = <String>[
-      for (final code in _destinationCodes)
-        _countryDirectory.displayNameForCode(code, languageCode),
-    ]..sort();
-    return names.join(' / ');
-  }
-
-  String _localCurrencyDisplayValue(AppLocalizations l10n) {
-    if (_localCurrencies.isEmpty) {
-      return _destinationCodes.isEmpty
-          ? l10n.tripLocalCurrenciesPending
-          : l10n.tripLocalCurrenciesMissing;
-    }
-    final currencies =
-        (_localCurrencies.toList()
-              ..sort((left, right) => left.code.compareTo(right.code)))
-            .map((currency) => currency.code)
-            .join(' / ');
-    return _localCurrenciesManuallyEdited
-        ? currencies
-        : l10n.tripLocalCurrenciesRecommended(currencies);
-  }
-
-  void _replaceLocalCurrencies(Iterable<Currency> currencies) {
-    _localCurrencies
-      ..clear()
-      ..addAll(currencies);
-  }
-
-  bool _sameCurrencyCodes(Iterable<Currency> left, Iterable<Currency> right) =>
-      setEquals(
-        left.map((currency) => currency.code).toSet(),
-        right.map((currency) => currency.code).toSet(),
-      );
-
   Future<void> _pickPaymentMethod(List<PaymentMethodModel> methods) async {
     final selected = await _choose<String?>(<String?, String>{
       null: AppLocalizations.of(context).commonNone,
       for (final item in methods) item.metadata.recordId: item.name,
     });
-    setState(() => _defaultPaymentMethodId = selected);
+    if (mounted) setState(() => _defaultPaymentMethodId = selected);
+  }
+
+  String _paymentMethodName(
+    List<PaymentMethodModel> methods,
+    AppLocalizations l10n,
+  ) =>
+      methods
+          .where((item) => item.metadata.recordId == _defaultPaymentMethodId)
+          .firstOrNull
+          ?.name ??
+      l10n.commonNone;
+
+  String _settingsSummary(
+    List<PaymentMethodModel> methods,
+    AppLocalizations l10n,
+  ) {
+    final currencies = _routeCurrencies.isEmpty
+        ? l10n.tripLocalCurrenciesPending
+        : _routeCurrencies.map((currency) => currency.code).join(' + ');
+    final payment = _paymentMethodName(methods, l10n);
+    final offline = _offlinePack
+        ? l10n.tripOfflineReady
+        : l10n.tripOfflineMissing;
+    return '$currencies · $payment · $offline';
   }
 
   Future<T?> _choose<T>(Map<T, String> options) {
@@ -652,26 +1001,32 @@ class _TripEditorPageState extends ConsumerState<TripEditorPage> {
       _invalid = false;
     });
     try {
+      if (_stops.isEmpty) {
+        throw const FormatException('Trip route is required.');
+      }
       final now = DateTime.now().toUtc();
       final budgetText = _budget.text.trim();
       final initial = widget.initial;
+      final participantCount = int.parse(_participants.text.trim());
       final trip = TripModel(
         metadata: SyncRecordMetadata(
           recordId: _recordId,
           syncVersion: (initial?.metadata.syncVersion ?? 0) + 1,
           updatedAt: now,
         ),
-        name: _name.text.trim(),
-        destinationCodes: _destinationCodes.toList()..sort(),
+        name: _name.text.trim().isEmpty
+            ? _automaticTripName(context)
+            : _name.text.trim(),
+        destinationCodes: <String>[for (final stop in _stops) stop.countryCode],
         startDate: _startDate,
         endDate: _endDate,
+        stops: _stops,
         homeCurrency: _homeCurrency,
-        localCurrencies: _localCurrencies.toList()
-          ..sort((left, right) => left.code.compareTo(right.code)),
+        localCurrencies: _routeCurrencies,
         totalBudget: budgetText.isEmpty
             ? null
             : Money.parse(budgetText, _homeCurrency),
-        participantCount: int.parse(_participants.text.trim()),
+        participantCount: participantCount,
         defaultPaymentMethodId: _defaultPaymentMethodId,
         offlinePackUpdatedAt: _offlinePack
             ? initial?.offlinePackUpdatedAt
@@ -813,7 +1168,13 @@ class TripDashboardPage extends ConsumerWidget {
                 ),
                 const SizedBox(width: 8),
                 CupertinoButton(
-                  onPressed: () => context.push(AppRoutes.scan),
+                  onPressed: () => context.push(
+                    AppRoutes.scan,
+                    extra: ScanPageArguments(
+                      initialPurpose: ScanPurpose.record,
+                      trip: trip,
+                    ),
+                  ),
                   child: Text(l10n.scanAction),
                 ),
               ],
@@ -889,60 +1250,616 @@ class _TripCard extends StatelessWidget {
   const _TripCard({
     required this.trip,
     required this.summary,
+    required this.now,
     required this.onTap,
+    required this.onRecord,
     required this.onMore,
   });
 
   final TripModel trip;
   final TripBudgetSummary summary;
+  final DateTime now;
   final VoidCallback onTap;
+  final VoidCallback onRecord;
   final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final formatter = const MoneyFormatter();
-    final spent = formatter.format(
-      summary.spent,
-      locale: locale,
-      includeCode: true,
+    String money(Money? value) => value == null
+        ? l10n.tripNoBudget
+        : formatter.format(value, locale: locale, includeCode: false);
+    final usedPercent =
+        double.tryParse(summary.usedPercent?.toString() ?? '0') ?? 0;
+    final progress = (usedPercent / 100).clamp(0.0, 1.0);
+    final today = localCalendarDate(now);
+    final currentIndex = trip.stops.indexWhere(
+      (stop) => !today.isBefore(stop.startDate) && !today.isAfter(stop.endDate),
     );
-    final budget = summary.totalBudget == null
-        ? AppLocalizations.of(context).tripNoBudget
-        : formatter.format(
-            summary.totalBudget!,
-            locale: locale,
-            includeCode: true,
-          );
+    final current = currentIndex >= 0 ? trip.stops[currentIndex] : null;
+    final next = currentIndex >= 0 && currentIndex + 1 < trip.stops.length
+        ? trip.stops[currentIndex + 1]
+        : null;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: _Surface(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemBlue
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(CupertinoIcons.briefcase, size: 19),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        trip.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_formatShortDate(trip.startDate, context)} – ${_formatShortDate(trip.endDate, context)} · ${l10n.tripDayCount(summary.totalDays)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.secondaryLabel.resolveFrom(
+                            context,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGreen
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Text(
+                    l10n.tripActive,
+                    style: const TextStyle(
+                      color: CupertinoColors.systemGreen,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                CupertinoButton(
+                  minimumSize: const Size.square(28),
+                  padding: const EdgeInsetsDirectional.only(start: 4),
+                  onPressed: onMore,
+                  child: const Icon(CupertinoIcons.ellipsis, size: 18),
+                ),
+              ],
+            ),
+            if (trip.stops.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 14),
+              _TripRouteOverview(stops: trip.stops, activeIndex: currentIndex),
+            ],
+            if (current != null) ...<Widget>[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBlue
+                      .resolveFrom(context)
+                      .withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const Icon(CupertinoIcons.location_solid, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${l10n.tripCurrentStop}：${_countryNameForTrip(current.countryCode, context)} · ${l10n.tripStopDayProgress(today.difference(current.startDate).inDays + 1, current.endDate.difference(current.startDate).inDays + 1)}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: CupertinoColors.systemBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (next != null) ...<Widget>[
+                      Container(
+                        width: 0.5,
+                        height: 18,
+                        color: CupertinoColors.separator.resolveFrom(context),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(CupertinoIcons.clock, size: 14),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          '${l10n.tripNextStop}：${_countryNameForTrip(next.countryCode, context)} · ${l10n.tripDaysLater(next.startDate.difference(today).inDays)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.systemBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              children: <Widget>[
+                _BudgetMetric(
+                  label: l10n.tripBudget,
+                  value: money(summary.totalBudget),
+                ),
+                _BudgetMetric(
+                  label: l10n.tripSpent,
+                  value: money(summary.spent),
+                ),
+                _BudgetMetric(
+                  label: l10n.tripRemaining,
+                  value: money(summary.remaining),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: SizedBox(
+                height: 5,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    ColoredBox(
+                      color: CupertinoColors.systemGrey4.resolveFrom(context),
+                    ),
+                    FractionallySizedBox(
+                      alignment: AlignmentDirectional.centerStart,
+                      widthFactor: progress,
+                      child: const ColoredBox(
+                        color: CupertinoColors.systemBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  l10n.tripBudgetUsed(usedPercent.toStringAsFixed(1)),
+                  style: const TextStyle(
+                    color: CupertinoColors.systemBlue,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  l10n.tripBudgetRemainingPercent(
+                    (100 - usedPercent).clamp(0, 100).toStringAsFixed(1),
+                  ),
+                  style: TextStyle(
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            if (summary.remainingPerDay != null) ...<Widget>[
+              const SizedBox(height: 10),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemBlue
+                        .resolveFrom(context)
+                        .withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(CupertinoIcons.chart_bar_alt_fill, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              l10n.tripDailyBudgetApprox(
+                                money(summary.remainingPerDay),
+                              ),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              l10n.tripDailyBudgetHint,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(CupertinoIcons.chevron_forward, size: 14),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: CupertinoButton.filled(
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    onPressed: onTap,
+                    child: Text(l10n.tripViewAction),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: CupertinoColors.systemBlue),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: CupertinoButton(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      onPressed: onRecord,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Icon(CupertinoIcons.pencil, size: 17),
+                          const SizedBox(width: 6),
+                          Text(l10n.tripRecordAction),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripRouteOverview extends StatelessWidget {
+  const _TripRouteOverview({required this.stops, required this.activeIndex});
+
+  final List<TripStopModel> stops;
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget stopView(int index) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 19,
+          height: 19,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: index == activeIndex
+                ? CupertinoColors.systemBlue
+                : CupertinoColors.systemBackground.resolveFrom(context),
+            border: Border.all(
+              color: index <= activeIndex
+                  ? CupertinoColors.systemBlue
+                  : CupertinoColors.systemGrey3.resolveFrom(context),
+            ),
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '${index + 1}',
+            style: TextStyle(
+              color: index == activeIndex
+                  ? CupertinoColors.white
+                  : CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontSize: 10,
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _countryNameForTrip(stops[index].countryCode, context),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${_formatShortDate(stops[index].startDate, context)} – ${_formatShortDate(stops[index].endDate, context)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          ),
+        ),
+        Text(
+          stops[index].localCurrency.code,
+          style: const TextStyle(
+            fontSize: 11,
+            color: CupertinoColors.systemBlue,
+          ),
+        ),
+      ],
+    );
+
+    Widget connector({double? width}) => SizedBox(
+      width: width,
+      child: Container(
+        margin: const EdgeInsets.only(top: 9),
+        height: 1,
+        color: CupertinoColors.systemGrey3.resolveFrom(context),
+      ),
+    );
+
+    if (stops.length > 3) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            for (var index = 0; index < stops.length; index += 1) ...<Widget>[
+              if (index > 0) connector(width: 32),
+              SizedBox(width: 108, child: stopView(index)),
+            ],
+          ],
+        ),
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        for (var index = 0; index < stops.length; index += 1) ...<Widget>[
+          if (index > 0) Expanded(child: connector()),
+          Flexible(flex: 2, child: stopView(index)),
+        ],
+      ],
+    );
+  }
+}
+
+class _BudgetMetric extends StatelessWidget {
+  const _BudgetMetric({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      padding: const EdgeInsetsDirectional.only(start: 10),
+      decoration: const BoxDecoration(
+        border: BorderDirectional(
+          start: BorderSide(color: CupertinoColors.separator, width: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 13,
+        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      ),
+    ),
+  );
+}
+
+class _CompactTripRow extends StatelessWidget {
+  const _CompactTripRow({
+    required this.trip,
+    required this.onTap,
+    required this.onMore,
+  });
+  final TripModel trip;
+  final VoidCallback onTap;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) => _Surface(
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: CupertinoColors.systemBlue
+                .resolveFrom(context)
+                .withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(CupertinoIcons.briefcase, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: CupertinoButton(
+            padding: EdgeInsets.zero,
+            alignment: AlignmentDirectional.centerStart,
+            onPressed: onTap,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  trip.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '${_formatShortDate(trip.startDate, context)} – ${_formatShortDate(trip.endDate, context)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        CupertinoButton(
+          minimumSize: const Size.square(30),
+          padding: EdgeInsets.zero,
+          onPressed: onMore,
+          child: const Icon(CupertinoIcons.ellipsis, size: 18),
+        ),
+        const Icon(CupertinoIcons.chevron_forward, size: 14),
+      ],
+    ),
+  );
+}
+
+class _GroupedSurface extends StatelessWidget {
+  const _GroupedSurface({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(
+        context,
+      ),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: CupertinoColors.separator.resolveFrom(context),
+        width: 0.35,
+      ),
+    ),
+    child: child,
+  );
+}
+
+class _TripStopEditorRow extends StatelessWidget {
+  const _TripStopEditorRow({
+    required this.index,
+    required this.stop,
+    required this.destination,
+    required this.onPressed,
+    super.key,
+  });
+
+  final int index;
+  final TripStopModel stop;
+  final String destination;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: <Widget>[
+      CupertinoButton(
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        onPressed: onPressed,
         child: Row(
           children: <Widget>[
-            const Icon(CupertinoIcons.airplane, size: 30),
-            const SizedBox(width: AppSpacing.medium),
+            Container(
+              width: 27,
+              height: 27,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: index == 0
+                    ? CupertinoColors.systemBlue
+                    : CupertinoColors.systemGrey,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  color: CupertinoColors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    trip.name,
+                    destination,
                     style: const TextStyle(
-                      fontSize: 17,
+                      color: CupertinoColors.label,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 3),
                   Text(
-                    '${_formatDate(trip.startDate, context)} – ${_formatDate(trip.endDate, context)}',
-                  ),
-                  Text(
-                    '${trip.localCurrencies.map((item) => item.code).join(' / ')} · $spent / $budget',
-                  ),
-                  Text(
-                    trip.offlinePackUpdatedAt == null
-                        ? AppLocalizations.of(context).tripOfflineMissing
-                        : AppLocalizations.of(context).tripOfflineReady,
+                    '${_formatShortDate(stop.startDate, context)} – ${_formatShortDate(stop.endDate, context)} · ${stop.localCurrency.code}',
                     style: TextStyle(
                       fontSize: 12,
                       color: CupertinoColors.secondaryLabel.resolveFrom(
@@ -953,38 +1870,183 @@ class _TripCard extends StatelessWidget {
                 ],
               ),
             ),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: onMore,
-              child: const Icon(CupertinoIcons.ellipsis),
+            ReorderableDragStartListener(
+              index: index,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  CupertinoIcons.circle_grid_3x3_fill,
+                  size: 18,
+                  color: CupertinoColors.systemGrey.resolveFrom(context),
+                ),
+              ),
             ),
+            const Icon(CupertinoIcons.chevron_forward, size: 14),
           ],
         ),
       ),
-    );
-  }
+      const _EditorDivider(indent: 53),
+    ],
+  );
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.section});
-  final TripListSection section;
+class _EditorValueRow extends StatelessWidget {
+  const _EditorValueRow({
+    required this.label,
+    required this.value,
+    required this.onPressed,
+    this.icon,
+    this.expanded = false,
+  });
+
+  final IconData? icon;
+  final String label;
+  final String value;
+  final VoidCallback onPressed;
+  final bool expanded;
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final label = switch (section) {
-      TripListSection.active => l10n.tripActive,
-      TripListSection.upcoming => l10n.tripUpcoming,
-      TripListSection.history => l10n.tripHistory,
-    };
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        label,
-        style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => CupertinoButton(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    onPressed: onPressed,
+    child: Row(
+      children: <Widget>[
+        if (icon != null) ...<Widget>[
+          Icon(icon, size: 20),
+          const SizedBox(width: 10),
+        ],
+        Text(
+          label,
+          style: const TextStyle(
+            color: CupertinoColors.label,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Icon(
+          expanded
+              ? CupertinoIcons.chevron_down
+              : CupertinoIcons.chevron_forward,
+          size: 14,
+          color: CupertinoColors.systemGrey.resolveFrom(context),
+        ),
+      ],
+    ),
+  );
+}
+
+class _EditorInputRow extends StatelessWidget {
+  const _EditorInputRow({
+    required this.label,
+    required this.controller,
+    this.icon,
+    this.numeric = false,
+    this.placeholder,
+    this.onChanged,
+  });
+
+  final IconData? icon;
+  final String label;
+  final TextEditingController controller;
+  final bool numeric;
+  final String? placeholder;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+    child: Row(
+      children: <Widget>[
+        if (icon != null) ...<Widget>[
+          Icon(icon, size: 20, color: CupertinoColors.systemBlue),
+          const SizedBox(width: 10),
+        ],
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: CupertinoTextField.borderless(
+            controller: controller,
+            placeholder: placeholder,
+            textAlign: TextAlign.end,
+            keyboardType: numeric
+                ? const TextInputType.numberWithOptions(decimal: true)
+                : TextInputType.text,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _EditorActionRow extends StatelessWidget {
+  const _EditorActionRow({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    child: Row(
+      children: <Widget>[
+        Icon(icon, size: 20, color: CupertinoColors.systemBlue),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                label,
+                style: const TextStyle(
+                  color: CupertinoColors.systemBlue,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const Icon(CupertinoIcons.chevron_forward, size: 14),
+      ],
+    ),
+  );
+}
+
+class _EditorDivider extends StatelessWidget {
+  const _EditorDivider({this.indent = 0});
+  final double indent;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: EdgeInsetsDirectional.only(start: indent),
+    height: 0.5,
+    color: CupertinoColors.separator.resolveFrom(context),
+  );
 }
 
 class _EmptyTrips extends StatelessWidget {
@@ -1010,78 +2072,6 @@ class _EmptyTrips extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  const _Field({
-    required this.label,
-    required this.controller,
-    this.numeric = false,
-    this.placeholder,
-  });
-  final String label;
-  final TextEditingController controller;
-  final bool numeric;
-  final String? placeholder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.medium),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(label),
-          const SizedBox(height: 6),
-          CupertinoTextField(
-            controller: controller,
-            placeholder: placeholder,
-            keyboardType: numeric
-                ? const TextInputType.numberWithOptions(decimal: true)
-                : TextInputType.text,
-            padding: const EdgeInsets.all(12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Choice extends StatelessWidget {
-  const _Choice({
-    required this.label,
-    required this.value,
-    required this.onPressed,
-  });
-  final String label;
-  final String value;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      onPressed: onPressed,
-      child: Row(
-        children: <Widget>[
-          Expanded(child: Text(label)),
-          Expanded(
-            child: Text(
-              value,
-              maxLines: 2,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
-              ),
-            ),
-          ),
-          const Icon(CupertinoIcons.chevron_forward, size: 14),
-        ],
       ),
     );
   }
@@ -1124,10 +2114,26 @@ class _Metric extends StatelessWidget {
   );
 }
 
-String _formatDate(DateTime date, BuildContext context) {
-  return DateFormat.yMd(
+String _formatShortDate(DateTime date, BuildContext context) {
+  return DateFormat.MMMd(
     Localizations.localeOf(context).toLanguageTag(),
   ).format(date);
+}
+
+DecimalValue? _tryParseDecimal(String value) {
+  if (value.isEmpty) return null;
+  try {
+    return DecimalValue.parse(value);
+  } on FormatException {
+    return null;
+  }
+}
+
+String _countryNameForTrip(String code, BuildContext context) {
+  return CountryDirectory().displayNameForCode(
+    code,
+    Localizations.localeOf(context).languageCode,
+  );
 }
 
 String _share(Money value, Money total) {

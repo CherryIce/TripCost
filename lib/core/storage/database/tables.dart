@@ -103,6 +103,8 @@ class Trips extends Table with SyncableColumns {
 
   TextColumn get destinationCodesJson => text()();
 
+  TextColumn get routeStopsJson => text().withDefault(const Constant('[]'))();
+
   DateTimeColumn get startDate => dateTime()();
 
   DateTimeColumn get endDate => dateTime()();

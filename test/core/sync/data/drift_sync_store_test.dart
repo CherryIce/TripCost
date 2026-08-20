@@ -227,6 +227,43 @@ void main() {
       SyncState.pending.name,
     );
   });
+
+  test('conflict resolution cannot make refunds exceed the original', () async {
+    await _insertExpense(database, first, actual: '100');
+    await _insertRefund(database, first, amount: '-100');
+    final row = await database
+        .customSelect("SELECT * FROM expenses WHERE id = 'expense-1'")
+        .getSingle();
+    final remoteAt = first.add(const Duration(minutes: 1));
+    final remotePayload = Map<String, Object?>.from(row.data)
+      ..remove('receipt_local_path')
+      ..['actual_final_amount'] = '90'
+      ..['updated_at'] = remoteAt.millisecondsSinceEpoch ~/ 1000;
+
+    await store.applyPullBatch(<CloudSyncRecord>[
+      CloudSyncRecord(
+        id: 'expense-1',
+        entityType: SyncEntityType.expense,
+        payloadJson: jsonEncode(remotePayload),
+        modifiedAtUtc: remoteAt,
+        deleted: false,
+        schemaVersion: 1,
+        deviceId: 'remote-device',
+        changeId: 'remote-invalid',
+      ),
+    ], 'cursor-invalid');
+    final conflict = (await store.unresolvedConflicts()).single;
+
+    await expectLater(
+      store.resolveActualAmountConflict(conflict, useRemoteValue: true),
+      throwsA(isA<SyncFailure>()),
+    );
+    expect(
+      (await database.coreDao.getExpense('expense-1'))!.actualFinalAmount,
+      '100',
+    );
+    expect(await store.unresolvedConflicts(), hasLength(1));
+  });
 }
 
 Future<void> _insertTrip(
@@ -277,6 +314,37 @@ Future<void> _insertExpense(
       occurredAt: updatedAt,
       receiptLocalPath: Value<String?>(receipt),
       status: 'confirmed',
+      createdAt: updatedAt,
+    ),
+  );
+}
+
+Future<void> _insertRefund(
+  AppDatabase database,
+  DateTime updatedAt, {
+  required String amount,
+}) {
+  return database.coreDao.upsertExpense(
+    ExpensesCompanion.insert(
+      id: 'refund-1',
+      updatedAt: updatedAt,
+      title: 'Lunch refund',
+      category: 'food',
+      transactionAmount: '-2000',
+      transactionCurrency: 'JPY',
+      referenceAmount: amount,
+      homeCurrency: 'CNY',
+      estimatedFinalAmount: amount,
+      actualFinalAmount: Value<String?>(amount),
+      paymentRuleSnapshotJson: '{}',
+      rateSnapshotJson: '{}',
+      taxAmount: '0',
+      tipAmount: '0',
+      discountAmount: '0',
+      occurredAt: updatedAt,
+      status: 'confirmed',
+      entryType: const Value<String>('refund'),
+      relatedExpenseId: const Value<String?>('expense-1'),
       createdAt: updatedAt,
     ),
   );

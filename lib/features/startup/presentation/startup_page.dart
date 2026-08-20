@@ -50,8 +50,6 @@ class LaunchMark extends StatelessWidget {
       'assets/branding/launch_mark.png',
       width: size,
       height: size,
-      color: AppColors.primary.resolveFrom(context),
-      colorBlendMode: BlendMode.srcIn,
       filterQuality: FilterQuality.high,
       semanticLabel: 'TripCost',
     );

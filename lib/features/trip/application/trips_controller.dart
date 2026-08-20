@@ -38,6 +38,15 @@ final class TripsController extends AsyncNotifier<List<TripModel>> {
     final duration = trip.endDate.difference(trip.startDate);
     final start = localCalendarDate(now);
     final end = start.add(duration);
+    final shiftedStops = <TripStopModel>[
+      for (final stop in trip.stops)
+        TripStopModel(
+          countryCode: stop.countryCode,
+          startDate: start.add(stop.startDate.difference(trip.startDate)),
+          endDate: start.add(stop.endDate.difference(trip.startDate)),
+          localCurrency: stop.localCurrency,
+        ),
+    ];
     await save(
       TripModel(
         metadata: SyncRecordMetadata(
@@ -49,6 +58,7 @@ final class TripsController extends AsyncNotifier<List<TripModel>> {
         destinationCodes: trip.destinationCodes,
         startDate: start,
         endDate: end,
+        stops: shiftedStops,
         homeCurrency: trip.homeCurrency,
         localCurrencies: trip.localCurrencies,
         totalBudget: trip.totalBudget,
@@ -99,6 +109,7 @@ TripModel _copyTrip(
     destinationCodes: trip.destinationCodes,
     startDate: trip.startDate,
     endDate: trip.endDate,
+    stops: trip.stops,
     homeCurrency: trip.homeCurrency,
     localCurrencies: trip.localCurrencies,
     totalBudget: trip.totalBudget,

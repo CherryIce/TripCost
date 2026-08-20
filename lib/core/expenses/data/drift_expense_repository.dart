@@ -26,7 +26,10 @@ final class DriftExpenseRepository
 
   @override
   Future<void> save(ExpenseModel expense) async {
-    await _database.transaction(() => _save(expense));
+    await _database.transaction(() async {
+      await _validateExpenseWrite(expense);
+      await _save(expense);
+    });
     _database.notifyCacheTable('expenses');
   }
 
@@ -36,6 +39,7 @@ final class DriftExpenseRepository
     FeeCalibrationModel calibration,
   ) async {
     await _database.transaction(() async {
+      await _validateExpenseWrite(expense);
       await _save(expense);
       await DriftFeeCalibrationRepository(
         _database,
@@ -44,6 +48,115 @@ final class DriftExpenseRepository
     });
     _database.notifyCacheTable('expenses');
     _database.notifyCacheTable('fee_calibrations');
+  }
+
+  Future<void> _validateExpenseWrite(ExpenseModel expense) async {
+    switch (expense.entryType) {
+      case ExpenseEntryType.purchase:
+        final actual = expense.actualFinalAmount;
+        if (expense.status == ExpenseStatus.estimated) {
+          if (actual != null) {
+            throw const FormatException(
+              'A pending expense cannot have an actual amount.',
+            );
+          }
+          return;
+        }
+        if (actual == null || actual.amount.compareTo(DecimalValue.zero) <= 0) {
+          throw const FormatException(
+            'A posted expense requires a positive actual amount.',
+          );
+        }
+        final refunds = await _database.coreDao.activeRefundsForExpense(
+          expense.metadata.recordId,
+        );
+        final refunded = _sumRefundRows(
+          refunds,
+          homeCurrency: expense.referenceAmount.currency.code,
+        );
+        if (refunded.compareTo(actual.amount.abs()) > 0) {
+          throw const FormatException(
+            'The actual amount cannot be lower than existing refunds.',
+          );
+        }
+        return;
+      case ExpenseEntryType.refund:
+      case ExpenseEntryType.partialRefund:
+        final originalId = expense.relatedExpenseId;
+        final refundAmount = expense.actualFinalAmount;
+        if (originalId == null ||
+            expense.status != ExpenseStatus.confirmed ||
+            refundAmount == null ||
+            refundAmount.amount.compareTo(DecimalValue.zero) >= 0) {
+          throw const FormatException('A refund adjustment is invalid.');
+        }
+        final original = await _database.coreDao.getExpense(originalId);
+        if (original == null ||
+            original.deletedAt != null ||
+            original.entryType != ExpenseEntryType.purchase.name ||
+            original.status != ExpenseStatus.confirmed.name ||
+            original.actualFinalAmount == null ||
+            original.homeCurrency != expense.referenceAmount.currency.code) {
+          throw const FormatException(
+            'A refund requires a posted original expense.',
+          );
+        }
+        final existing = await _database.coreDao.activeRefundsForExpense(
+          originalId,
+        );
+        final refunded = _sumRefundRows(
+          existing.where((row) => row.id != expense.metadata.recordId),
+          homeCurrency: original.homeCurrency,
+        );
+        final resulting = refunded + refundAmount.amount.abs();
+        final originalActual = DecimalValue.parse(
+          original.actualFinalAmount!,
+        ).abs();
+        if (resulting.compareTo(originalActual) > 0) {
+          throw const FormatException(
+            'The refunded amount cannot exceed the original expense.',
+          );
+        }
+        return;
+      case ExpenseEntryType.voided:
+        if (expense.budgetIncluded) {
+          throw const FormatException(
+            'A voided expense cannot count toward the budget.',
+          );
+        }
+        final current = await _database.coreDao.getExpense(
+          expense.metadata.recordId,
+        );
+        if (current?.entryType == ExpenseEntryType.voided.name) return;
+        final refunds = await _database.coreDao.activeRefundsForExpense(
+          expense.metadata.recordId,
+        );
+        if (current == null ||
+            current.entryType != ExpenseEntryType.purchase.name ||
+            current.status != ExpenseStatus.estimated.name ||
+            current.actualFinalAmount != null ||
+            expense.status != ExpenseStatus.estimated ||
+            expense.actualFinalAmount != null ||
+            refunds.isNotEmpty) {
+          throw const FormatException('Only a pending expense can be voided.');
+        }
+        return;
+    }
+  }
+
+  DecimalValue _sumRefundRows(
+    Iterable<Expense> rows, {
+    required String homeCurrency,
+  }) {
+    var total = DecimalValue.zero;
+    for (final row in rows) {
+      if (row.homeCurrency != homeCurrency) {
+        throw const FormatException('Refund currencies do not match.');
+      }
+      final value = row.actualFinalAmount ?? row.estimatedFinalAmount;
+      total += DecimalValue.parse(value).abs();
+    }
+    return total;
   }
 
   Future<void> _save(ExpenseModel expense) async {
@@ -318,7 +431,11 @@ final class DriftFeeCalibrationRepository
     final result = <FeeCalibrationModel>[];
     for (final row in rows) {
       final expense = await _database.coreDao.getExpense(row.expenseId);
-      if (expense == null) continue;
+      if (expense == null ||
+          expense.deletedAt != null ||
+          expense.entryType != ExpenseEntryType.purchase.name) {
+        continue;
+      }
       final currency = _currencyCatalog.resolve(expense.homeCurrency);
       result.add(
         FeeCalibrationModel(

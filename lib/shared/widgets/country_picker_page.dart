@@ -10,6 +10,7 @@ Future<List<String>?> showCountryMultiPickerPage({
   required String doneLabel,
   required List<String> selectedCodes,
   int minimumSelection = 0,
+  int? maximumSelection,
 }) {
   return Navigator.of(context, rootNavigator: true).push<List<String>>(
     CupertinoPageRoute<List<String>>(
@@ -18,6 +19,7 @@ Future<List<String>?> showCountryMultiPickerPage({
         doneLabel: doneLabel,
         selectedCodes: selectedCodes,
         minimumSelection: minimumSelection,
+        maximumSelection: maximumSelection,
       ),
     ),
   );
@@ -29,6 +31,7 @@ final class CountryMultiPickerPage extends StatefulWidget {
     required this.doneLabel,
     required this.selectedCodes,
     this.minimumSelection = 0,
+    this.maximumSelection,
     super.key,
   });
 
@@ -36,6 +39,7 @@ final class CountryMultiPickerPage extends StatefulWidget {
   final String doneLabel;
   final List<String> selectedCodes;
   final int minimumSelection;
+  final int? maximumSelection;
 
   @override
   State<CountryMultiPickerPage> createState() => _CountryMultiPickerPageState();
@@ -154,6 +158,13 @@ final class _CountryMultiPickerPageState extends State<CountryMultiPickerPage> {
                                 _selectedCodes.remove(country.codeShort);
                               }
                             } else {
+                              if (widget.maximumSelection == 1) {
+                                _selectedCodes.clear();
+                              } else if (widget.maximumSelection != null &&
+                                  _selectedCodes.length >=
+                                      widget.maximumSelection!) {
+                                return;
+                              }
                               _selectedCodes.add(country.codeShort);
                             }
                           }),

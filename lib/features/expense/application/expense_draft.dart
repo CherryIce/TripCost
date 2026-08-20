@@ -16,10 +16,39 @@ final class ExpenseDraftSeed {
   final String? receiptLocalPath;
 }
 
+final class ReceiptExpensePrefill {
+  const ReceiptExpensePrefill({
+    this.title,
+    this.transactionAmount,
+    this.occurredAt,
+    this.receiptLocalPath,
+    this.titleNeedsConfirmation = false,
+    this.amountNeedsConfirmation = false,
+    this.dateNeedsConfirmation = false,
+  });
+
+  final String? title;
+  final Money? transactionAmount;
+  final DateTime? occurredAt;
+  final String? receiptLocalPath;
+  final bool titleNeedsConfirmation;
+  final bool amountNeedsConfirmation;
+  final bool dateNeedsConfirmation;
+
+  int get filledFieldCount => <Object?>[
+    title,
+    transactionAmount,
+    occurredAt,
+    receiptLocalPath,
+  ].where((value) => value != null).length;
+}
+
 final class ExpenseEditorArguments {
-  const ExpenseEditorArguments({this.seed, this.trip});
+  const ExpenseEditorArguments({this.seed, this.receiptPrefill, this.trip})
+    : assert(seed == null || receiptPrefill == null);
 
   final ExpenseDraftSeed? seed;
+  final ReceiptExpensePrefill? receiptPrefill;
   final TripModel? trip;
 }
 

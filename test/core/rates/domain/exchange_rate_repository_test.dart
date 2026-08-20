@@ -64,6 +64,26 @@ void main() {
   );
 
   test(
+    'identical currencies always resolve to one without a request',
+    () async {
+      final repository = createRepository();
+
+      final result = await repository.resolveRate(
+        baseCurrency: catalog.resolve('USD'),
+        quoteCurrency: catalog.resolve('USD'),
+        manualRate: ManualRateOverride(
+          rate: DecimalValue.parse('7'),
+          observedAt: now,
+        ),
+      );
+
+      expect(result.availability, RateAvailability.identity);
+      expect(result.snapshot?.rate, DecimalValue.parse('1'));
+      expect(gateway.singleCalls, 0);
+    },
+  );
+
+  test(
     'available card-network placeholder precedes the market source',
     () async {
       final cardSnapshot = _snapshot(

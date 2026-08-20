@@ -483,6 +483,10 @@ POS 机让用户选择“JPY 12,800”或“CNY 648”，用户输入两个报�
 - 至少积累 3 笔可比较数据后，再建议用户更新默认加价率。
 - 更新前必须由用户确认。
 - 历史交易保留原费用规则快照，不随支付方式配置变化。
+- 原交易的实际入账金额表示已经发生的入账事实；退款作为关联原交易的独立负向记录保存，不把原实际金额改成零。
+- 无退款、部分退款、全部退款和异常退款状态由原实际金额与累计退款实时推导，不保存第二份可漂移的聚合状态。
+- 待入账记录只允许补录实际金额或撤销；已入账记录只允许退款、冲正或受控更正，不允许直接撤销。
+- 更正原交易金额后，累计退款不得超过新的实际入账金额；更正退款金额后也必须重新校验累计上限。
 
 ### 5.12 行程总结与导出
 
@@ -762,7 +766,7 @@ paymentMethodId
 paymentRuleSnapshot
 rateSnapshot
 entryType            purchase / refund / partialRefund / voided
-relatedExpenseId     退款或撤销关联的原消费，可选
+relatedExpenseId     退款关联的原消费，可选
 taxAmount
 tipAmount
 discountAmount

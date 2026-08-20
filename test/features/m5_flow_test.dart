@@ -64,7 +64,7 @@ void main() {
     await tester.tap(find.byIcon(CupertinoIcons.book));
     await tester.pumpAndSettle();
     expect(find.text('Lunch'), findsOneWidget);
-    expect(find.text('Timeline'), findsOneWidget);
+    expect(find.text('Details'), findsOneWidget);
     expect(find.text('Calendar'), findsOneWidget);
     expect(find.text('Categories'), findsOneWidget);
   });

@@ -40,9 +40,12 @@ void main() {
   );
 
   test('onboarding visible copy has no direct string literals', () async {
-    final contents = await File(
-      'lib/features/onboarding/presentation/onboarding_page.dart',
-    ).readAsString();
+    final contents = await Future.wait(
+      <String>[
+        'lib/features/onboarding/presentation/onboarding_page.dart',
+        'lib/features/onboarding/presentation/quick_setup_page.dart',
+      ].map((path) => File(path).readAsString()),
+    ).then((files) => files.join('\n'));
 
     expect(
       RegExp(

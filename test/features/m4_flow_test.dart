@@ -125,7 +125,7 @@ Widget _testApp() {
       appDatabaseProvider.overrideWithValue(database),
       startupStateStoreProvider.overrideWithValue(_CompleteStartupStore()),
       rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
-      settingsRepositoryProvider.overrideWithValue(MemorySettingsRepository()),
+      settingsRepositoryProvider.overrideWithValue(_sampleSettings()),
       tripRepositoryProvider.overrideWithValue(MemoryTripRepository()),
       expenseRepositoryProvider.overrideWithValue(MemoryExpenseRepository()),
       feeCalibrationRepositoryProvider.overrideWithValue(
@@ -142,6 +142,26 @@ Widget _testApp() {
       ),
     ],
     child: const TripCostApp(),
+  );
+}
+
+MemorySettingsRepository _sampleSettings() {
+  final catalog = CurrencyCatalog();
+  return MemorySettingsRepository(
+    UserSettingsModel(
+      metadata: SyncRecordMetadata(
+        recordId: 'app',
+        syncVersion: 1,
+        updatedAt: DateTime.utc(2026, 8, 17, 8),
+      ),
+      defaultCurrency: catalog.resolve('CNY'),
+      lastTransactionCurrency: catalog.resolve('JPY'),
+      favoriteCurrencies: const <Currency>[],
+      languageMode: AppLanguageMode.system,
+      refreshInterval: const Duration(hours: 6),
+      wifiOnlyRefresh: false,
+      syncEnabled: false,
+    ),
   );
 }
 

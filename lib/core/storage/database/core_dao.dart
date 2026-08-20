@@ -182,6 +182,16 @@ final class CoreDao extends DatabaseAccessor<AppDatabase> with _$CoreDaoMixin {
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
 
+  Future<List<Expense>> activeRefundsForExpense(String expenseId) {
+    return (select(expenses)..where(
+          (table) =>
+              table.deletedAt.isNull() &
+              table.relatedExpenseId.equals(expenseId) &
+              table.entryType.isIn(<String>['refund', 'partialRefund']),
+        ))
+        .get();
+  }
+
   Future<void> upsertFeeCalibration(FeeCalibrationsCompanion value) {
     return into(feeCalibrations).insertOnConflictUpdate(value);
   }

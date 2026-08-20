@@ -57,4 +57,28 @@ void main() {
       expect(restored.metadata.updatedAt, now);
     },
   );
+
+  test('round-trips an identical USD transaction and home currency', () async {
+    await repository.save(
+      UserSettingsModel(
+        metadata: SyncRecordMetadata(
+          recordId: DriftSettingsRepository.settingsRecordId,
+          syncVersion: 1,
+          updatedAt: now,
+        ),
+        defaultCurrency: catalog.resolve('USD'),
+        lastTransactionCurrency: catalog.resolve('USD'),
+        favoriteCurrencies: const <Currency>[],
+        languageMode: AppLanguageMode.system,
+        refreshInterval: const Duration(hours: 6),
+        wifiOnlyRefresh: false,
+        syncEnabled: false,
+      ),
+    );
+
+    final restored = await repository.load();
+
+    expect(restored?.defaultCurrency.code, 'USD');
+    expect(restored?.lastTransactionCurrency.code, 'USD');
+  });
 }

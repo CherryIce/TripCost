@@ -89,6 +89,10 @@ void main() {
   );
 
   test('refund relation and negative amount survive persistence', () async {
+    final original = fixtureExpense(
+      actual: '100',
+      status: ExpenseStatus.confirmed,
+    );
     final refund = fixtureExpense(
       id: 'refund-1',
       estimate: '-40',
@@ -97,7 +101,7 @@ void main() {
       entryType: ExpenseEntryType.partialRefund,
       relatedExpenseId: 'expense-1',
     );
-    await expenses.save(fixtureExpense());
+    await expenses.save(original);
     await expenses.save(refund);
 
     final restored = await expenses.findById('refund-1');
@@ -105,6 +109,36 @@ void main() {
     expect(restored.relatedExpenseId, 'expense-1');
     expect(restored.estimatedFinalAmount.amount.toString(), '-40');
   });
+
+  test(
+    'atomic validation rejects an actual correction below refunds',
+    () async {
+      final original = fixtureExpense(
+        actual: '100',
+        status: ExpenseStatus.confirmed,
+      );
+      final refund = fixtureExpense(
+        id: 'refund-1',
+        estimate: '-100',
+        actual: '-100',
+        status: ExpenseStatus.confirmed,
+        entryType: ExpenseEntryType.refund,
+        relatedExpenseId: original.metadata.recordId,
+      );
+      await expenses.save(original);
+      await expenses.save(refund);
+
+      await expectLater(
+        expenses.save(
+          fixtureExpense(actual: '99', status: ExpenseStatus.confirmed),
+        ),
+        throwsA(isA<FormatException>()),
+      );
+
+      final restored = await expenses.findById(original.metadata.recordId);
+      expect(restored!.actualFinalAmount!.amount.toString(), '100');
+    },
+  );
 
   test('expense save rolls back when calibration persistence fails', () async {
     final expense = fixtureExpense();

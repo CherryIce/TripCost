@@ -38,14 +38,8 @@ final class DriftSettingsRepository
         ? null
         : _currencyCatalog.resolve(row.lastTransactionCurrency!);
     final lastTransactionCurrency =
-        storedTransactionCurrency == null ||
-            storedTransactionCurrency == defaultCurrency
-        ? money.fallbackTransactionCurrency(
-            homeCurrency: defaultCurrency,
-            preferredCurrencies: favoriteCurrencies,
-            catalog: _currencyCatalog,
-          )
-        : storedTransactionCurrency;
+        storedTransactionCurrency ??
+        money.fallbackTransactionCurrency(catalog: _currencyCatalog);
     return UserSettingsModel(
       metadata: SyncRecordMetadata(
         recordId: row.id,

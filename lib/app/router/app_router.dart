@@ -12,6 +12,7 @@ import 'package:trip_cost/features/expense/presentation/ledger_page.dart';
 import 'package:trip_cost/features/onboarding/presentation/onboarding_page.dart';
 import 'package:trip_cost/features/payment_method/presentation/payment_comparison_page.dart';
 import 'package:trip_cost/features/payment_method/presentation/payment_methods_page.dart';
+import 'package:trip_cost/features/scanner/application/scan_flow.dart';
 import 'package:trip_cost/features/scanner/presentation/scan_page.dart';
 import 'package:trip_cost/features/settings/presentation/settings_page.dart';
 import 'package:trip_cost/features/startup/presentation/startup_page.dart';
@@ -64,7 +65,11 @@ GoRouter _createRouter() {
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: AppRoutes.scan,
-        builder: (context, state) => const ScanPage(),
+        builder: (context, state) => ScanPage(
+          arguments: state.extra is ScanPageArguments
+              ? state.extra! as ScanPageArguments
+              : const ScanPageArguments(),
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,

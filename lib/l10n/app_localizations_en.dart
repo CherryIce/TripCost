@@ -55,11 +55,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Currency, rates, payments, sync, and privacy.';
 
   @override
-  String get scanTitle => 'Scan a price';
+  String get scanTitle => 'Scan';
+
+  @override
+  String get scanPurposeCompare => 'Compare';
+
+  @override
+  String get scanPurposeRecord => 'Record';
 
   @override
   String get scanSubtitle =>
-      'Choose a camera photo or an image, then confirm every detected price before comparing payment methods.';
+      'Photograph a price tag or bill, then confirm the price before comparing payment methods.';
+
+  @override
+  String get scanRecordSubtitle =>
+      'Scan a receipt or bill to prefill an expense.';
 
   @override
   String get scanCamera => 'Camera';
@@ -75,7 +85,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanRecognizing => 'Recognizing text on this device…';
 
   @override
+  String get scanPreparingExpense => 'Recognizing and preparing the expense…';
+
+  @override
   String get scanDetectedPrices => 'Detected prices';
+
+  @override
+  String scanDetectedPriceCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count prices detected',
+      one: '1 price detected',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get scanSelectHint =>
@@ -88,13 +112,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanManualEntry => 'Enter an amount manually';
 
   @override
+  String get scanManualEntryHint => 'Continue even without an image';
+
+  @override
+  String get scanRecordManualEntry => 'Add an expense manually';
+
+  @override
+  String get scanRecordManualEntryHint => 'Continue without scanning';
+
+  @override
+  String get scanCameraAction => 'Scan a photo';
+
+  @override
+  String get scanRetake => 'Retake';
+
+  @override
+  String get scanPhotoLibraryAction => 'Choose from Photos';
+
+  @override
+  String get scanManualSheetTitle => 'Enter an amount';
+
+  @override
+  String get scanManualSheetSubtitle => 'Type the listed price directly';
+
+  @override
+  String get scanEditSheetTitle => 'Confirm price';
+
+  @override
+  String get scanEditSheetSubtitle => 'Edit the recognized result';
+
+  @override
   String get scanAmount => 'Amount';
+
+  @override
+  String get scanTransactionCurrency => 'Transaction currency';
 
   @override
   String get scanChooseCurrency => 'Choose currency';
 
   @override
   String get scanInvalidEdit => 'Enter a valid amount and choose a currency.';
+
+  @override
+  String get scanReviewBeforeContinue =>
+      'Check the amount and currency before continuing.';
+
+  @override
+  String get scanSaveAndUse => 'Save and use';
 
   @override
   String get scanCurrencyRequired =>
@@ -194,6 +258,51 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onboardingBudgetSubtitle =>
       'Add expenses to a trip and see how much of your travel budget remains.';
+
+  @override
+  String get onboardingSetupStart => 'Start setup';
+
+  @override
+  String get onboardingSetupTitle => 'Quick setup';
+
+  @override
+  String get onboardingSetupSubtitle =>
+      'Takes about a minute. You can add a trip and payment methods later.';
+
+  @override
+  String onboardingSetupProgress(int completed, int total) {
+    return '$completed of $total complete';
+  }
+
+  @override
+  String get onboardingSetupEnterHome => 'Enter home';
+
+  @override
+  String get onboardingSetupContinue => 'Continue setup';
+
+  @override
+  String get onboardingSetupDismiss => 'Not now';
+
+  @override
+  String get onboardingSetupTripNotCreated => 'Not created';
+
+  @override
+  String onboardingSetupTripCount(int count) {
+    return '$count trips created';
+  }
+
+  @override
+  String get onboardingSetupPaymentNotAdded => 'Not added';
+
+  @override
+  String onboardingSetupPaymentCount(int count) {
+    return '$count methods added';
+  }
+
+  @override
+  String onboardingSetupCurrencySelected(String code) {
+    return '$code · Selected';
+  }
 
   @override
   String get converterInputLabel => 'Local price or expression';
@@ -356,6 +465,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentAddTitle => 'Add payment method';
+
+  @override
+  String get paymentEditorQuickStart => 'Quick setup';
+
+  @override
+  String get paymentEditorTemplateHint =>
+      'Start with a common rule, then fine-tune it below';
+
+  @override
+  String get paymentEditorBasics => 'Basic details';
+
+  @override
+  String get paymentEditorFees => 'Fee rules';
+
+  @override
+  String get paymentEditorOptional => 'Optional details';
 
   @override
   String get paymentEditName => 'Name';
@@ -651,6 +776,102 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDestinationsEmpty => 'Select';
 
   @override
+  String get tripCurrentAndUpcoming => 'Current & upcoming';
+
+  @override
+  String get tripHistoryTab => 'History';
+
+  @override
+  String get tripRoutePlannerTitle => 'Plan a multi-country route';
+
+  @override
+  String get tripRoutePlannerSubtitle =>
+      'Add stops in order. Budget and insights cover the whole trip.';
+
+  @override
+  String get tripStopsTitle => 'Destinations & stays';
+
+  @override
+  String get tripAddNextStop => 'Add next stop';
+
+  @override
+  String get tripWholeRange => 'Whole trip';
+
+  @override
+  String get tripDateRangePickerTitle => 'Select date range';
+
+  @override
+  String get tripWholeBudget => 'Whole-trip budget';
+
+  @override
+  String get tripMoreSettings => 'More settings';
+
+  @override
+  String get tripCurrentStop => 'Current';
+
+  @override
+  String get tripNextStop => 'Next';
+
+  @override
+  String tripDaysLater(int count) {
+    return 'In $count days';
+  }
+
+  @override
+  String tripDayCount(int count) {
+    return '$count days';
+  }
+
+  @override
+  String tripStopDayProgress(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String tripBudgetUsed(String percent) {
+    return '$percent% used';
+  }
+
+  @override
+  String tripBudgetRemainingPercent(String percent) {
+    return '$percent% remaining';
+  }
+
+  @override
+  String get tripDailyBudgetHint =>
+      'Based on remaining days · updates automatically';
+
+  @override
+  String tripDailyBudgetApprox(String amount) {
+    return 'About $amount / day';
+  }
+
+  @override
+  String get tripViewAction => 'View trip';
+
+  @override
+  String get tripRecordAction => 'Add expense';
+
+  @override
+  String get tripRouteRequired => 'Add at least one destination.';
+
+  @override
+  String get tripAdjustStopEnd => 'Adjust departure date';
+
+  @override
+  String get tripChangeDestination => 'Change destination';
+
+  @override
+  String get tripChangeStopCurrency => 'Change local currency';
+
+  @override
+  String get tripRemoveStop => 'Remove this stop';
+
+  @override
+  String get tripOfflineMultiHint =>
+      'Includes every local currency without requesting location.';
+
+  @override
   String get countrySearchEmpty => 'No countries or regions found';
 
   @override
@@ -758,13 +979,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseManualAdd => 'Add expense';
 
   @override
+  String expenseOcrPrefillBanner(int count) {
+    return 'Filled $count items from the receipt. Please review them.';
+  }
+
+  @override
+  String get expenseOcrNeedsConfirmation => 'Review';
+
+  @override
   String get expenseSave => 'Save expense';
 
   @override
   String get expenseRecent => 'Recent expenses';
 
   @override
+  String get expenseEditorBasics => 'Basic information';
+
+  @override
+  String get expenseEditorAmount => 'Amount';
+
+  @override
+  String get expenseEditorPaymentStatus => 'Payment and status';
+
+  @override
+  String get expenseEditorTripCategory => 'Trip and category';
+
+  @override
+  String get expenseEditorAdjustments => 'Adjustments and travelers';
+
+  @override
+  String get expenseEditorLiveHint =>
+      'Updates with the trip, currencies, and payment method';
+
+  @override
   String get expenseTitle => 'Merchant or item';
+
+  @override
+  String get expenseTitlePlaceholder => 'Enter merchant or item';
 
   @override
   String get expenseTrip => 'Trip';
@@ -773,7 +1024,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseCategory => 'Category';
 
   @override
-  String get expenseTransactionAmount => 'Original amount';
+  String get expenseTransactionAmount => 'Transaction amount';
+
+  @override
+  String get expenseTransactionAmountPlaceholder => 'Enter transaction amount';
 
   @override
   String get expenseReferenceAmount => 'Reference conversion';
@@ -803,6 +1057,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseReceiptPath => 'Receipt attachment (optional)';
 
   @override
+  String get expenseReceiptSection => 'Receipt attachment';
+
+  @override
+  String get expenseReceiptReplace => 'Replace';
+
+  @override
+  String get expenseReceiptAdd => 'Add photo';
+
+  @override
+  String get expenseReceiptRemove => 'Remove receipt';
+
+  @override
   String get expenseNotes => 'Notes';
 
   @override
@@ -812,11 +1078,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseStatus => 'Status';
 
   @override
-  String get expenseConfirmed => 'Confirmed';
+  String get expenseAmountStatus => 'Amount status';
+
+  @override
+  String get expensePending => 'Pending';
+
+  @override
+  String get expenseConfirmed => 'Posted';
 
   @override
   String get expenseInvalid =>
       'Check the title, positive amounts, currencies and traveler count.';
+
+  @override
+  String get expenseMissingRequired =>
+      'Merchant name and transaction amount are still required.';
 
   @override
   String get expenseDuplicateTitle => 'Possible duplicate expense';
@@ -848,6 +1124,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseRecordActual => 'Record actual amount';
 
   @override
+  String get expenseEditActual => 'Edit actual amount';
+
+  @override
   String get expenseAdjust => 'Refund or void';
 
   @override
@@ -861,7 +1140,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseRefundInvalid =>
-      'The refund must be greater than zero and cannot exceed the original posted or estimated amount.';
+      'The refund must be greater than zero and cannot exceed the original posted amount.';
+
+  @override
+  String get expenseRefundStatus => 'Refund status';
+
+  @override
+  String get expenseRefundNone => 'No refund';
+
+  @override
+  String get expenseRefundPartialStatus => 'Partially refunded';
+
+  @override
+  String get expenseRefundFullStatus => 'Fully refunded';
+
+  @override
+  String get expenseRefundInvalidStatus => 'Invalid refund amount';
+
+  @override
+  String get expenseRefundedTotal => 'Total refunded';
+
+  @override
+  String get expenseNetAmount => 'Net expense';
+
+  @override
+  String get expenseRefundRecords => 'Refund records';
+
+  @override
+  String get expenseRelatedOriginal => 'Original expense';
+
+  @override
+  String get expenseViewOriginal => 'View original expense';
+
+  @override
+  String get expenseCorrectOriginal => 'Correct original amount';
+
+  @override
+  String get expenseCorrectRefund => 'Correct refund amount';
+
+  @override
+  String get expenseRecordRefund => 'Record refund';
+
+  @override
+  String get expenseContinueRefund => 'Continue refund';
+
+  @override
+  String get expenseVoidAction => 'Void record';
+
+  @override
+  String get expenseVoidConfirm =>
+      'Only an expense that has not posted can be voided. Void this record?';
+
+  @override
+  String get expenseCorrectionWarning =>
+      'Changing the original amount may change the refund status, but it will not change existing refund amounts.';
+
+  @override
+  String get expenseAdjustmentInvalid =>
+      'This action cannot be completed. Check the original amount and total refunded.';
 
   @override
   String get expenseManualRateSource => 'Manual ledger rate';
@@ -870,7 +1206,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseManualPaymentRule => 'Manual entry';
 
   @override
-  String get ledgerTimeline => 'Timeline';
+  String get ledgerTimeline => 'Details';
 
   @override
   String get ledgerCalendar => 'Calendar';
@@ -883,6 +1219,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ledgerClearFilters => 'Clear';
+
+  @override
+  String get ledgerThisMonth => 'This month';
+
+  @override
+  String get ledgerLastMonth => 'Last month';
+
+  @override
+  String get ledgerAllTime => 'All time';
+
+  @override
+  String get ledgerThisMonthSpending => 'This month spending';
+
+  @override
+  String get ledgerLastMonthSpending => 'Last month spending';
+
+  @override
+  String get ledgerTotalSpending => 'Total spending';
+
+  @override
+  String ledgerSummaryCount(int count, String currencyCode) {
+    return '$count records · Calculated in $currencyCode';
+  }
+
+  @override
+  String ledgerToday(String date) {
+    return 'Today · $date';
+  }
+
+  @override
+  String ledgerDayCount(int count) {
+    return '$count records';
+  }
 
   @override
   String get ledgerEmpty => 'No matching expenses yet.';
@@ -905,6 +1274,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String ledgerRecentDays(int count) {
     return 'Last $count days';
   }
+
+  @override
+  String ledgerRecentDaysShort(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String get ledgerCustomDate => 'Custom';
+
+  @override
+  String get ledgerDateRangePickerTitle => 'Select date range';
+
+  @override
+  String get ledgerStartDate => 'Start date';
+
+  @override
+  String get ledgerEndDate => 'End date';
+
+  @override
+  String ledgerViewRecords(int count) {
+    return 'View $count records';
+  }
+
+  @override
+  String get ledgerSelectionSeparator => ', ';
 
   @override
   String get calibrationNone =>
@@ -1005,6 +1399,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsLoadFailed =>
       'Settings could not be loaded. Local data is unchanged.';
+
+  @override
+  String get settingsSectionCommon => 'Common';
+
+  @override
+  String get settingsSectionDataDevices => 'Data and devices';
+
+  @override
+  String get settingsSectionGeneral => 'General';
+
+  @override
+  String get settingsPaymentMethodsSummary => 'Manage cards, cash, and fees';
+
+  @override
+  String get settingsDataSummary => 'Export, backup, and cleanup';
+
+  @override
+  String get settingsPrivacySummary => 'Policies, permissions, and disclaimers';
+
+  @override
+  String get syncStatusEnabledShort => 'On';
+
+  @override
+  String get syncStatusDisabledShort => 'Off';
 
   @override
   String get rateSettingsTitle => 'Currency and rates';

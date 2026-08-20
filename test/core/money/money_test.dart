@@ -18,6 +18,17 @@ void main() {
     );
   });
 
+  test(
+    'transaction currency defaults to USD including for a USD home currency',
+    () {
+      expect(fallbackTransactionCurrency(catalog: catalog).code, 'USD');
+      expect(
+        fallbackTransactionCurrency(catalog: catalog),
+        catalog.resolve('USD'),
+      );
+    },
+  );
+
   group('DecimalValue', () {
     test('keeps large and negative values exact', () {
       final value = DecimalValue.parse('999999999999999999999999.9999');

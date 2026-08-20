@@ -128,10 +128,7 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     final homeCurrency = _settings?.defaultCurrency ?? catalog.resolve('CNY');
     final transactionCurrency =
         _settings?.lastTransactionCurrency ??
-        fallbackTransactionCurrency(
-          homeCurrency: homeCurrency,
-          catalog: catalog,
-        );
+        fallbackTransactionCurrency(catalog: catalog);
     final initial = ConverterState(
       expression: '12800',
       transactionCurrency: transactionCurrency,
@@ -173,11 +170,8 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
     _settings = await _settingsRepository.load();
     if (!ref.mounted) return;
     final homeCurrency = _settings?.defaultCurrency ?? current.homeCurrency;
-    final storedTransactionCurrency =
+    final transactionCurrency =
         _settings?.lastTransactionCurrency ?? current.transactionCurrency;
-    final transactionCurrency = storedTransactionCurrency == homeCurrency
-        ? fallbackTransactionCurrency(homeCurrency: homeCurrency)
-        : storedTransactionCurrency;
     final cached = await _resolve(
       current.copyWith(
         homeCurrency: homeCurrency,
@@ -216,7 +210,7 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
 
   Future<void> changeTransactionCurrency(Currency currency) async {
     final current = _current;
-    if (current == null || currency == current.homeCurrency) {
+    if (current == null) {
       return;
     }
     final resolution = _publishResolved(
@@ -232,7 +226,7 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
 
   Future<void> changeHomeCurrency(Currency currency) async {
     final current = _current;
-    if (current == null || currency == current.transactionCurrency) {
+    if (current == null) {
       return;
     }
     final resolution = _publishResolved(
@@ -284,7 +278,8 @@ final class ConverterController extends AsyncNotifier<ConverterState> {
 
   Future<void> setManualRate(DecimalValue rate) async {
     final current = _current;
-    if (current == null) {
+    if (current == null ||
+        current.transactionCurrency == current.homeCurrency) {
       return;
     }
     final generation = ++_resolutionGeneration;
