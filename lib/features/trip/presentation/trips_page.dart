@@ -1266,7 +1266,9 @@ class _TripCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
+    final appLocale = Localizations.localeOf(context);
+    final locale = appLocale.toLanguageTag();
+    final stopLabelSeparator = appLocale.languageCode == 'zh' ? '：' : ': ';
     final formatter = const MoneyFormatter();
     String money(Money? value) => value == null
         ? l10n.tripNoBudget
@@ -1381,7 +1383,7 @@ class _TripCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${l10n.tripCurrentStop}：${_countryNameForTrip(current.countryCode, context)} · ${l10n.tripStopDayProgress(today.difference(current.startDate).inDays + 1, current.endDate.difference(current.startDate).inDays + 1)}',
+                        '${l10n.tripCurrentStop}$stopLabelSeparator${_countryNameForTrip(current.countryCode, context)} · ${l10n.tripStopDayProgress(today.difference(current.startDate).inDays + 1, current.endDate.difference(current.startDate).inDays + 1)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1402,7 +1404,7 @@ class _TripCard extends StatelessWidget {
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          '${l10n.tripNextStop}：${_countryNameForTrip(next.countryCode, context)} · ${l10n.tripDaysLater(next.startDate.difference(today).inDays)}',
+                          '${l10n.tripNextStop}$stopLabelSeparator${_countryNameForTrip(next.countryCode, context)} · ${l10n.tripDaysLater(next.startDate.difference(today).inDays)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

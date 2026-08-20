@@ -1542,6 +1542,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyPolicyTitle => 'Privacy policy';
 
   @override
+  String get privacyPolicyLoadFailed =>
+      'The privacy policy could not be loaded. Check your connection and try again.';
+
+  @override
   String get privacyPolicyBody =>
       'TripCost does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.';
 

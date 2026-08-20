@@ -2852,6 +2852,12 @@ abstract class AppLocalizations {
   /// **'Privacy policy'**
   String get privacyPolicyTitle;
 
+  /// No description provided for @privacyPolicyLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The privacy policy could not be loaded. Check your connection and try again.'**
+  String get privacyPolicyLoadFailed;
+
   /// No description provided for @privacyPolicyBody.
   ///
   /// In en, this message translates to:

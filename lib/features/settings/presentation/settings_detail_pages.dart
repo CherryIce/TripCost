@@ -13,6 +13,7 @@ import 'package:trip_cost/features/payment_method/application/payment_methods_co
 import 'package:trip_cost/features/settings/application/general_settings_controller.dart';
 import 'package:trip_cost/features/settings/application/settings_data_service.dart';
 import 'package:trip_cost/features/settings/application/sync_settings_controller.dart';
+import 'package:trip_cost/features/settings/presentation/privacy_policy_launcher.dart';
 import 'package:trip_cost/features/trip/application/trips_controller.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 import 'package:trip_cost/shared/widgets/currency_picker_page.dart';
@@ -485,12 +486,21 @@ class _DataSettingsPageState extends ConsumerState<DataSettingsPage> {
   );
 }
 
-class PrivacySettingsPage extends StatelessWidget {
+class PrivacySettingsPage extends ConsumerWidget {
   const PrivacySettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final localizations = AppLocalizations.of(context);
+    final languageMode = ref.watch(
+      generalSettingsControllerProvider.select(
+        (state) => state.value?.languageMode,
+      ),
+    );
+    final privacyPolicyUri = privacyPolicyUriFor(
+      languageMode: languageMode,
+      systemLocale: Localizations.localeOf(context),
+    );
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(localizations.privacyTitle),
@@ -506,11 +516,8 @@ class PrivacySettingsPage extends StatelessWidget {
                 _DetailNavigationRow(
                   icon: CupertinoIcons.hand_raised,
                   title: localizations.privacyPolicyTitle,
-                  onPressed: () => _showLongText(
-                    context,
-                    localizations.privacyPolicyTitle,
-                    localizations.privacyPolicyBody,
-                  ),
+                  onPressed: () =>
+                      _openPrivacyPolicy(context, privacyPolicyUri),
                 ),
                 _DetailNavigationRow(
                   icon: CupertinoIcons.info_circle,
@@ -534,6 +541,28 @@ class PrivacySettingsPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context, Uri uri) async {
+    try {
+      if (await openPrivacyPolicy(uri)) return;
+    } on Object {
+      // The user receives the same localized failure message for launch errors.
+    }
+    if (!context.mounted) return;
+    final localizations = AppLocalizations.of(context);
+    await showCupertinoDialog<void>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        content: Text(localizations.privacyPolicyLoadFailed),
+        actions: <Widget>[
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(localizations.commonDone),
+          ),
+        ],
       ),
     );
   }

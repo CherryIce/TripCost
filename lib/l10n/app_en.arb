@@ -499,6 +499,7 @@
   "clearDataFailed": "The data could not be cleared completely. No success was recorded.",
   "privacyTitle": "Privacy and about",
   "privacyPolicyTitle": "Privacy policy",
+  "privacyPolicyLoadFailed": "The privacy policy could not be loaded. Check your connection and try again.",
   "privacyPolicyBody": "TripCost does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.",
   "disclaimerTitle": "Rates and cost disclaimer",
   "disclaimerBody": "Rates and fee estimates are reference information, not financial or investment advice. Rates are daily reference data and may be cached or delayed. Bank, card-network, payment-provider, and merchant policies can change. Authorization and settlement dates may differ. Final posted amounts are determined by the issuer, card network, payment provider, and merchant. DCC comparisons do not guarantee a transaction result or the lowest possible cost.",
