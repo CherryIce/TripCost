@@ -30,6 +30,51 @@ void main() {
       find.byKey(const Key('payment-name-field')),
     );
     expect(nameField.textAlign, TextAlign.end);
+    expect(nameField.placeholder, '请输入支付方式名称');
+
+    final basicsRight = tester
+        .getRect(find.byKey(const Key('payment-editor-basics-section')))
+        .right;
+    final trailingValueRights = <double>[
+      for (final value in <String>['信用卡', '未知', 'CNY', '消费'])
+        tester.getRect(find.text(value)).right,
+    ];
+    for (final right in trailingValueRights) {
+      expect(basicsRight - right, lessThan(48));
+      expect((right - trailingValueRights.first).abs(), lessThan(1));
+    }
+  });
+
+  testWidgets('empty optional fields expose localized placeholders', (
+    tester,
+  ) async {
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpWidget(_localizedEditor());
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView), const Offset(0, -700));
+    await tester.pumpAndSettle();
+
+    for (final key in <Key>[
+      const Key('payment-minimum-fee-field'),
+      const Key('payment-maximum-fee-field'),
+      const Key('payment-cash-rate-field'),
+    ]) {
+      expect(
+        tester.widget<CupertinoTextField>(find.byKey(key)).placeholder,
+        '选填',
+      );
+    }
+    expect(
+      tester
+          .widget<CupertinoTextField>(
+            find.byKey(const Key('payment-notes-field')),
+          )
+          .placeholder,
+      '选填，例如适用条件或备注',
+    );
   });
 
   testWidgets('keeps the generated name in sync when switching templates', (

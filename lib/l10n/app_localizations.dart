@@ -926,6 +926,24 @@ abstract class AppLocalizations {
   /// **'Name'**
   String get paymentEditName;
 
+  /// No description provided for @paymentNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a payment method name'**
+  String get paymentNamePlaceholder;
+
+  /// No description provided for @paymentOptionalPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get paymentOptionalPlaceholder;
+
+  /// No description provided for @paymentNotesPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, such as usage conditions or notes'**
+  String get paymentNotesPlaceholder;
+
   /// No description provided for @paymentType.
   ///
   /// In en, this message translates to:

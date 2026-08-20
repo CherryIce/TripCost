@@ -1039,6 +1039,46 @@ void main() {
     expect(tester.testTextInput.isVisible, isFalse);
   });
 
+  testWidgets('notes field stays above the keyboard accessory', (tester) async {
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tripRepositoryProvider.overrideWithValue(MemoryTripRepository()),
+          paymentMethodRepositoryProvider.overrideWithValue(
+            MemoryPaymentMethodRepository(),
+          ),
+          rateRepositoryProvider.overrideWithValue(createFakeRateRepository()),
+          settingsRepositoryProvider.overrideWithValue(
+            MemorySettingsRepository(),
+          ),
+        ],
+        child: _localizedApp(home: const ExpenseEditorPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final notes = _field('expense-notes-field');
+    await tester.scrollUntilVisible(
+      notes,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(notes);
+    await tester.tap(notes);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pumpAndSettle();
+
+    final accessory = find.byKey(const Key('expense-keyboard-accessory'));
+    expect(accessory, findsOneWidget);
+    expect(
+      tester.getRect(notes).bottom,
+      lessThanOrEqualTo(tester.getRect(accessory).top - 12),
+    );
+  });
+
   testWidgets('receipt attachment renders an image without exposing its path', (
     tester,
   ) async {

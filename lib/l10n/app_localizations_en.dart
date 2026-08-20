@@ -486,6 +486,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentEditName => 'Name';
 
   @override
+  String get paymentNamePlaceholder => 'Enter a payment method name';
+
+  @override
+  String get paymentOptionalPlaceholder => 'Optional';
+
+  @override
+  String get paymentNotesPlaceholder =>
+      'Optional, such as usage conditions or notes';
+
+  @override
   String get paymentType => 'Type';
 
   @override

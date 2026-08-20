@@ -453,6 +453,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paymentEditName => '名称';
 
   @override
+  String get paymentNamePlaceholder => '请输入支付方式名称';
+
+  @override
+  String get paymentOptionalPlaceholder => '选填';
+
+  @override
+  String get paymentNotesPlaceholder => '选填，例如适用条件或备注';
+
+  @override
   String get paymentType => '类型';
 
   @override

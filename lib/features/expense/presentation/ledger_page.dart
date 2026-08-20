@@ -1604,6 +1604,8 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   final _discountFocus = FocusNode();
   final _participantsFocus = FocusNode();
   final _notesFocus = FocusNode();
+  final _editorScrollController = ScrollController();
+  final _notesGroupKey = GlobalKey();
   Currency _transactionCurrency = CurrencyCatalog().resolve('USD');
   Currency _homeCurrency = CurrencyCatalog().resolve('CNY');
   String _category = 'shopping';
@@ -1621,6 +1623,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   bool _isResolvingReceipt = false;
   int _calculationGeneration = 0;
   int _receiptGeneration = 0;
+  bool _notesVisibilityScheduled = false;
   Timer? _calculationDebounce;
   RateSnapshotModel? _activeRateSnapshot;
   File? _receiptFile;
@@ -1695,6 +1698,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
     ]) {
       controller.addListener(_scheduleRecalculation);
     }
+    _notesFocus.addListener(_scheduleNotesVisibility);
     if (_receiptPath.text.isNotEmpty) {
       unawaited(_resolveReceiptPreview(_receiptPath.text));
     }
@@ -1706,6 +1710,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
   @override
   void dispose() {
     _calculationDebounce?.cancel();
+    _notesFocus.removeListener(_scheduleNotesVisibility);
     for (final controller in <TextEditingController>[
       _transactionAmount,
       _tax,
@@ -1741,6 +1746,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
     ]) {
       node.dispose();
     }
+    _editorScrollController.dispose();
     super.dispose();
   }
 
@@ -1776,6 +1782,9 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
         .firstOrNull;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardVisible = keyboardInset > 0;
+    if (keyboardVisible && _notesFocus.hasFocus) {
+      _scheduleNotesVisibility();
+    }
     final bottomPadding =
         AppInsets.scrollableBottomPadding(context) +
         (keyboardVisible
@@ -1806,6 +1815,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
                 children: <Widget>[
                   ListView(
                     key: const Key('expense-editor-list'),
+                    controller: _editorScrollController,
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: EdgeInsets.fromLTRB(
@@ -1995,6 +2005,7 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
                       _buildReceiptSection(l10n),
                       const SizedBox(height: 14),
                       _ExpenseEditorGroup(
+                        key: _notesGroupKey,
                         children: <Widget>[
                           _ExpenseEditorTextRow(
                             fieldKey: const Key('expense-notes-field'),
@@ -2036,6 +2047,43 @@ class _ExpenseEditorPageState extends ConsumerState<ExpenseEditorPage> {
               ),
       ),
     );
+  }
+
+  void _scheduleNotesVisibility() {
+    if (_notesVisibilityScheduled || !_notesFocus.hasFocus) return;
+    _notesVisibilityScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notesVisibilityScheduled = false;
+      if (!mounted || !_notesFocus.hasFocus) return;
+      if (MediaQuery.viewInsetsOf(context).bottom <= 0) return;
+      final notesContext = _notesGroupKey.currentContext;
+      if (notesContext == null) return;
+      final notesBox = notesContext.findRenderObject();
+      if (notesBox is! RenderBox || !_editorScrollController.hasClients) {
+        return;
+      }
+      final availableBottom =
+          MediaQuery.sizeOf(context).height -
+          MediaQuery.viewInsetsOf(context).bottom -
+          AppKeyboardAccessoryBar.height -
+          12;
+      final notesBottom = notesBox
+          .localToGlobal(Offset(0, notesBox.size.height))
+          .dy;
+      final overlap = notesBottom - availableBottom;
+      if (overlap <= 0) return;
+      final position = _editorScrollController.position;
+      final target = (position.pixels + overlap)
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
+      unawaited(
+        _editorScrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+        ),
+      );
+    });
   }
 
   Widget _buildReceiptSection(AppLocalizations l10n) {

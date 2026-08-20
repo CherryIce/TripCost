@@ -309,6 +309,7 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
                   fieldKey: const Key('payment-name-field'),
                   label: localizations.paymentEditName,
                   controller: _name,
+                  placeholder: localizations.paymentNamePlaceholder,
                 ),
                 _EditorChoiceRow(
                   label: localizations.paymentType,
@@ -357,19 +358,35 @@ class _PaymentMethodEditorPageState extends State<PaymentMethodEditorPage> {
               key: const Key('payment-editor-optional-section'),
               title: localizations.paymentEditorOptional,
               children: <Widget>[
-                for (final entry in <(String, TextEditingController)>[
-                  (localizations.paymentMinimumFee, _minimumFee),
-                  (localizations.paymentMaximumFee, _maximumFee),
-                  (localizations.paymentCashRate, _cashRate),
+                for (final entry in <(String, TextEditingController, Key)>[
+                  (
+                    localizations.paymentMinimumFee,
+                    _minimumFee,
+                    const Key('payment-minimum-fee-field'),
+                  ),
+                  (
+                    localizations.paymentMaximumFee,
+                    _maximumFee,
+                    const Key('payment-maximum-fee-field'),
+                  ),
+                  (
+                    localizations.paymentCashRate,
+                    _cashRate,
+                    const Key('payment-cash-rate-field'),
+                  ),
                 ])
                   _EditorTextRow(
                     label: entry.$1,
                     controller: entry.$2,
                     numeric: true,
+                    fieldKey: entry.$3,
+                    placeholder: localizations.paymentOptionalPlaceholder,
                   ),
                 _EditorNotesRow(
+                  fieldKey: const Key('payment-notes-field'),
                   label: localizations.paymentNotes,
                   controller: _notes,
+                  placeholder: localizations.paymentNotesPlaceholder,
                 ),
               ],
             ),
@@ -666,12 +683,14 @@ class _EditorTextRow extends StatelessWidget {
     required this.controller,
     this.numeric = false,
     this.fieldKey,
+    this.placeholder,
   });
 
   final String label;
   final TextEditingController controller;
   final bool numeric;
   final Key? fieldKey;
+  final String? placeholder;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -685,6 +704,7 @@ class _EditorTextRow extends StatelessWidget {
           child: CupertinoTextField(
             key: fieldKey,
             controller: controller,
+            placeholder: placeholder,
             textAlign: TextAlign.end,
             keyboardType: numeric
                 ? const TextInputType.numberWithOptions(decimal: true)
@@ -702,10 +722,17 @@ class _EditorTextRow extends StatelessWidget {
 }
 
 class _EditorNotesRow extends StatelessWidget {
-  const _EditorNotesRow({required this.label, required this.controller});
+  const _EditorNotesRow({
+    required this.label,
+    required this.controller,
+    required this.placeholder,
+    this.fieldKey,
+  });
 
   final String label;
   final TextEditingController controller;
+  final String placeholder;
+  final Key? fieldKey;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -716,7 +743,9 @@ class _EditorNotesRow extends StatelessWidget {
         Text(label, style: const TextStyle(fontSize: 15)),
         const SizedBox(height: 8),
         CupertinoTextField(
+          key: fieldKey,
           controller: controller,
+          placeholder: placeholder,
           minLines: 3,
           maxLines: 5,
           padding: const EdgeInsets.all(12),
@@ -757,22 +786,31 @@ class _EditorChoiceRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: CupertinoColors.secondaryLabel.resolveFrom(context),
-              fontSize: 15,
-            ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 190),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: TextStyle(
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                CupertinoIcons.chevron_forward,
+                size: 15,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 6),
-        Icon(
-          CupertinoIcons.chevron_forward,
-          size: 15,
-          color: CupertinoColors.tertiaryLabel.resolveFrom(context),
         ),
       ],
     ),
