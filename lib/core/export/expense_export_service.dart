@@ -317,7 +317,7 @@ final class ExpenseExportLabels {
   };
 
   static const ExpenseExportLabels _en = ExpenseExportLabels(
-    title: 'TripCost expense export',
+    title: 'RoamSum expense export',
     date: 'Date',
     item: 'Item',
     category: 'Category',
@@ -336,7 +336,7 @@ final class ExpenseExportLabels {
   );
 
   static const ExpenseExportLabels _zh = ExpenseExportLabels(
-    title: 'TripCost 消费导出',
+    title: 'RoamSum 消费导出',
     date: '消费日期',
     item: '商户或项目',
     category: '分类',

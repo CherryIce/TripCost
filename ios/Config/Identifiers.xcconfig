@@ -4,4 +4,4 @@ APP_RUNNER_BUNDLE_ID = dev.tripcost.app
 APP_WIDGET_BUNDLE_ID = dev.tripcost.app.widget
 APP_GROUP_ID = group.dev.tripcost.app
 APP_CLOUDKIT_CONTAINER_ID = iCloud.dev.tripcost.app
-APP_WIDGET_DISPLAY_NAME = TripCost
+APP_WIDGET_DISPLAY_NAME = RoamSum

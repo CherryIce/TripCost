@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'TripCost';
+  String get appTitle => 'RoamSum';
 
   @override
   String get homeTab => '首页';
@@ -167,14 +167,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get permissionCameraUnavailableBody =>
-      '请前往系统设置允许 Trip Cost 使用相机，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
+      '请前往系统设置允许 RoamSum 使用相机，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
 
   @override
   String get permissionPhotoLibraryUnavailableTitle => '无法访问相册';
 
   @override
   String get permissionPhotoLibraryUnavailableBody =>
-      '请前往系统设置允许 Trip Cost 访问相册，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
+      '请前往系统设置允许 RoamSum 访问相册，然后重试。如果权限受屏幕使用时间或设备管理限制，请先解除相应限制。';
 
   @override
   String get permissionOpenSettings => '前往设置';
@@ -1474,7 +1474,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get privacyPolicyBody =>
-      'TripCost 无需注册账户，也不保存完整卡号、CVV、身份证件或银行登录信息。行程、消费、设置和票据图片保存在本机；OCR 在本机执行，票据原图不会上传。启用 iCloud 同步后，结构化应用数据会发送到你的 CloudKit 私有数据库，票据原图不在同步范围内。市场参考汇率请求会发送到 Frankfurter。Frankfurter 声明其 API 本身不收集个人数据，但公共服务使用 Cloudflare，可能收集基础分析信息。导出和备份均在本机生成，只有你在系统分享面板中选择目标后才会离开应用。';
+      'RoamSum 无需注册账户，也不保存完整卡号、CVV、身份证件或银行登录信息。行程、消费、设置和票据图片保存在本机；OCR 在本机执行，票据原图不会上传。启用 iCloud 同步后，结构化应用数据会发送到你的 CloudKit 私有数据库，票据原图不在同步范围内。市场参考汇率请求会发送到 Frankfurter。Frankfurter 声明其 API 本身不收集个人数据，但公共服务使用 Cloudflare，可能收集基础分析信息。导出和备份均在本机生成，只有你在系统分享面板中选择目标后才会离开应用。';
 
   @override
   String get disclaimerTitle => '汇率与成本免责声明';

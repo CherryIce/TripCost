@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'TripCost'**
+  /// **'RoamSum'**
   String get appTitle;
 
   /// No description provided for @homeTab.
@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @permissionCameraUnavailableBody.
   ///
   /// In en, this message translates to:
-  /// **'Allow Trip Cost to use the camera in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
+  /// **'Allow RoamSum to use the camera in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
   String get permissionCameraUnavailableBody;
 
   /// No description provided for @permissionPhotoLibraryUnavailableTitle.
@@ -419,7 +419,7 @@ abstract class AppLocalizations {
   /// No description provided for @permissionPhotoLibraryUnavailableBody.
   ///
   /// In en, this message translates to:
-  /// **'Allow Trip Cost to access photos in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
+  /// **'Allow RoamSum to access photos in Settings, then try again. If access is restricted by Screen Time or device management, change that restriction first.'**
   String get permissionPhotoLibraryUnavailableBody;
 
   /// No description provided for @permissionOpenSettings.
@@ -2861,7 +2861,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyPolicyBody.
   ///
   /// In en, this message translates to:
-  /// **'TripCost does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.'**
+  /// **'RoamSum does not require an account and does not store full card numbers, CVV, identity documents, or banking credentials. Trips, expenses, settings, and receipt images are stored on this device. OCR runs on this device. Receipt originals are not uploaded. If you enable iCloud sync, structured app data is sent to your private CloudKit database; receipt originals are excluded. Market reference-rate requests are sent to Frankfurter. Frankfurter states that its API does not collect personal data, while its public service uses Cloudflare and may collect basic analytics information. Exports and backups are generated locally and leave the app only when you choose a destination in the system share sheet.'**
   String get privacyPolicyBody;
 
   /// No description provided for @disclaimerTitle.

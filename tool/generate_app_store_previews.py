@@ -203,7 +203,7 @@ def add_brand(canvas: Image.Image, layout: Layout) -> None:
     draw.text(
         (x + layout.brand_icon + round(layout.brand_icon * 0.25),
          layout.brand_y + round(layout.brand_icon * 0.19)),
-        "TripCost",
+        "RoamSum",
         font=brand_font,
         fill=(255, 255, 255, 255),
     )

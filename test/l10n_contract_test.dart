@@ -39,6 +39,25 @@ void main() {
     },
   );
 
+  test('user-facing localized app name is RoamSum', () async {
+    final english = await _readJson('lib/l10n/app_en.arb');
+    final chinese = await _readJson('lib/l10n/app_zh.arb');
+
+    expect(english['appTitle'], 'RoamSum');
+    expect(chinese['appTitle'], 'RoamSum');
+    for (final catalog in <Map<String, Object?>>[english, chinese]) {
+      for (final key in <String>[
+        'permissionCameraUnavailableBody',
+        'permissionPhotoLibraryUnavailableBody',
+        'privacyPolicyBody',
+      ]) {
+        expect(catalog[key], contains('RoamSum'));
+        expect(catalog[key], isNot(contains('TripCost')));
+        expect(catalog[key], isNot(contains('Trip Cost')));
+      }
+    }
+  });
+
   test('onboarding visible copy has no direct string literals', () async {
     final contents = await Future.wait(
       <String>[
