@@ -1,0 +1,1 @@
+const _="新規登録特典",e="アンロック中",t="日",a="詳細を見る",n={trade_unlock_new_user:_,trade_unlock_status_unlocking:e,trade_unlock_days:"日",trade_unlock_view_details:a};export{n as default,t as trade_unlock_days,_ as trade_unlock_new_user,e as trade_unlock_status_unlocking,a as trade_unlock_view_details};

@@ -1,0 +1,1 @@
+const _="Бонус за нови клиенти",e="В процес на разблокиране",t="дни",a="Подробности",n={trade_unlock_new_user:_,trade_unlock_status_unlocking:e,trade_unlock_days:"дни",trade_unlock_view_details:a};export{n as default,t as trade_unlock_days,_ as trade_unlock_new_user,e as trade_unlock_status_unlocking,a as trade_unlock_view_details};

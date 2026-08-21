@@ -1,0 +1,1 @@
+const e="Bonus pre nových klientov",o="Odblokávanie",n="deň",t="Zobraziť podrobnosti",a={trade_unlock_new_user:e,trade_unlock_status_unlocking:o,trade_unlock_days:"deň",trade_unlock_view_details:t};export{a as default,n as trade_unlock_days,e as trade_unlock_new_user,o as trade_unlock_status_unlocking,t as trade_unlock_view_details};

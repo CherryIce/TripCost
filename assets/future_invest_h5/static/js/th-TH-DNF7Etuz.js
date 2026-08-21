@@ -1,0 +1,1 @@
+const _="โบนัสผู้ใช้ใหม่",e="กำลังปลดล็อก",t="วัน",a="ดูรายละเอียด",n={trade_unlock_new_user:_,trade_unlock_status_unlocking:e,trade_unlock_days:"วัน",trade_unlock_view_details:a};export{n as default,t as trade_unlock_days,_ as trade_unlock_new_user,e as trade_unlock_status_unlocking,a as trade_unlock_view_details};

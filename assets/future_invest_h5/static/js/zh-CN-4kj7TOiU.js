@@ -1,0 +1,1 @@
+const a="真实账户",t="体验金账户",c="钱包账户",n="待激活",o={real_account:a,trial_account:t,wallet_account:c,pending_activation:"待激活"};export{o as default,n as pending_activation,a as real_account,t as trial_account,c as wallet_account};

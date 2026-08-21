@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","新人獎勵"),_=e("trade_unlock_status_unlocking","正在解锁"),n=e("trade_unlock_days","天"),u=e("trade_unlock_view_details","查看詳情");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:_,trade_unlock_days:n,trade_unlock_view_details:u})}}});

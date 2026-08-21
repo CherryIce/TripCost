@@ -1,0 +1,1 @@
+const n="Phần thưởng cho người mới",t="Đang mở khóa",a="ngày",e="Xem chi tiết",_={trade_unlock_new_user:n,trade_unlock_status_unlocking:t,trade_unlock_days:a,trade_unlock_view_details:e};export{_ as default,a as trade_unlock_days,n as trade_unlock_new_user,t as trade_unlock_status_unlocking,e as trade_unlock_view_details};

@@ -1,0 +1,1 @@
+System.register([],function(e,i){"use strict";return{execute:function(){const i=e("please_login","الرجاء تسجيل الدخول"),t=e("profile_login_tip","مرحبًا بكم في فوترن");e("default",{please_login:i,profile_login_tip:t})}}});

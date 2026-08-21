@@ -1,0 +1,1 @@
+const a="Nagroda dla nowych użytkowników",n="Odblokowywanie",o="dni",d="Zobacz szczegóły",e={trade_unlock_new_user:a,trade_unlock_status_unlocking:n,trade_unlock_days:"dni",trade_unlock_view_details:d};export{e as default,o as trade_unlock_days,a as trade_unlock_new_user,n as trade_unlock_status_unlocking,d as trade_unlock_view_details};

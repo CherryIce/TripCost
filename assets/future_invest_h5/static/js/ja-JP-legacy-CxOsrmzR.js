@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","新規登録特典"),_=e("trade_unlock_status_unlocking","アンロック中"),n=e("trade_unlock_days","日"),u=e("trade_unlock_view_details","詳細を見る");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:_,trade_unlock_days:n,trade_unlock_view_details:u})}}});

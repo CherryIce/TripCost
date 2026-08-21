@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("please_login","කරුණාකර ලොග් වන්න"),i=e("profile_login_tip","Futrenට සාදරයෙන් පිළිගනිමු");e("default",{please_login:t,profile_login_tip:i})}}});

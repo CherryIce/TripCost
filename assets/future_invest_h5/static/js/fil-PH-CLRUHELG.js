@@ -1,0 +1,1 @@
+const a="Premyo para sa Bagong User",e="Nag-unlock",t="araw",_="Detalye",n={trade_unlock_new_user:a,trade_unlock_status_unlocking:e,trade_unlock_days:t,trade_unlock_view_details:_};export{n as default,t as trade_unlock_days,a as trade_unlock_new_user,e as trade_unlock_status_unlocking,_ as trade_unlock_view_details};

@@ -1,17 +1,25 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trip_cost/app/app_surface_controller.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
+import 'package:trip_cost/features/future_invest/presentation/future_invest_page.dart';
 import 'package:trip_cost/features/scanner/application/scan_flow.dart';
 import 'package:trip_cost/l10n/app_localizations.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(appSurfaceControllerProvider) ==
+        AppSurfaceMode.futureInvest) {
+      return const FutureInvestPage();
+    }
+
     return CupertinoPageScaffold(
       resizeToAvoidBottomInset: false,
       child: Column(

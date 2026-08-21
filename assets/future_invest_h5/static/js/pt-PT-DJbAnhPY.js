@@ -1,0 +1,1 @@
+const e="Bónus para novos utilizadores",a="A desbloquear",s="dias",t="Ver detalhes",d={trade_unlock_new_user:e,trade_unlock_status_unlocking:a,trade_unlock_days:s,trade_unlock_view_details:t};export{d as default,s as trade_unlock_days,e as trade_unlock_new_user,a as trade_unlock_status_unlocking,t as trade_unlock_view_details};

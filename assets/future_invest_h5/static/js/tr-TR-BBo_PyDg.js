@@ -1,0 +1,1 @@
+const e="Yeni Kullanıcı Ödülü",a="Açılıyor",l="gün",n="Detayları Göster",t={trade_unlock_new_user:e,trade_unlock_status_unlocking:a,trade_unlock_days:"gün",trade_unlock_view_details:n};export{t as default,l as trade_unlock_days,e as trade_unlock_new_user,a as trade_unlock_status_unlocking,n as trade_unlock_view_details};

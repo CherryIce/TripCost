@@ -1,0 +1,1 @@
+const a="Bonus Pengguna Baru",e="sedang membuka kunci",n="hari",u="Lihat Detail",t={trade_unlock_new_user:a,trade_unlock_status_unlocking:e,trade_unlock_days:n,trade_unlock_view_details:u};export{t as default,n as trade_unlock_days,a as trade_unlock_new_user,e as trade_unlock_status_unlocking,u as trade_unlock_view_details};

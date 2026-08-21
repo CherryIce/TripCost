@@ -1,0 +1,1 @@
+System.register(["./vendor-legacy-CoFmDwbv.js"],function(t,e){"use strict";var r;return{setters:[t=>{r=t.aq}],execute:function(){t("v",function(t,e){if(!t||!e)return!1;try{return!!r(t,e).isValid()}catch{return!1}})}}});

@@ -1,0 +1,1 @@
+System.register([],function(e,i){"use strict";return{execute:function(){const i=e("please_login","Molimo prijavite se"),o=e("profile_login_tip","Dobrodošli u Futren");e("default",{please_login:i,profile_login_tip:o})}}});

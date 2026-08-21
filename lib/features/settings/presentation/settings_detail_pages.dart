@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trip_cost/app/app_surface_controller.dart';
 import 'package:trip_cost/app/router/app_routes.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
@@ -238,6 +239,85 @@ class LanguageSettingsPage extends ConsumerWidget {
     return ref
         .read(generalSettingsControllerProvider.notifier)
         .setLanguage(mode);
+  }
+}
+
+class AppSurfaceSettingsPage extends ConsumerWidget {
+  const AppSurfaceSettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localizations = AppLocalizations.of(context);
+    final selected = ref.watch(appSurfaceControllerProvider);
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(localizations.appSurfaceTitle),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: ListView(
+          key: const Key('app-surface-settings-list'),
+          padding: AppInsets.secondaryPageScrollPadding(context),
+          children: <Widget>[
+            _DetailGroup(
+              children: <Widget>[
+                _SelectionRow(
+                  key: const Key('app-surface-roamsum'),
+                  title: localizations.appSurfaceRoamSum,
+                  selected: selected == AppSurfaceMode.roamSum,
+                  onPressed: () =>
+                      _setMode(context, ref, AppSurfaceMode.roamSum),
+                ),
+                _SelectionRow(
+                  key: const Key('app-surface-future-invest'),
+                  title: localizations.appSurfaceFutureInvest,
+                  selected: selected == AppSurfaceMode.futureInvest,
+                  onPressed: () =>
+                      _setMode(context, ref, AppSurfaceMode.futureInvest),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.small),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                localizations.appSurfaceDescription,
+                style: TextStyle(
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                  fontSize: 13,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setMode(
+    BuildContext context,
+    WidgetRef ref,
+    AppSurfaceMode mode,
+  ) async {
+    try {
+      await ref.read(appSurfaceControllerProvider.notifier).setMode(mode);
+      if (context.mounted) Navigator.of(context).pop();
+    } on Object {
+      if (!context.mounted) return;
+      await showCupertinoDialog<void>(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: Text(AppLocalizations.of(context).appSurfaceSaveFailed),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(AppLocalizations.of(context).commonDone),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
 
@@ -944,6 +1024,7 @@ class _SelectionRow extends StatelessWidget {
     required this.title,
     required this.selected,
     required this.onPressed,
+    super.key,
   });
 
   final String title;

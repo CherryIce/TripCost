@@ -1,0 +1,1 @@
+System.register([],function(t,e){"use strict";return{execute:function(){const e=t("real_net_worth_title","Real Net Worth"),l=t("real_net_worth_desc","Real-time account equity, including floating P/L"),a=t("total_assets","Total Assets"),s=t("wallet_available","Wallet Available");t("default",{real_net_worth_title:e,real_net_worth_desc:l,total_assets:a,wallet_available:s})}}});

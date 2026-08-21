@@ -1,0 +1,1 @@
+System.register([],function(t,e){"use strict";return{execute:function(){t("C",{Banner:"banner_",Grid:"grid_",ActivityEntry:"activityentry_",Ad:"ad_",Horse:"horse_",Slip:"slip_",List:"list_",Header:"header_",Balance:"balance_",Vip:"vip_",Account:"account_",AccountList:"accountlist_",NewsList:"newslist_",Market:"market_",Unlock:"unlock_",Gap:"gap_"})}}});

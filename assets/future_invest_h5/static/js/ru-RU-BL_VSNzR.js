@@ -1,0 +1,1 @@
+const _="Приветственный бонус",e="В процессе разблокировки",t="дней",a="Подробнее",n={trade_unlock_new_user:_,trade_unlock_status_unlocking:e,trade_unlock_days:t,trade_unlock_view_details:a};export{n as default,t as trade_unlock_days,_ as trade_unlock_new_user,e as trade_unlock_status_unlocking,a as trade_unlock_view_details};

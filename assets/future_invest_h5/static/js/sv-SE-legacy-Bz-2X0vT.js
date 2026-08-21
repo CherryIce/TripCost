@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","Ny användarbonus"),n=e("trade_unlock_status_unlocking","Låser upp"),u=e("trade_unlock_days","dagar"),_=e("trade_unlock_view_details","Visa detaljer");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:n,trade_unlock_days:u,trade_unlock_view_details:_})}}});

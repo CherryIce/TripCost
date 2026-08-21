@@ -152,6 +152,11 @@ void main() {
       MediaQuery.paddingOf(tester.element(find.byType(SettingsPage))).bottom,
       0,
     );
+    expect(
+      find.byKey(const Key('settings-category-app-surface')),
+      findsOneWidget,
+    );
+    expect(find.text('RoamSum native'), findsOneWidget);
 
     await tester.tap(find.byIcon(CupertinoIcons.viewfinder));
     await tester.pumpAndSettle();

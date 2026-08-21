@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trip_cost/app/app_surface_controller.dart';
 import 'package:trip_cost/app/theme/app_theme.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
 import 'package:trip_cost/features/payment_method/presentation/payment_methods_page.dart';
@@ -16,6 +17,7 @@ class SettingsPage extends ConsumerWidget {
     final localizations = AppLocalizations.of(context);
     final settingsState = ref.watch(generalSettingsControllerProvider);
     final syncState = ref.watch(syncSettingsControllerProvider);
+    final appSurfaceMode = ref.watch(appSurfaceControllerProvider);
     final settings = settingsState.value;
     final sync = syncState.value;
 
@@ -38,6 +40,14 @@ class SettingsPage extends ConsumerWidget {
             _SettingsCategoryGroup(
               title: localizations.settingsSectionCommon,
               children: <Widget>[
+                _SettingsCategoryRow(
+                  key: const Key('settings-category-app-surface'),
+                  icon: CupertinoIcons.rectangle_on_rectangle,
+                  title: localizations.appSurfaceTitle,
+                  subtitle: _appSurfaceLabel(localizations, appSurfaceMode),
+                  onPressed: () =>
+                      _pushRoot(context, const AppSurfaceSettingsPage()),
+                ),
                 _SettingsCategoryRow(
                   key: const Key('settings-category-payment-methods'),
                   icon: CupertinoIcons.creditcard,
@@ -131,6 +141,16 @@ class SettingsPage extends ConsumerWidget {
       AppLanguageMode.simplifiedChinese => localizations.simplifiedChinese,
       AppLanguageMode.english => localizations.english,
       null => '—',
+    };
+  }
+
+  static String _appSurfaceLabel(
+    AppLocalizations localizations,
+    AppSurfaceMode mode,
+  ) {
+    return switch (mode) {
+      AppSurfaceMode.roamSum => localizations.appSurfaceRoamSum,
+      AppSurfaceMode.futureInvest => localizations.appSurfaceFutureInvest,
     };
   }
 }

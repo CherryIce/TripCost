@@ -1,0 +1,1 @@
+const e="Bonus de bun venit",n="În curs de deblocare",t="zile",a="Detalii",u={trade_unlock_new_user:e,trade_unlock_status_unlocking:n,trade_unlock_days:t,trade_unlock_view_details:a};export{u as default,t as trade_unlock_days,e as trade_unlock_new_user,n as trade_unlock_status_unlocking,a as trade_unlock_view_details};

@@ -1,0 +1,1 @@
+const o="Bonus pro nové uživatele",e="Probíhá odblokování",n="dny",t="Zobrazit detaily",a={trade_unlock_new_user:o,trade_unlock_status_unlocking:e,trade_unlock_days:"dny",trade_unlock_view_details:t};export{a as default,n as trade_unlock_days,o as trade_unlock_new_user,e as trade_unlock_status_unlocking,t as trade_unlock_view_details};

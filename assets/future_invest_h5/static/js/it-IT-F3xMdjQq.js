@@ -1,0 +1,1 @@
+const o="Bonus per nuovi utenti",t="Sblocco in corso",e="giorni",n="Visualizza dettagli",a={trade_unlock_new_user:o,trade_unlock_status_unlocking:t,trade_unlock_days:e,trade_unlock_view_details:n};export{a as default,e as trade_unlock_days,o as trade_unlock_new_user,t as trade_unlock_status_unlocking,n as trade_unlock_view_details};

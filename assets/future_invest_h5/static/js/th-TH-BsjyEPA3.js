@@ -1,0 +1,1 @@
+const e="เพิ่มเติม",o={more:e};export{o as default,e as more};

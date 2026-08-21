@@ -1,0 +1,1 @@
+const t="Uusikäyttäjäbonus",a="Avautumassa",u="päivä",e="Näytä tiedot",s={trade_unlock_new_user:t,trade_unlock_status_unlocking:a,trade_unlock_days:u,trade_unlock_view_details:e};export{s as default,u as trade_unlock_days,t as trade_unlock_new_user,a as trade_unlock_status_unlocking,e as trade_unlock_view_details};

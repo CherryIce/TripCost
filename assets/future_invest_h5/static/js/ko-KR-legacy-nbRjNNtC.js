@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("please_login","로그인 해주세요"),i=e("profile_login_tip","Futren에 오신 것을 환영합니다");e("default",{please_login:t,profile_login_tip:i})}}});

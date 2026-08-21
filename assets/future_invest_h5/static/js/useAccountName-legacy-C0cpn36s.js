@@ -1,0 +1,1 @@
+System.register(["./index-legacy-BzfEdDc4.js","./vendor-core-legacy-C8EYXWgL.js"],function(e,n){"use strict";var r,t;return{setters:[e=>{r=e.U},e=>{t=e.a}],execute:function(){function n(e){return e?.name?.trim()||""}e({r:n,u:function(){const e=r();return{accountName:t(()=>n(e.userInfo)),ensureUserInfo:async function(){await e.info(!1)},userStore:e}}})}}});

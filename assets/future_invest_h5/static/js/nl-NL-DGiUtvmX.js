@@ -1,0 +1,1 @@
+const e="welkomstbonus",t="Bezig met ontgrendelen",n="dagen",a="Bekijk details",_={trade_unlock_new_user:e,trade_unlock_status_unlocking:t,trade_unlock_days:n,trade_unlock_view_details:a};export{_ as default,n as trade_unlock_days,e as trade_unlock_new_user,t as trade_unlock_status_unlocking,a as trade_unlock_view_details};

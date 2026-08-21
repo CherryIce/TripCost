@@ -1,0 +1,1 @@
+const _="新人獎勵",e="正在解锁",t="天",a="查看詳情",n={trade_unlock_new_user:_,trade_unlock_status_unlocking:e,trade_unlock_days:"天",trade_unlock_view_details:a};export{n as default,t as trade_unlock_days,_ as trade_unlock_new_user,e as trade_unlock_status_unlocking,a as trade_unlock_view_details};

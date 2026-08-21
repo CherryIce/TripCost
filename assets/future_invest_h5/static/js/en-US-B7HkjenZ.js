@@ -1,0 +1,1 @@
+const c="Real Account",t="Trial Account",a="Wallet Account",n="Pending",l={real_account:c,trial_account:t,wallet_account:a,pending_activation:n};export{l as default,n as pending_activation,c as real_account,t as trial_account,a as wallet_account};

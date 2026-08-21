@@ -1,0 +1,1 @@
+const t="Real Net Worth",e="Real-time account equity, including floating P/L",a="Total Assets",l="Wallet Available",o={real_net_worth_title:t,real_net_worth_desc:e,total_assets:a,wallet_available:l};export{o as default,e as real_net_worth_desc,t as real_net_worth_title,a as total_assets,l as wallet_available};

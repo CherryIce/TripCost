@@ -1,0 +1,1 @@
+const e="Nybrugerbonus",a="Låser op",t="dage",_="Se detaljer",r={trade_unlock_new_user:e,trade_unlock_status_unlocking:a,trade_unlock_days:t,trade_unlock_view_details:_};export{r as default,t as trade_unlock_days,e as trade_unlock_new_user,a as trade_unlock_status_unlocking,_ as trade_unlock_view_details};

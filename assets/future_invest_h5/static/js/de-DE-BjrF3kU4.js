@@ -1,0 +1,1 @@
+const e="Willkommensbonus",n="Wird entsperrt",t="Tage",a="Details anzeigen",s={trade_unlock_new_user:e,trade_unlock_status_unlocking:n,trade_unlock_days:t,trade_unlock_view_details:a};export{s as default,t as trade_unlock_days,e as trade_unlock_new_user,n as trade_unlock_status_unlocking,a as trade_unlock_view_details};

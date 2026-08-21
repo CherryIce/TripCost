@@ -1,0 +1,1 @@
+const t="真实净值",e="实时账户净值，含浮动盈亏",a="总资产",l="钱包可用",_={real_net_worth_title:t,real_net_worth_desc:e,total_assets:"总资产",wallet_available:l};export{_ as default,e as real_net_worth_desc,t as real_net_worth_title,a as total_assets,l as wallet_available};

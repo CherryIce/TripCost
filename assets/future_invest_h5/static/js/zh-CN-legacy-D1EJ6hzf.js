@@ -1,0 +1,1 @@
+System.register([],function(t,e){"use strict";return{execute:function(){const e=t("real_net_worth_title","真实净值"),a=t("real_net_worth_desc","实时账户净值，含浮动盈亏"),l=t("total_assets","总资产"),_=t("wallet_available","钱包可用");t("default",{real_net_worth_title:e,real_net_worth_desc:a,total_assets:l,wallet_available:_})}}});

@@ -1,0 +1,1 @@
+System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","โบนัสผู้ใช้ใหม่"),_=e("trade_unlock_status_unlocking","กำลังปลดล็อก"),n=e("trade_unlock_days","วัน"),u=e("trade_unlock_view_details","ดูรายละเอียด");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:_,trade_unlock_days:n,trade_unlock_view_details:u})}}});

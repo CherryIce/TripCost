@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trip_cost/app/app.dart';
+import 'package:trip_cost/app/app_surface_controller.dart';
 import 'package:trip_cost/app/locale_controller.dart';
 import 'package:trip_cost/core/destinations/country_directory.dart';
 import 'package:trip_cost/core/domain/core_models.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase.open();
   final initialLanguageMode = await _loadInitialLanguageMode(database);
+  final initialAppSurfaceMode = await _loadInitialAppSurfaceMode();
   runApp(
     ProviderScope(
       overrides: [
@@ -22,6 +24,7 @@ Future<void> main() async {
           return database;
         }),
         initialAppLanguageModeProvider.overrideWithValue(initialLanguageMode),
+        initialAppSurfaceModeProvider.overrideWithValue(initialAppSurfaceMode),
         localDataChangeCoordinatorProvider.overrideWith(
           (ref) => ref.watch(productionLocalDataChangeCoordinatorProvider),
         ),
@@ -29,6 +32,14 @@ Future<void> main() async {
       child: const _ProductionAppBootstrap(),
     ),
   );
+}
+
+Future<AppSurfaceMode> _loadInitialAppSurfaceMode() async {
+  try {
+    return await SharedPreferencesAppSurfaceStore().load();
+  } on Object {
+    return AppSurfaceMode.roamSum;
+  }
 }
 
 Future<AppLanguageMode> _loadInitialLanguageMode(AppDatabase database) async {

@@ -1365,6 +1365,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPrivacySummary => '政策、权限与免责声明';
 
   @override
+  String get appSurfaceTitle => '应用显示';
+
+  @override
+  String get appSurfaceRoamSum => 'RoamSum 原生界面';
+
+  @override
+  String get appSurfaceFutureInvest => 'Future Invest H5';
+
+  @override
+  String get appSurfaceDescription =>
+      '选择应用启动后显示的界面。此偏好只保存在当前设备，不会同步到 iCloud。切换到 H5 后，可使用右上角按钮随时返回 RoamSum。';
+
+  @override
+  String get appSurfaceSwitchToRoamSum => '返回 RoamSum';
+
+  @override
+  String get appSurfaceSaveFailed => '无法保存显示方式，本地设置保持不变。';
+
+  @override
+  String get futureInvestLoadFailed =>
+      '无法加载 Future Invest 本地页面。请重试或返回 RoamSum。';
+
+  @override
+  String get commonRetry => '重试';
+
+  @override
   String get syncStatusEnabledShort => '已开启';
 
   @override

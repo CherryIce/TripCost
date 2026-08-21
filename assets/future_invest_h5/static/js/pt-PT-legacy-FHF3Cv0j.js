@@ -1,0 +1,1 @@
+System.register([],function(e,i){"use strict";return{execute:function(){const i=e("please_login","Por favor, inicie sessão"),o=e("profile_login_tip","Bem-vindo ao Futren");e("default",{please_login:i,profile_login_tip:o})}}});

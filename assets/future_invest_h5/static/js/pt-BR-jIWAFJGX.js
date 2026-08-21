@@ -1,0 +1,1 @@
+const e="Bônus de boas-vindas",a="Desbloqueando",s="dias",d="Ver detalhes",n={trade_unlock_new_user:e,trade_unlock_status_unlocking:a,trade_unlock_days:s,trade_unlock_view_details:d};export{n as default,s as trade_unlock_days,e as trade_unlock_new_user,a as trade_unlock_status_unlocking,d as trade_unlock_view_details};

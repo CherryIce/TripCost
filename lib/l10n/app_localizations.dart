@@ -2648,6 +2648,54 @@ abstract class AppLocalizations {
   /// **'Policies, permissions, and disclaimers'**
   String get settingsPrivacySummary;
 
+  /// No description provided for @appSurfaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'App display'**
+  String get appSurfaceTitle;
+
+  /// No description provided for @appSurfaceRoamSum.
+  ///
+  /// In en, this message translates to:
+  /// **'RoamSum native'**
+  String get appSurfaceRoamSum;
+
+  /// No description provided for @appSurfaceFutureInvest.
+  ///
+  /// In en, this message translates to:
+  /// **'Future Invest H5'**
+  String get appSurfaceFutureInvest;
+
+  /// No description provided for @appSurfaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the interface shown when the app starts. This preference stays on this device and is not synced to iCloud. In H5 mode, use the top-right button to return to RoamSum at any time.'**
+  String get appSurfaceDescription;
+
+  /// No description provided for @appSurfaceSwitchToRoamSum.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to RoamSum'**
+  String get appSurfaceSwitchToRoamSum;
+
+  /// No description provided for @appSurfaceSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The display mode could not be saved. The local setting is unchanged.'**
+  String get appSurfaceSaveFailed;
+
+  /// No description provided for @futureInvestLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The local Future Invest page could not be loaded. Try again or return to RoamSum.'**
+  String get futureInvestLoadFailed;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
   /// No description provided for @syncStatusEnabledShort.
   ///
   /// In en, this message translates to:

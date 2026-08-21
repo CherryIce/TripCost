@@ -1,0 +1,1 @@
+const e="Bonus de bienvenue",u="Déverrouillage en cours",n="jours",o="Voir les détails",s={trade_unlock_new_user:e,trade_unlock_status_unlocking:u,trade_unlock_days:n,trade_unlock_view_details:o};export{s as default,n as trade_unlock_days,e as trade_unlock_new_user,u as trade_unlock_status_unlocking,o as trade_unlock_view_details};

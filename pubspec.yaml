@@ -26,6 +26,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.42
   url_launcher: ^6.3.2
   uuid: ^4.6.0
+  webview_flutter: ^4.13.1
 
 dev_dependencies:
   build_runner: 2.4.14
@@ -41,3 +42,11 @@ flutter:
   assets:
     - assets/branding/launch_mark.png
     - assets/onboarding/
+    - assets/future_invest_h5/
+    - assets/future_invest_h5/polymer/env/
+    - assets/future_invest_h5/static/css/
+    - assets/future_invest_h5/static/gif/
+    - assets/future_invest_h5/static/js/
+    - assets/future_invest_h5/static/png/
+    - assets/future_invest_h5/static/svg/
+    - assets/future_invest_h5/static/woff2/

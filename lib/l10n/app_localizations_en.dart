@@ -1429,6 +1429,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPrivacySummary => 'Policies, permissions, and disclaimers';
 
   @override
+  String get appSurfaceTitle => 'App display';
+
+  @override
+  String get appSurfaceRoamSum => 'RoamSum native';
+
+  @override
+  String get appSurfaceFutureInvest => 'Future Invest H5';
+
+  @override
+  String get appSurfaceDescription =>
+      'Choose the interface shown when the app starts. This preference stays on this device and is not synced to iCloud. In H5 mode, use the top-right button to return to RoamSum at any time.';
+
+  @override
+  String get appSurfaceSwitchToRoamSum => 'Back to RoamSum';
+
+  @override
+  String get appSurfaceSaveFailed =>
+      'The display mode could not be saved. The local setting is unchanged.';
+
+  @override
+  String get futureInvestLoadFailed =>
+      'The local Future Invest page could not be loaded. Try again or return to RoamSum.';
+
+  @override
+  String get commonRetry => 'Retry';
+
+  @override
   String get syncStatusEnabledShort => 'On';
 
   @override
