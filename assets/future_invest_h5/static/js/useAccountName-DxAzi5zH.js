@@ -1,0 +1,1 @@
+import{R as n}from"./index-B9ZvDVl5.js";import{a as r}from"./vendor-core-DkFnloUe.js";function o(n){return n?.name?.trim()||""}function e(){const e=n();return{accountName:r(()=>o(e.userInfo)),ensureUserInfo:async function(){await e.info(!1)},userStore:e}}export{o as r,e as u};

@@ -1,1 +1,0 @@
-System.register([],function(i,e){"use strict";return{execute:function(){const e=i("please_login","Prihlásiť sa"),t=i("profile_login_tip","Vitajte v aplikácii Futren");i("default",{please_login:e,profile_login_tip:t})}}});

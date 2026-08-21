@@ -1,1 +1,0 @@
-System.register([],function(e,n){"use strict";return{execute:function(){const n=e("please_login","Kérjük, bejelentkezzen"),t=e("profile_login_tip","Üdvözöljük a Futren-nél");e("default",{please_login:n,profile_login_tip:t})}}});

@@ -1,1 +1,0 @@
-System.register([],function(t,c){"use strict";return{execute:function(){const c=t("real_account","真實帳戶"),n=t("trial_account","體驗金帳戶"),a=t("wallet_account","錢包帳戶"),e=t("pending_activation","待啟用");t("default",{real_account:c,trial_account:n,wallet_account:a,pending_activation:e})}}});

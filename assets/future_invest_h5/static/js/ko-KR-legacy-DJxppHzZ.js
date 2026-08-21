@@ -1,1 +1,0 @@
-System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","신규 회원 보상"),_=e("trade_unlock_status_unlocking","잠금 해제 중"),n=e("trade_unlock_days","일"),u=e("trade_unlock_view_details","상세보기");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:_,trade_unlock_days:n,trade_unlock_view_details:u})}}});

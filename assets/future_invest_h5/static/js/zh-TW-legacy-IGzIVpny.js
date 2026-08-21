@@ -1,1 +1,0 @@
-System.register([],function(t,e){"use strict";return{execute:function(){const e=t("real_net_worth_title","真實淨值"),a=t("real_net_worth_desc","即時帳戶淨值，含浮動盈虧"),l=t("total_assets","總資產"),_=t("wallet_available","錢包可用");t("default",{real_net_worth_title:e,real_net_worth_desc:a,total_assets:l,wallet_available:_})}}});

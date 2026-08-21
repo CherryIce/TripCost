@@ -1,1 +1,0 @@
-System.register([],function(e,t){"use strict";return{execute:function(){const t=e("trade_unlock_new_user","नए यूजर इनाम"),_=e("trade_unlock_status_unlocking","अनलॉक हो रहा है"),n=e("trade_unlock_days","दिन"),u=e("trade_unlock_view_details","विवरण देखें");e("default",{trade_unlock_new_user:t,trade_unlock_status_unlocking:_,trade_unlock_days:n,trade_unlock_view_details:u})}}});

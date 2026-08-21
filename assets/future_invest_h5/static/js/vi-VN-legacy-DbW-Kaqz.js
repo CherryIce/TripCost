@@ -1,1 +1,0 @@
-System.register([],function(n,e){"use strict";return{execute:function(){const e=n("please_login","Vui lòng đăng nhập"),i=n("profile_login_tip","Chào mừng bạn đến với Futren");n("default",{please_login:e,profile_login_tip:i})}}});

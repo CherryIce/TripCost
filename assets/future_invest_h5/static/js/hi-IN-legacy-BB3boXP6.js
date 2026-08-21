@@ -1,1 +1,0 @@
-System.register([],function(e,t){"use strict";return{execute:function(){const t=e("please_login","कृपया लॉग इन करें"),i=e("profile_login_tip","Futren में आपका स्वागत है");e("default",{please_login:t,profile_login_tip:i})}}});

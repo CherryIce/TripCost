@@ -1,1 +1,0 @@
-System.register([],function(t,c){"use strict";return{execute:function(){const c=t("real_account","Real Account"),n=t("trial_account","Trial Account"),a=t("wallet_account","Wallet Account"),e=t("pending_activation","Pending");t("default",{real_account:c,trial_account:n,wallet_account:a,pending_activation:e})}}});

@@ -1,1 +1,0 @@
-System.register([],function(e,i){"use strict";return{execute:function(){const i=e("please_login","Venligst log ind"),t=e("profile_login_tip","Velkommen til Futren");e("default",{please_login:i,profile_login_tip:t})}}});

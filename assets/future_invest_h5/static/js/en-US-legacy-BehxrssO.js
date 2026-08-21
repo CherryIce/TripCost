@@ -1,1 +1,0 @@
-System.register([],function(e,t){"use strict";return{execute:function(){const t=e("view_benefits","Benefits"),i=e("upgrade_brief","Complete upgrade tasks to unlock more benefits");e("default",{view_benefits:t,upgrade_brief:i})}}});

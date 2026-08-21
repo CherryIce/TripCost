@@ -1,1 +1,0 @@
-import{U as n}from"./index-DhTUTyKt.js";import{a as r}from"./vendor-core-C5MDYqpB.js";function o(n){var r;return(null==(r=null==n?void 0:n.name)?void 0:r.trim())||""}function e(){const e=n();return{accountName:r(()=>o(e.userInfo)),ensureUserInfo:async function(){await e.info(!1)},userStore:e}}export{o as r,e as u};
