@@ -1,7 +1,8 @@
-// Development placeholders. Override these in untracked local/CI configuration
-// after the Apple identifiers are registered.
-APP_RUNNER_BUNDLE_ID = dev.tripcost.app
-APP_WIDGET_BUNDLE_ID = dev.tripcost.app.widget
-APP_GROUP_ID = group.dev.tripcost.app
-APP_CLOUDKIT_CONTAINER_ID = iCloud.dev.tripcost.app
+// Production identifiers. Signing certificates and provisioning profiles stay
+// outside the repository and are injected by Xcode or the cloud build workflow.
+APP_RUNNER_BUNDLE_ID = com.tripcost.lite
+APP_WIDGET_BUNDLE_ID = com.tripcost.lite.widget
+APP_GROUP_ID = group.com.tripcost.lite
+APP_CLOUDKIT_CONTAINER_ID = iCloud.com.tripcost.lite
+APP_DEVELOPMENT_TEAM = Z353FCBY9T
 APP_WIDGET_DISPLAY_NAME = RoamSum

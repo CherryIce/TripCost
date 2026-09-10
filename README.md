@@ -25,7 +25,16 @@ flutter run \
 ./tool/generate_pigeon.sh
 ```
 
-提交 schema 与 Dart/Swift 生成产物。正式名称、Bundle ID、App Group、CloudKit Container 和 Team 尚未冻结，规则见 `docs/IOS_CAPABILITIES.md`。
+提交 schema 与 Dart/Swift 生成产物。正式显示名与 Apple 标识已经冻结；能力、签名材料和人工验收边界见 `docs/IOS_CAPABILITIES.md`。
+
+## iOS 云构建
+
+仓库通过手动触发的 `Flutter iOS Release` GitHub Actions 工作流归档 Runner 和 AppWidget。工作流默认不上传 App Store Connect；生产签名材料只存放在受保护的 `tripcost-production` Environment 中。
+
+- 构建配置：`.github/ios-build.yml`
+- 工作流：`.github/workflows/ios-release.yml`
+- 首次验证：使用 `upload_to_asc=false`，并核对远端 SHA、IPA 中的两个 Bundle ID、签名 Team 和 embedded profiles。
+- 正式上传：确认使用未占用的 build number 后，再使用 `upload_to_asc=true`。
 
 ## 生成数据库代码与 schema
 

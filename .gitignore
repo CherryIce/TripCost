@@ -35,6 +35,9 @@ migrate_working_dir/
 /ios/build/
 /coverage/
 
+# CocoaPods resolution must be committed for reproducible local and cloud builds.
+!ios/Podfile.lock
+
 # Symbolication related
 app.*.symbols
 

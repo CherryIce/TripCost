@@ -85,7 +85,7 @@ project.build_configurations.each do |configuration|
 end
 
 runner.build_configurations.each do |configuration|
-  configuration.build_settings['DEVELOPMENT_TEAM'] = ''
+  configuration.build_settings['DEVELOPMENT_TEAM'] = '$(APP_DEVELOPMENT_TEAM)'
   configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
   configuration.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = '$(APP_RUNNER_BUNDLE_ID)'
 end
@@ -102,7 +102,7 @@ widget.build_configurations.each do |configuration|
   configuration.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'YES'
   configuration.build_settings['CODE_SIGN_STYLE'] = 'Automatic'
   configuration.build_settings['CURRENT_PROJECT_VERSION'] = '1'
-  configuration.build_settings['DEVELOPMENT_TEAM'] = ''
+  configuration.build_settings['DEVELOPMENT_TEAM'] = '$(APP_DEVELOPMENT_TEAM)'
   configuration.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
   configuration.build_settings['INFOPLIST_FILE'] = 'TripCostWidget/Info.plist'
   configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'

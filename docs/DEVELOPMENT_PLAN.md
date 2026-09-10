@@ -24,7 +24,7 @@
 
 ## 2. 执行前提与边界
 
-1. 正式中英文名称、图标、主色、Bundle ID、App Group ID 和 CloudKit Container ID 尚未确定。工程内先使用可替换配置，不在业务代码、路由或数据库表名中硬编码 `TripCost`。
+1. 正式展示名及 Bundle ID、App Group ID、CloudKit Container ID 已冻结并集中配置；业务代码、路由和数据库表名仍不得硬编码这些平台标识。
 2. iOS 15 是 Runner、Widget Extension 及原生能力的统一最低版本。
 3. Flutter 负责页面、状态、计算、数据库、网络、导出和主要业务逻辑；Swift 仅负责 Vision OCR、CloudKit、App Group/Widget 和系统分享能力。
 4. 本地 Drift/SQLite 是事实源，CloudKit 是增量同步层。无 iCloud 或同步失败不能阻断本地功能。
@@ -397,7 +397,7 @@ M0 技术决策与验收基线
 
 退出条件：CloudKit 通过双设备增删改和冲突验证；Widget 通过 iOS 15 添加、展示、过期状态和刷新验证。
 
-退出结论：实现与自动化验收已通过，M7 真实运行退出条件尚未关闭（2026-08-17）。Dart 已实现五类实体的 pending/outbox、稳定 change ID、批量 push/pull、游标事务提交、过期游标恢复、指数退避、墓碑和幂等 LWW；实际入账金额冲突保留双方值并由设置页生成新版本解决。Swift 已实现私有数据库自定义 zone/subscription、Cloud 侧确定性 LWW、结构化错误、游标编解码和无票据原图边界；App Group 采用版本化最小 JSON，Widget 不启动 Flutter Engine，并覆盖空/坏/过期数据。Drift schema v4 迁移、Fake Cloud、冲突及快照测试通过；`flutter analyze` 0 问题，完整 Flutter 测试 108 项通过、真网冒烟 1 项按开关跳过；iPhone 17（iOS 26.5）模拟器 Runner/Widget 无签名构建成功，原生 XCTest 7 项通过。尚未配置正式 CloudKit Container/App Group 标识并在两台真实设备验证增删改、墓碑和冲突，也未安装 iOS 15 运行时验证主屏幕添加、时间线刷新、过期展示及截图，因此 I6 保留真实运行验收项。
+退出结论：实现与自动化验收已通过，M7 真实运行退出条件尚未关闭（2026-08-17）。Dart 已实现五类实体的 pending/outbox、稳定 change ID、批量 push/pull、游标事务提交、过期游标恢复、指数退避、墓碑和幂等 LWW；实际入账金额冲突保留双方值并由设置页生成新版本解决。Swift 已实现私有数据库自定义 zone/subscription、Cloud 侧确定性 LWW、结构化错误、游标编解码和无票据原图边界；App Group 采用版本化最小 JSON，Widget 不启动 Flutter Engine，并覆盖空/坏/过期数据。Drift schema v4 迁移、Fake Cloud、冲突及快照测试通过；`flutter analyze` 0 问题，完整 Flutter 测试 108 项通过、真网冒烟 1 项按开关跳过；iPhone 17（iOS 26.5）模拟器 Runner/Widget 无签名构建成功，原生 XCTest 7 项通过。正式 CloudKit Container/App Group 标识已写入工程，但尚未核验 Apple Developer 后台关联并在两台真实设备验证增删改、墓碑和冲突，也未安装 iOS 15 运行时验证主屏幕添加、时间线刷新、过期展示及截图，因此 I6 保留真实运行验收项。
 
 ### M8：导出、国际化、隐私与异常收口
 
@@ -520,7 +520,7 @@ M0 技术决策与验收基线
 | CloudKit 冲突或墓碑错误 | 数据丢失或删除记录复活 | 本地优先、幂等同步、稳定 UUID、墓碑、实际金额冲突提示、双设备测试 |
 | Flutter 与原生契约漂移 | Runner 或扩展构建失败 | Pigeon 单一 schema、生成一致性门禁、版本化 DTO |
 | Widget 读取主库 | 迁移冲突或扩展崩溃 | 仅写最小只读 App Group 快照，Widget 不访问 Drift |
-| 正式名称和标识符迟迟未定 | 签名、CloudKit 和上架受阻 | M0 使用可替换配置；最迟在 M9 前冻结正式标识符 |
+| Apple 标识与签名材料不一致 | 签名、CloudKit 和上架受阻 | 正式标识集中配置；以 distribution profile 的 Team、Bundle ID 和 capabilities 做最终校验 |
 | 免责声明或 provider 条款不完整 | 审核和合规风险 | 发布前复核底层数据条款、署名、隐私政策和商店文案 |
 | 只凭构建结果宣布完成 | 运行时缺陷漏检 | 分开记录静态、测试、构建、模拟器、真机、双设备、视觉和发布证据 |
 
@@ -529,7 +529,7 @@ M0 技术决策与验收基线
 以下事项不阻塞 M0-M2，但必须在对应里程碑前确定：
 
 - 正式中文名、英文名、图标、主色和 App Store 展示名。
-- 正式 Bundle ID、App Group ID、CloudKit Container ID 与开发团队账户。
+- Apple Developer 中 App Group/CloudKit 的关联、Production Schema 和 Runner/Widget distribution profiles。
 - 金额内部采用十进制字符串/十进制库还是统一最小货币单位的最终方案。
 - 备份文件是否加密、恢复时的身份确认和文件格式版本策略。
 - Widget 首版支持的尺寸，以及用户从主 App 选择展示货币对/行程的交互。
@@ -545,6 +545,6 @@ M7 实现与自动化已完成，但 M0/M1 的历史退出复核、M5 完整手�
 3. 验收 TC-014：执行 iOS 模拟器冷/温启动、首装/回访分流和浅深色视觉检查。
 4. 补录 M5 模拟器完整数据闭环、深浅色与动态字体证据。
 5. 在真机使用价签、菜单、小票和 POS/截图完成 M6 相机/相册、权限拒绝、识别框与手动回退验收。
-6. 冻结正式 Bundle ID、App Group ID 和 CloudKit Container ID，在两台真实设备验证 M7 增删改、墓碑和冲突。
+6. 确认正式 App ID、App Group、CloudKit Container 与 profiles 的后台关联，在两台真实设备验证 M7 增删改、墓碑和冲突。
 7. 在 iOS 15 真机或对应运行时完成 Widget 添加、空/坏/过期展示、时间线刷新和截图验收。
 8. 补齐 M8 真机 Share Sheet、权限拒绝、VoiceOver、超大字号、浅深色/横竖屏及 CSV/PDF 第三方 App 视觉证据，然后推进 M9 发布链路。
