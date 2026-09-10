@@ -4,7 +4,8 @@ import WidgetKit
 
 enum CloudSyncSupport {
   static let contractVersion: Int64 = 1
-  static let recordSchemaVersion: Int64 = 1
+  static let minimumSupportedRecordSchemaVersion: Int64 = 1
+  static let recordSchemaVersion: Int64 = 2
   static let zoneName = "TripCostSyncZoneV1"
   static let subscriptionID = "TripCostSyncZoneSubscriptionV1"
   static let recordType = "TCEntity"
@@ -18,7 +19,9 @@ enum CloudSyncSupport {
         details: nil
       )
     }
-    guard record.schemaVersion == recordSchemaVersion else {
+    guard (minimumSupportedRecordSchemaVersion...recordSchemaVersion)
+      .contains(record.schemaVersion)
+    else {
       throw PigeonError(
         code: "unsupported-record-schema",
         message: "Unsupported Cloud record schema version.",

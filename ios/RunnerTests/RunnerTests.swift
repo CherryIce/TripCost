@@ -183,6 +183,42 @@ class RunnerTests: XCTestCase {
     }
   }
 
+  func testCloudRecordValidationAcceptsSchemaVersionsOneAndTwo() {
+    for schemaVersion: Int64 in [1, 2] {
+      let value = SyncRecord(
+        contractVersion: CloudSyncSupport.contractVersion,
+        id: "trip-1",
+        recordType: "trip",
+        schemaVersion: schemaVersion,
+        deviceId: "device-1",
+        changeId: "change-1",
+        payloadJson: "{\"id\":\"trip-1\"}",
+        modifiedAtUtc: "2026-08-17T08:00:00Z",
+        deleted: false
+      )
+
+      XCTAssertNoThrow(try CloudSyncSupport.validate(value))
+    }
+  }
+
+  func testCloudRecordValidationRejectsFutureSchemaVersion() {
+    let value = SyncRecord(
+      contractVersion: CloudSyncSupport.contractVersion,
+      id: "trip-1",
+      recordType: "trip",
+      schemaVersion: 3,
+      deviceId: "device-1",
+      changeId: "change-1",
+      payloadJson: "{\"id\":\"trip-1\"}",
+      modifiedAtUtc: "2026-08-17T08:00:00Z",
+      deleted: false
+    )
+
+    XCTAssertThrowsError(try CloudSyncSupport.validate(value)) { error in
+      XCTAssertEqual((error as? PigeonError)?.code, "unsupported-record-schema")
+    }
+  }
+
   func testCloudErrorsMapWithoutExposingRecordDetails() {
     let quota = CloudSyncSupport.mappedError(CKError(.quotaExceeded))
     XCTAssertEqual(quota.code, "cloud-quota-exceeded")
